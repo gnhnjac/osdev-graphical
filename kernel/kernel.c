@@ -5,6 +5,7 @@
 #include "keyboard.h"
 #include "mouse.h"
 #include "shell.h"
+#include "heap.h"
 
 void kmain();
 
@@ -19,8 +20,9 @@ void kmain() {
 	idt_install();
 	irq_install();
 	timer_install();
-	display_logo();
+	//display_logo();
 	init_screen();
+
 	keyboard_install();
 	#ifdef BOCHS
 		mouse_install(); // mouse has issues in qemu.

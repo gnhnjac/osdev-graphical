@@ -1,5 +1,6 @@
 #include "strings.h"
 #include "memory.h"
+#include "heap.h"
 
 void num_to_str(int n, char *buffer, int base)
 {
@@ -127,9 +128,9 @@ void strip_from_start(char *str, char character)
 
 }
 
-// seperate string by seperator and take the {index} numbered substring. buff is dest. buff must be the size of the original str.
+// seperate string by seperator and take the {index} numbered substring. return is malloced ***DONT FORGET TO FREE***.
 // index starts from 0.
-void seperate_and_take(char* str, char *buff, char seperator, int index)
+char *seperate_and_take(char* str, char seperator, int index)
 {
 	int curr_index = 0;
 	int len = 0;
@@ -142,21 +143,36 @@ void seperate_and_take(char* str, char *buff, char seperator, int index)
 
 			if (curr_index == index)
 			{
-
+				char *buff = (char *)malloc(len+1);
 				buff[len] = 0;
 				memcpy(buff,str_start,len);
-				return;
+				return buff;
 
 			}
 			str_start = str+i+1;
+			len = 0;
 			curr_index++;
 
 		}
 		len++;
 
 	}
-	memcpy(buff,str,strlen(str)+1); // if didn't find seperator copy the whole thing.
-	return;
+
+	if (curr_index == index)
+	{
+		char *buff = (char *)malloc(len+1);
+		buff[len] = 0;
+		memcpy(buff,str_start,len);
+		return buff;
+
+	}
+	else
+	{
+		char *buff = (char *)malloc(strlen(str)+1);
+		memcpy(buff,str,strlen(str)+1); // if didn't find seperator copy the whole thing.
+		return buff;
+	}
+	
 }
 
 // counts how many substrings the string has when seperated with seperator

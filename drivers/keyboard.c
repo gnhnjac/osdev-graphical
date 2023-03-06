@@ -11,10 +11,10 @@ static unsigned char kstatus = 0;
 static uint8_t input_row = 0;
 static uint8_t input_col = 0;
 static bool taking_input = false;
-static char input_buffer[INPUT_BUFFER_SIZE];
-static int buffer_index = 0;
-static int buffer_limit = 0;
-static int orig_scroll_index = 0;
+static char *input_buffer;
+static unsigned int buffer_index = 0;
+static unsigned int buffer_limit = 0;
+static unsigned int orig_scroll_index = 0;
 
 void enable_shift()
 {
@@ -310,9 +310,9 @@ static void handle_character(unsigned char scancode)
 
 }
 
-// row = the row you want to use, col = the col you want to use, bf_limit = how many characters, including \n should you take from the user.
-// if row<0 then row=cursor row, if col<0 then col=cursor col, if bf_limit<=0 then default limit.
-void keyboard_input(int row, int col, int bf_limit)
+// row = the row you want to use, col = the col you want to use, bf_size = how many characters, including \n should you take from the user buffer = pointer to buffer.
+// if row<0 then row=cursor row, if col<0 then col=cursor col.
+void keyboard_input(int row, int col, char *buffer, int bf_size)
 {
 
   taking_input = true;
@@ -337,20 +337,11 @@ void keyboard_input(int row, int col, int bf_limit)
   set_cursor(get_screen_offset(input_row, input_col));
   buffer_index = 0;
 
-  if (bf_limit <= 0)
-    buffer_limit = INPUT_BUFFER_SIZE;
-  else
-    buffer_limit = bf_limit;
+  buffer_limit = bf_size;
+  input_buffer = buffer;
 
   orig_scroll_index = get_scroll_index();
 
-
-}
-
-void load_input_to_buffer(char *buffer)
-{
-
-  memcpy(buffer,input_buffer,buffer_limit);
 
 }
 
@@ -385,7 +376,7 @@ static int keyboard_input_character(char character)
     return 1;
   }
 
-  if (buffer_index == min(INPUT_BUFFER_SIZE-1,buffer_limit-1)) // only if character is \n let it pass and finish taking the input
+  if (buffer_index == buffer_limit-1) // only if character is \n let it pass and finish taking the input
     return -1;
 
   input_buffer[buffer_index] = character;

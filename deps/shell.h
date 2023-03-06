@@ -19,5 +19,6 @@
 void shell_main();
 void handle_command(char *cmd_buff);
 void handle_help(char *cmd_buff);
+int get_help_index(char *cmd);
 void handle_reboot();
 void handle_shutdown();
