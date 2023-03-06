@@ -9,12 +9,18 @@ HEADERS = $(wildcard deps/*.h)
 # the ’.c’ extension of filenames in C_SOURCES with ’.o’
 OBJ = ${C_SOURCES:.c=.o}
 
+emu = QEMU
+
 # Default make target .
 all: clean pre-build os-image
 
-# Run bochs to simulate booting of our code.
+# Run bochs
 run: all
 	@bochs
+	
+# Run qemu
+runq: all
+	@qemu-system-x86_64 -D qemu_log.txt -d int -fda os-image
 
 pre-build:
 	@python update_headers.py
@@ -35,7 +41,7 @@ kernel.bin: kernel/kernel_entry.o ${OBJ}
 
 # Generic rule for building ’somefile.o’ from ’somefile.c’
 %.o: %.c ${HEADERS}
-	@gcc -m32 -ffreestanding -c $< -I ./deps -o $@ -D BOCHS
+	@gcc -m32 -ffreestanding -c $< -I ./deps -o $@ -D $(emu)
 
 # Build our kernel entry object file.
 #$< is the first dependancy and $@ is the target file
