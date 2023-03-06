@@ -1,0 +1,7 @@
+# Tell bochs to use our boot sector code as though it were
+# a floppy disk inserted into a computer at boot time .
+floppya : 1_44=os-image, status=inserted
+boot: a
+megs: 32
+clock: sync=realtime
+mouse: type=imps2, enabled=1
