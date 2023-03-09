@@ -2,6 +2,7 @@
 #include "irq.h"
 #include "screen.h"
 #include "mouse.h"
+#include "std.h"
 #include <stdint.h>
 #include <stdbool.h>
 
@@ -18,7 +19,7 @@ static placeholder mouset_buffer = {' ',0x0f};
 static placeholder mouseb_buffer = {' ',0x0f};
 static placeholder mouser_buffer = {' ',0x0f};
 
-void mouse_wait(uint8_t type)
+int mouse_wait(uint8_t type)
 {
 	uint32_t _timeout = 1000000;
 	
@@ -26,17 +27,23 @@ void mouse_wait(uint8_t type)
 	{
 		while (_timeout--)
 		{
-			if (inb(0x64) & 1) return;
+			if (inb(PS_CTRL) & 1) return;
 			asm ("pause");
+
 		}
+		// data buffer isn't full
+		printf("dbuff\n");
+		return STDERR;
 	}
 	else
 	{
 		while (_timeout--)
 		{
-			if (!(inb(0x64) & 2)) return;
+			if (!(inb(PS_CTRL) & 2)) return;
 			asm ("pause");
 		}
+		// can't write data to PS_CTRL / PS_DATA
+		return STDERR;
 	}
 
 }
@@ -83,6 +90,14 @@ void enable_mouse()
 	set_cursor(prev_cursor);
 }
 
+int mouse_buffer_full()
+{
+
+
+  	return inb(PS_CTRL)&1;
+
+}
+
 void mouse_handler(struct regs *r)
 {
 	mouse_wait(0);
@@ -93,6 +108,8 @@ void mouse_handler(struct regs *r)
 	uint8_t ymov = inb(PS_DATA);
 	mouse_wait(0);
 	uint8_t zmov = inb(PS_DATA);
+
+
 	if (!mouse_enabled || !mouse_installed)
 		return;
 
@@ -237,7 +254,6 @@ void mouse_install()
 	mouse_write(MOUSE_DEFAULT);// default settings
 
 	// activate scrolling
-
 	set_mouse_rate(200);
 	set_mouse_rate(100);
 	set_mouse_rate(80);

@@ -24,6 +24,7 @@ void timer_handler(struct regs *r)
 {
     /* Increment our 'tick count' */
     timer_ticks++;
+    set_timer_ticks(timer_ticks);
 }
 
 /* Sets up the system clock by installing the timer handler

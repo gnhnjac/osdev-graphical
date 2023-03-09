@@ -16,6 +16,9 @@ char bot_buffer[BUFFER_BOT_ROWS][2*MAX_COLS];
 
 int scroll_index = 0;
 
+static uint8_t cursor_input_row = 0;
+static uint8_t cursor_input_col = 0;
+
 /* Print a char on the screen at col, row, or at cursor position */
 void print_char(const char character, int row, int col, char attribute_byte) 
 {
@@ -177,6 +180,21 @@ void set_cursor(int offset)
 	outb(REG_SCREEN_DATA, (unsigned char)(offset));
 }
 
+void set_cursor_input_coords(uint8_t row, uint8_t col)
+{
+
+	cursor_input_row = row;
+	cursor_input_col = col;
+
+}
+
+void attach_cursor_to_input()
+{
+
+	set_cursor_coords(cursor_input_row,cursor_input_col);
+
+}
+
 
 void enable_cursor(uint8_t cursor_start, uint8_t cursor_end)
 {
@@ -196,7 +214,14 @@ void disable_cursor()
 void set_cursor_coords(int row, int col)
 {
 
-	return set_cursor(get_screen_offset(row, col));
+	set_cursor(get_screen_offset(row, col));
+
+}
+
+void set_cursor_row(int row)
+{
+
+	set_cursor_coords(row,get_cursor_col());
 
 }
 
@@ -209,7 +234,6 @@ void putchar(char c)
 
 void print_at(const char *msg, int row, int col, int attr_byte) 
 {
-	// maybe redundant
 	if ( col >= 0 && row >= 0) {
 		set_cursor_coords(row, col);
 	}
@@ -323,7 +347,7 @@ void clear_viewport()
 		}
 	}
 	//Move the cursor back to the top left .
-	set_cursor(get_screen_offset(TOP,0));
+	set_cursor_coords(TOP,0);
 }
 
 // clear whole screen
@@ -337,8 +361,7 @@ void clear_screen()
 		*(video_memory + i) = ' ';
 		*(video_memory + i + 1) = WHITE_ON_BLACK;
 	}
-	//Move the cursor back to the top left .
-	set_cursor(get_screen_offset(TOP,0));
+	set_cursor_coords(0,0);
 }
 
 
@@ -349,6 +372,8 @@ int handle_scrolling(int cursor_offset)
 	{
 		return cursor_offset;
 	}
+	int cursor_row = get_cursor_row();
+	int cursor_col = get_cursor_col();
 	hide_scroll_bar();
 	disable_mouse();
 	char *first_line = (char *)(VIDEO_ADDRESS + get_screen_offset(TOP, 0));
@@ -377,6 +402,8 @@ int handle_scrolling(int cursor_offset)
 	if (scroll_index != BUFFER_TOP_ROWS)
 		scroll_index++;
 	draw_scroll_bar();
+	set_cursor_coords(cursor_row-1,cursor_col);
+	cursor_input_row -=1;
 
 	return cursor_offset;
 
@@ -462,9 +489,9 @@ void init_screen()
 
 	// Initialize stats
 
-	print_at("CTRL SHIFT ALT CAPS", 0, 0, WHITE_ON_BLACK);
+	print_at("CTRL SHIFT ALT CAPS | CLOCK_TICKS=", 0, 0, WHITE_ON_BLACK);
 
-	set_cursor(get_screen_offset(TOP,0));
+	set_cursor_coords(TOP,0);
 
 	draw_scroll_bar();
 
@@ -480,6 +507,14 @@ void switch_top_bar_value(int offset, int len)
 
 	}
 
+}
+
+void set_timer_ticks(unsigned int ticks)
+{	
+	int cursor_coords = get_cursor();
+	set_cursor_coords(0,CYCLE_OFF);
+	printf("%d          ",ticks);
+	set_cursor(cursor_coords);
 }
 
 void push_to_buffer(char buffer[][2*MAX_COLS], char *line, int buffer_rows)
@@ -513,6 +548,8 @@ void scroll_up()
 {
 	if (scroll_index == 0)
 		return;
+	int cursor_row = get_cursor_row();
+	int cursor_col = get_cursor_col();
 	hide_scroll_bar();
 	char *last_line = (char *)(VIDEO_ADDRESS + get_screen_offset(MAX_ROWS-1, 0));
 	push_to_buffer(bot_buffer, last_line, BUFFER_BOT_ROWS);
@@ -533,6 +570,8 @@ void scroll_up()
 
 	scroll_index--;
 	draw_scroll_bar();
+	set_cursor_coords(cursor_row+1,cursor_col);
+	cursor_input_row +=1;
 
 }
 
@@ -540,6 +579,8 @@ void scroll_down()
 {
 	if (scroll_index == BUFFER_TOP_ROWS)
 		return;
+	int cursor_row = get_cursor_row();
+	int cursor_col = get_cursor_col();
 	hide_scroll_bar();
 	disable_mouse();
 
@@ -560,12 +601,13 @@ void scroll_down()
 
 	scroll_index++;
 	draw_scroll_bar();
+	set_cursor_coords(cursor_row-1,cursor_col);
+	cursor_input_row -=1;
 
 }
 
 void draw_scroll_bar()
 {
-	int prev_cursor = get_cursor();
 	for (int i = TOP; i < MAX_ROWS; i++)
 	{
 
@@ -577,7 +619,6 @@ void draw_scroll_bar()
 	int row = remap(scroll_index, 0, BUFFER_TOP_ROWS, TOP, MAX_ROWS-1);
 	int col = 79;
 	print_char(' ', row, col, 0x70);
-	set_cursor(prev_cursor);
 
 }
 
@@ -603,8 +644,6 @@ void set_scroll_pos_mouse(int pos_index)
 		scroll_down();
 	while(target_scroll_index < scroll_index)
 		scroll_up();
-
-	draw_scroll_bar();
 	
 }
 
@@ -616,8 +655,16 @@ void set_scroll_pos(int target_scroll_index)
 	while(target_scroll_index < scroll_index)
 		scroll_up();
 
-	draw_scroll_bar();
-	
+}
+
+void fit_to_scroll(int target_scroll_index)
+{
+
+	while(target_scroll_index - scroll_index >= VIEWPORT_ROWS)
+		scroll_down();
+	while(target_scroll_index < scroll_index)
+		scroll_up();
+
 }
 
 

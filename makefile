@@ -20,7 +20,7 @@ run: all
 	
 # Run qemu
 runq: all
-	@qemu-system-x86_64 -D qemu_log.txt -d int -fda os-image
+	@qemu-system-x86_64 -D qemu_log.txt -d int -drive file=os-image,if=floppy,format=raw
 
 pre-build:
 	@python update_headers.py

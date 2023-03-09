@@ -3,13 +3,13 @@
 #include "low_level.h"
 #include "screen.h"
 #include "math.h"
+#include "std.h"
 #include "memory.h"
+#include "mouse.h"
 
 // status byte for keyboard
 // [n,n,n,n,caps,shift,alt,ctrl]
 static unsigned char kstatus = 0;
-static uint8_t input_row = 0;
-static uint8_t input_col = 0;
 static bool taking_input = false;
 static char *input_buffer;
 static unsigned int buffer_index = 0;
@@ -107,6 +107,7 @@ int check_alt()
 
 }
 
+
 // us keyboard layout scancode->ascii
 unsigned char kbdus[128] =
 {
@@ -196,6 +197,8 @@ void keyboard_handler(struct regs *r)
 
     /* Read from the keyboard's data buffer */
     scancode = inb(PS_DATA);
+
+
     /* If the top bit of the byte we read from the keyboard is
     *  set, that means that a key has just been released */
     if (scancode & 0x80)
@@ -281,6 +284,9 @@ void keyboard_handler(struct regs *r)
 static void handle_character(unsigned char scancode)
 {
 
+  if (!kbdus[scancode])
+    return;
+
   int character_status = 0; // 0 = print
 
   if (check_shift())
@@ -304,8 +310,7 @@ static void handle_character(unsigned char scancode)
 
   if (taking_input)
   {
-    input_row = get_cursor_row();
-    input_col = get_cursor_col();
+    set_cursor_input_coords(get_cursor_row(), get_cursor_col());
   }
 
 }
@@ -322,26 +327,23 @@ void keyboard_input(int row, int col, char *buffer, int bf_size)
   if(col < 0)
     col = get_cursor_col();
 
-  if (row < 2)
-    row = 2;
-  else if (row > 24)
-    row = 24;
+  if (row < TOP)
+    row = TOP;
+  else if (row >= MAX_ROWS)
+    row = MAX_ROWS-1;
 
   if (col < 0)
     col = 0;
-  else if (col > 79)
-    col = 79;
+  else if (col >= MAX_COLS)
+    col = MAX_COLS-1;
 
-  input_row = row;
-  input_col = col;
-  set_cursor(get_screen_offset(input_row, input_col));
+  set_cursor_input_coords(row, col);
   buffer_index = 0;
 
   buffer_limit = bf_size;
   input_buffer = buffer;
 
-  orig_scroll_index = get_scroll_index();
-
+  orig_scroll_index = get_scroll_index() + get_cursor_row() - TOP;
 
 }
 
@@ -355,8 +357,8 @@ bool is_taking_input()
 // returns -1 if reached limit (start/end) and must be supplied with \n, zero if continuing and 1 if finished successfully.
 static int keyboard_input_character(char character)
 {
-  set_scroll_pos(orig_scroll_index);
-  set_cursor(get_screen_offset(input_row, input_col));
+  fit_to_scroll(orig_scroll_index);
+  attach_cursor_to_input();
 
   if (character == '\b') // handle backspace
   {

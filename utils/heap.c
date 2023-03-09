@@ -1,4 +1,7 @@
 #include "heap.h"
+
+// NOTE: CURRENTLY EACH MALLOC IS LIMITED TO 4096 BYTES
+
 void *malloc(unsigned int size)
 {
 	void *heap_head = (void *)HEAP_ADDR;
@@ -6,14 +9,14 @@ void *malloc(unsigned int size)
 	while(!addr)
 	{
 
-		if (*(unsigned int *)heap_head == 0)
+		if (*(unsigned char *)heap_head == 0)
 		{
-			*(unsigned int *)heap_head = size;
-			addr = heap_head + sizeof(unsigned int);
+			*(unsigned char *)heap_head = 1; // set to occupied
+			addr = heap_head + sizeof(unsigned char);
 
 		}
 
-		heap_head += *(unsigned int *)heap_head + sizeof(unsigned int);
+		heap_head +=  sizeof(unsigned char) + HEAP_CHUNK_SIZE;
 
 	}
 
@@ -24,6 +27,6 @@ void *malloc(unsigned int size)
 void free(void *addr)
 {
 
-	*(unsigned int *)(addr-sizeof(unsigned int)) = 0;
+	*(unsigned char *)(addr-sizeof(unsigned char)) = 0;
 
 }
