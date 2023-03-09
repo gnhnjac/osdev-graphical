@@ -1,3 +1,4 @@
+make clean
 git add .
 for /f "tokens=1-4 delims=/ " %%i in ("%date%") do (
      set dow=%%i
