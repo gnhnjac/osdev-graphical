@@ -18,11 +18,10 @@ typedef struct
 } placeholder;
 
 //refs
-int mouse_wait(uint8_t type);
+void mouse_wait(uint8_t type);
 void disable_mouse();
 void save_to_mouse_buffer();
 void enable_mouse();
-int mouse_buffer_full();
 void mouse_handler(struct regs *r);
 void ack();
 void mouse_write(uint8_t byte);

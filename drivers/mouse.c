@@ -19,7 +19,7 @@ static placeholder mouset_buffer = {' ',0x0f};
 static placeholder mouseb_buffer = {' ',0x0f};
 static placeholder mouser_buffer = {' ',0x0f};
 
-int mouse_wait(uint8_t type)
+void mouse_wait(uint8_t type)
 {
 	uint32_t _timeout = 1000000;
 	
@@ -31,9 +31,6 @@ int mouse_wait(uint8_t type)
 			asm ("pause");
 
 		}
-		// data buffer isn't full
-		printf("dbuff\n");
-		return STDERR;
 	}
 	else
 	{
@@ -42,8 +39,6 @@ int mouse_wait(uint8_t type)
 			if (!(inb(PS_CTRL) & 2)) return;
 			asm ("pause");
 		}
-		// can't write data to PS_CTRL / PS_DATA
-		return STDERR;
 	}
 
 }
@@ -88,14 +83,6 @@ void enable_mouse()
 	if (MOUSEX < 79)
 		print_char(' ',MOUSEY,MOUSEX+1,0x40);
 	set_cursor(prev_cursor);
-}
-
-int mouse_buffer_full()
-{
-
-
-  	return inb(PS_CTRL)&1;
-
 }
 
 void mouse_handler(struct regs *r)

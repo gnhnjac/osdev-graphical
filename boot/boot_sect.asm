@@ -27,7 +27,7 @@ load_kernel: ; note that dx is changed here!
 	push 0x1000 ; es offset
 	push 0 ; bx offset
 	push dx ; drive number
-	push 70 ; sectors to be read
+	push 80 ; sectors to be read
 	push 0 ; head
 	push 0 ; cyl
 	push 2 ; sec

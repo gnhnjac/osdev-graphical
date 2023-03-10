@@ -20,7 +20,7 @@ run: all
 	
 # Run qemu
 runq: all
-	@qemu-system-x86_64 -D qemu_log.txt -d int -drive file=os-image,if=floppy,format=raw
+	@qemu-system-x86_64 -d int -drive file=os-image,if=floppy,format=raw -device rtl8139,netdev=net0 -netdev user,id=net0 -D qemu_log.txt 
 
 pre-build:
 	@python update_headers.py

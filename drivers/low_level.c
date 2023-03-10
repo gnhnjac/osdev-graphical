@@ -24,3 +24,13 @@ unsigned short inw( unsigned short port ) {
 void outw( unsigned short port , unsigned short data ) {
 	__asm__ ("out %%ax, %%dx" : :"a" ( data ), "d" ( port ));
 }
+
+unsigned long inl( unsigned short port ) {
+	unsigned long result;
+	__asm__ ("inl %%dx, %%eax" : "=a" ( result ) : "d" ( port ));
+	return result;
+}
+
+void outl( unsigned short port , unsigned long data ) {
+	__asm__ ("outl %%eax, %%dx" : :"a" ( data ), "d" ( port ));
+}

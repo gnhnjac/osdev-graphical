@@ -6,6 +6,6 @@ for /f "tokens=1-4 delims=/ " %%i in ("%date%") do (
      set day=%%k
      set year=%%l
 )
-set datestr=%month%_%day%_%year%
+set datestr=%day%_%month%_%year%
 git commit -m "%datestr%"
 git push

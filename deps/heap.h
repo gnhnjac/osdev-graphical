@@ -2,5 +2,5 @@
 #define HEAP_CHUNK_SIZE 4096
 
 //refs
-void *malloc(unsigned int size);
+void *malloc();
 void free(void *addr);

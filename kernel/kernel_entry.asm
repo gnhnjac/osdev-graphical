@@ -182,14 +182,14 @@ isr_common_stub:
 
 ; IRQS
 %assign i 0 
-%rep    16
+%rep    17
     global _irq%+i
 %assign i i+1 
 %endrep
 
 ; 32: IRQ0
 %assign i 0
-%rep    16
+%rep    17
 _irq%+i:
     cli
     push byte 0 ; these dont push an error so for stack consistency we push 0

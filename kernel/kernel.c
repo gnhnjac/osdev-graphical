@@ -6,6 +6,7 @@
 #include "mouse.h"
 #include "shell.h"
 #include "heap.h"
+#include "rtl8139.h"
 
 void kmain();
 
@@ -22,11 +23,14 @@ void kmain() {
 	timer_install();
 	//display_logo();
 	init_screen();
-
+	#ifdef QEMU
+			install_nic();
+	#endif
 	keyboard_install();
 	#ifdef BOCHS
 		mouse_install(); // mouse has issues in qemu.
 	#endif
+
 	// for (int i = 0; i < 80; i++)
 	// {	
 
@@ -48,7 +52,7 @@ void kmain() {
 
 	// } 
 	
-	shell_main(); // start terminal
+	//shell_main(); // start terminal
 
 	return;
 }

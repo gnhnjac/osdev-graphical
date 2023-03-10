@@ -2,7 +2,7 @@
 
 // NOTE: CURRENTLY EACH MALLOC IS LIMITED TO 4096 BYTES
 
-void *malloc(unsigned int size)
+void *malloc()
 {
 	void *heap_head = (void *)HEAP_ADDR;
 	void *addr = 0;
