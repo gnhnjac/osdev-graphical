@@ -30,7 +30,7 @@ void install_nic()
 	outb(ioaddr+CFG1_REG,0);
 
 	// reset the device to avoid junk in the registers
-	printf("%x\n",ioaddr);
+	printf("%x\n",inb(ioaddr));
 	outb(ioaddr + CMD_REG, 0x10);
  	while((inb(ioaddr + CMD_REG) & 0x10) != 0) { }
 
