@@ -25,6 +25,11 @@ void kmain() {
 	init_screen();
 	#ifdef QEMU
 			install_nic();
+			char *packet = malloc();
+			memset(packet,0,1024);
+			send_packet(packet,1024);
+			send_packet(packet,1024);
+			free(packet);
 	#endif
 	keyboard_install();
 	#ifdef BOCHS

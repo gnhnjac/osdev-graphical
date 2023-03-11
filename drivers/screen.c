@@ -43,6 +43,8 @@ void print_char(const char character, int row, int col, char attribute_byte)
 
 		// handle backspace
 		offset-=2;
+		if ((offset/2)%MAX_COLS >= 78)
+			offset = offset - ((offset/2)%MAX_COLS)*2 + 77*2;
 		if (offset < get_screen_offset(TOP, 0)) // can't be lower than start of screen.
 		{
 

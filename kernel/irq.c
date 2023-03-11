@@ -20,11 +20,10 @@ extern void irq12();
 extern void irq13();
 extern void irq14();
 extern void irq15();
-extern void irq16();
 
 /* This array is actually an array of function pointers. We use
 *  this to handle custom IRQ handlers for a given IRQ */
-void *irq_routines[17] =
+void *irq_routines[16] =
 {
     0, 0, 0, 0, 0, 0, 0, 0,
     0, 0, 0, 0, 0, 0, 0, 0
@@ -88,7 +87,6 @@ void irq_install()
 	idt_set_gate(45, (void *)irq13, 0x8E);
 	idt_set_gate(46, (void *)irq14, 0x8E);
 	idt_set_gate(47, (void *)irq15, 0x8E);
-    idt_set_gate(48, (void *)irq16, 0x8E);
 
 	// After we set all the irq places up and remmaped them we won't get double fault again so it's safe to enable interrupts
 	__asm__ __volatile__ ("sti");
@@ -131,7 +129,5 @@ void irq_handler(struct regs *r)
     *  interrupt controller too */
     outb(0x20, 0x20);
 
-    if (r->int_no)
-            printf("%d\n",r->int_no);
 
 }

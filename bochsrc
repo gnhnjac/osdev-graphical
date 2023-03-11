@@ -1,6 +1,6 @@
 # Tell bochs to use our boot sector code as though it were
 # a floppy disk inserted into a computer at boot time .
-floppya : 1_44=os-image, status=inserted
+floppya : 2_88=os-image, status=inserted
 boot: a
 megs: 32
 clock: sync=realtime

@@ -27,10 +27,8 @@ load_kernel: ; note that dx is changed here!
 	push 0x1000 ; es offset
 	push 0 ; bx offset
 	push dx ; drive number
-	push 80 ; sectors to be read
-	push 0 ; head
-	push 0 ; cyl
-	push 2 ; sec
+	push 100 ; sectors to be read
+	push 1 ; start sector in LBA
 	call disk_load
 
 	ret
@@ -48,7 +46,7 @@ BEGIN_PM:
 
 ; 16 bit rm files
 %include "print_str_mem.asm"
-%include "print_hex_word.asm"
+;%include "print_hex_word.asm"
 %include "disk_load.asm"
 %include "gdt.asm"
 
