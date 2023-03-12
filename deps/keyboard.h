@@ -23,6 +23,8 @@
 #define DOWN_ARROW_PRESS 80
 #define UP_ARROW_PRESS 72
 
+#define WRITE_TO_KEYBOARD 0xD2
+
 //refs
 void enable_shift();
 void disable_shift();

@@ -6,6 +6,7 @@
 #include "std.h"
 #include "memory.h"
 #include "mouse.h"
+#include "ps2.h"
 
 // status byte for keyboard
 // [n,n,n,n,caps,shift,alt,ctrl]
@@ -390,6 +391,11 @@ static int keyboard_input_character(char character)
 
 void keyboard_install()
 {
+    // reset the keyboard
+    uint8_t tmp = inb(0x61);
+    outb(0x61, tmp | 0x80);
+    outb(0x61, tmp & 0x7F);
+    inb(PS_DATA); // ack
 
     irq_install_handler(1, keyboard_handler);
 

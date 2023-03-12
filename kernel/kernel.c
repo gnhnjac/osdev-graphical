@@ -7,6 +7,7 @@
 #include "shell.h"
 #include "heap.h"
 #include "rtl8139.h"
+#include "ps2.h"
 
 void kmain();
 
@@ -31,6 +32,7 @@ void kmain() {
 			send_packet(packet,1024);
 			free(packet);
 	#endif
+	ps2_init();
 	keyboard_install();
 	#ifdef BOCHS
 		mouse_install(); // mouse has issues in qemu.

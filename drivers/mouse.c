@@ -1,4 +1,5 @@
 #include "low_level.h"
+#include "ps2.h"
 #include "irq.h"
 #include "screen.h"
 #include "mouse.h"
@@ -87,6 +88,7 @@ void enable_mouse()
 
 void mouse_handler(struct regs *r)
 {
+
 	mouse_wait(0);
 	uint8_t flags = inb(PS_DATA);
 	mouse_wait(0);
@@ -248,9 +250,9 @@ void mouse_install()
 
 	mouse_write(MOUSE_PACKET);// activate data send
 
-	__asm__ __volatile__ ("sti");
-
 	irq_install_handler(12, mouse_handler);
+
+	__asm__ __volatile__ ("sti");
 
 	// save strings at future mouse init position
 	char *video_memory = (char *)VIDEO_ADDRESS;
