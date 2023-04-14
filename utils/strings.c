@@ -1,8 +1,12 @@
 #include "strings.h"
+#include <stdarg.h>
 #include "memory.h"
 #include "heap.h"
+#include "std.h"
+#include <stdint.h>
+#include "screen.h"
 
-void num_to_str(int n, char *buffer, int base)
+void int_to_str(int n, char *buffer, int base)
 {
 	char digits[] = {'0','1','2','3','4','5','6','7','8','9','A','B','C','D','E','F'};
 
@@ -28,6 +32,28 @@ void num_to_str(int n, char *buffer, int base)
 		n_of_digits += 1;
 		buffer[0] = '-';
 	}
+	do
+	{	
+
+		int digit = digits[n%base];
+		*(buffer + n_of_digits - 1 - i) = digit;
+		i++;
+		n /= base;
+
+	} while(n);
+
+	buffer[n_of_digits] = 0;
+
+}
+
+void byte_to_str(unsigned char n, char *buffer, int base)
+{
+	char digits[] = {'0','1','2','3','4','5','6','7','8','9','A','B','C','D','E','F'};
+
+	int n_of_digits = 2;
+	buffer[0] = '0';
+
+	int i = 0;
 	do
 	{	
 
@@ -242,5 +268,89 @@ bool strcmp(char *s1, char *s2)
 	}
 
 	return true;
+
+}
+
+int sprintf(char *str, const char *fmt, ...)
+{
+
+	va_list valist;
+	va_start(valist, fmt);
+
+	const char *orig = fmt;
+
+	while (*fmt)
+	{
+
+		if (*fmt == '%' && ((*(fmt-1) != '\\' && fmt != orig) || fmt == orig))
+		{
+
+			char buff[30];
+			char *to_cpy;
+			int len;
+
+			switch(*++fmt)
+			{
+
+				case 'd':
+
+					int_to_str(va_arg(valist, int), buff, 10);
+					len = strlen(buff);
+					memcpy(str,buff,len);
+					str+=len;
+					break;
+
+				case 'c':
+
+					*str = (char)va_arg(valist, int);
+					str++;
+					break;
+
+				case 's':
+					to_cpy = (char *)va_arg(valist, int);
+					len = strlen(to_cpy);
+					memcpy(str,to_cpy,len);
+					str+=len;
+					break;
+
+				case 'x':
+
+					int_to_str(va_arg(valist, int), buff, 16);
+					len = strlen(buff);
+					memcpy(str,buff,len);
+					str+=len;
+					break;
+
+				case 'b':
+					int_to_str(va_arg(valist, int), buff, 2);
+					len = strlen(buff);
+					memcpy(str,buff,len);
+					str+=len;
+					break;
+
+				default:
+
+					printf("Unknown format type \\%%c", fmt);
+					return STDERR;
+			}
+
+		}
+		else if(*fmt == '\\')
+		{	
+			fmt++;
+			continue;
+		}
+		else
+		{
+			*str = *fmt;
+			str++;
+		}
+
+		fmt++;
+
+	}
+	*str = 0; // put end of string character
+
+	return STDOK;
 
 }

@@ -5,9 +5,9 @@
 #include "keyboard.h"
 #include "mouse.h"
 #include "shell.h"
-#include "heap.h"
 #include "rtl8139.h"
 #include "ps2.h"
+#include "network.h"
 
 void kmain();
 
@@ -22,15 +22,10 @@ void kmain() {
 	idt_install();
 	irq_install();
 	timer_install();
-	//display_logo();
+	display_logo();
 	init_screen();
 	#ifdef QEMU
 			install_nic();
-			char *packet = malloc();
-			memset(packet,0,1024);
-			send_packet(packet,1024);
-			send_packet(packet,1024);
-			free(packet);
 	#endif
 	ps2_init();
 	keyboard_install();
@@ -59,7 +54,7 @@ void kmain() {
 
 	// } 
 	
-	//shell_main(); // start terminal
+	shell_main(); // start terminal
 
 	return;
 }

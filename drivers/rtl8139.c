@@ -2,6 +2,8 @@
 #include "screen.h"
 #include "irq.h"
 #include "memory.h"
+#include "heap.h"
+#include "network.h"
 #include "rtl8139.h"
 #include "low_level.h"
 
@@ -12,6 +14,9 @@ rtl8139_dev_t rtl8139_dev;
 // Four TXAD register, you must use a different one to send packet each time(for example, use the first one, second... fourth and back to the first)
 uint8_t TSAD_array[4] = {0x20, 0x24, 0x28, 0x2C}; // address registers
 uint8_t TSD_array[4] = {0x10, 0x14, 0x18, 0x1C}; // status registers
+
+uint32_t current_packet_ptr;
+
 
 void install_nic()
 {
@@ -31,6 +36,8 @@ void install_nic()
 
 	// Set current TSAD because the device cycles between pairs of status/address registers to send data
     rtl8139_dev.tx_cur = 0;
+
+    current_packet_ptr = 0;
 
 	// get the mac address of the device
 	printf("mac address: ");
@@ -72,13 +79,18 @@ void install_nic()
 	uint16_t ilr = pci_config_read_word(0,dev_num,0,0x3C)&0xFF; // interrupt line number which is the irq number (0-15)
  	irq_install_handler(ilr, rtl8139_handler);
 
+ 	char *packet = malloc(); 
+	memset(packet,0xDD,169);
+	build_ethernet_layer(packet, "\xFF\xFF\xFF\xFF\xFF\xFF",get_mac_addr(),0x806);
+	send_packet(packet,169);
+	free(packet);
 }
 
 // note: maximum len of packet is 1792
 void send_packet(char *packet,int len)
 {
 
-	outl(rtl8139_dev.io_base+TSAD_array[rtl8139_dev.tx_cur],(uintptr_t)packet);
+	outl(rtl8139_dev.io_base+TSAD_array[rtl8139_dev.tx_cur],(uint32_t)packet);
  	// 0-12 => size of packet
  	// 13 => own, 1 when not transmitting, 0 when transmitting
  	// 14 => tun
@@ -99,10 +111,10 @@ void rtl8139_handler(struct regs *r)
 	uint16_t status = inw(rtl8139_dev.io_base + ISR_REG);
 
     if(status & TOK) { // if transmit ok received
-        printf("Packet sent\n");
+        //printf("Packet sent\n");
     }
     if (status & ROK) { // if received ok, handle packet
-        printf("Received packet\n");
+        //printf("Received packet\n");
         receive_packet();
     }
 
@@ -111,10 +123,48 @@ void rtl8139_handler(struct regs *r)
 
 
 }
-
+int lol = 1;
 void receive_packet()
 {
 
+	if (inb(rtl8139_dev.io_base + CMD_REG) & CR_BUFE) {
+		return;
+	}
+	
+	char * packet = rtl8139_dev.rx_buffer + current_packet_ptr;
+	for(int i = 0; i < RX_BUF_SIZE + 16 + 1500; i++)
+	{
+		if (*(packet+i))
+		{
+			printf("%d\n",i);
+			break;
+		}
+	}
+    // Skip packet header, get packet length
+    uint16_t packet_length = *(uint16_t *)(packet + 2);
 
+    // Skip, packet header and packet length, now t points to the packet data
+    packet += 2;
+    //printf("Printing packet of size %d at addr 0x%x\n", packet_length,packet);
+    //hexdump((void *)packet, packet_length);
+
+    // Now, ethernet layer starts to handle the packet(be sure to make a copy of the packet, insteading of using the buffer)
+    // and probabbly this should be done in a separate thread...
+    //void * packet = kmalloc(packet_length);
+    //memcpy(packet, t, packet_length);
+    //ethernet_handle_packet(packet, packet_length);
+
+    current_packet_ptr = (current_packet_ptr + packet_length + 4 + 3) & RX_READ_POINTER_MASK;
+
+    if(current_packet_ptr > RX_BUF_SIZE)
+        current_packet_ptr -= RX_BUF_SIZE;
+
+    outw(rtl8139_dev.io_base + CAP_REG, current_packet_ptr - 0x10);
+}
+
+char *get_mac_addr()
+{
+
+	return rtl8139_dev.mac_addr;
 
 }

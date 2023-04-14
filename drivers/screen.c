@@ -14,6 +14,8 @@ char top_buffer[BUFFER_TOP_ROWS][2*MAX_COLS];
 
 char bot_buffer[BUFFER_BOT_ROWS][2*MAX_COLS];
 
+int screen_initialized = 0;
+
 int scroll_index = 0;
 
 static uint8_t cursor_input_row = 0;
@@ -283,7 +285,7 @@ int printf(const char *fmt, ...)
 
 				case 'd':
 
-					num_to_str(va_arg(valist, int), buff, 10);
+					int_to_str(va_arg(valist, int), buff, 10);
 					print(buff);
 					break;
 
@@ -297,15 +299,22 @@ int printf(const char *fmt, ...)
 					break;
 
 				case 'x':
+					int_to_str(va_arg(valist, int), buff, 16);
+					print(buff);
+					break;
 
-					num_to_str(va_arg(valist, int), buff, 16);
+				case 'X':
+
+					byte_to_str((uint8_t)va_arg(valist, int), buff, 16);
 					print(buff);
 					break;
 
 				case 'b':
-					num_to_str(va_arg(valist, int), buff, 2);
+					int_to_str(va_arg(valist, int), buff, 2);
 					print(buff);
 					break;
+
+
 
 				default:
 
@@ -497,6 +506,13 @@ void init_screen()
 
 	draw_scroll_bar();
 
+	screen_initialized = 1;
+
+}
+
+int is_screen_initialized()
+{
+	return screen_initialized;
 }
 
 void switch_top_bar_value(int offset, int len)

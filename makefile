@@ -9,7 +9,7 @@ HEADERS = $(wildcard deps/*.h)
 # the ’.c’ extension of filenames in C_SOURCES with ’.o’
 OBJ = ${C_SOURCES:.c=.o}
 
-emu = QEMU
+emu = BOCHS
 
 # Default make target .
 all: clean pre-build os-image
@@ -20,7 +20,7 @@ run: all
 	
 # Run qemu
 runq: all
-	@qemu-system-x86_64 -drive file=os-image,if=floppy,format=raw -device rtl8139,netdev=net0 -netdev user,id=net0,net=192.168.1.0/24 -object filter-dump,id=f1,netdev=net0,file=dump.dat
+	@run_qemu.bat
 
 pre-build:
 	@python update_headers.py

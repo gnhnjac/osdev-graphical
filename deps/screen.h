@@ -50,6 +50,7 @@ int handle_scrolling(int cursor_offset);
 void display_logo();
 void clear_line(char *line);
 void init_screen();
+int is_screen_initialized();
 void switch_top_bar_value(int offset, int len);
 void set_timer_ticks(unsigned int ticks);
 void push_to_buffer(char buffer[][2*MAX_COLS], char *line, int buffer_rows);
