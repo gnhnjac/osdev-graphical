@@ -1,9 +1,10 @@
 #include <stdbool.h>
 #include <stdint.h>
 
-#define sizeof(type) (char *)(&type+1)-(char*)(&type)
+#define sizeof(type) (char *)(&type+1) - (char*)(&type)
 
-#define VFS_BASE 0x200000
+#define VFS_BASE 0x70000
+#define VFS_CEILING 0x95000
 #define BLOCK_SIZE 4096
 
 typedef enum{File,SubFile,Dir} block_type; // add symbolic link maybe
@@ -17,9 +18,11 @@ struct b_metadata
 	block_type type;
 	uint32_t fid; // file id -> unique to directories and files
 	uint32_t bid; // block id -> unique to all types
+	uint32_t data_pointer; // pointer to next free space in data part of file starting from the start of the data part.
 	bool occupied;
 	char name[10];
 };
+
 
 typedef struct d_record dir_record; // directory record of file/directory/...
 
@@ -31,21 +34,30 @@ struct d_record
 	bool occupied;
 	dir_record *next_record;
 
-}
+};
 
-#define META_SIZE sizeof(block_metadata);
-#define RECORD_SIZE sizeof(d_record);
 
 //refs
+void init_vfs();
+void set_vfs_screen_stats();
+void ls(uint32_t fid);
+void pwd(uint32_t fid);
+void mkdir(char *name, uint32_t parent_fid);
+void touch(char *name, uint32_t parent_fid);
+uint32_t get_fid_by_name(char *name, uint32_t fid);
+void write(uint32_t fid, char *str);
+void cat_through_keyboard(uint32_t fid);
+void cat(uint32_t fid);
 uint32_t get_next_fid();
 block_metadata *get_faddr_by_id(uint32_t fid);
+uint32_t get_bid_by_faddr(block_metadata *base);
 block_metadata *create_block(block_metadata *parent_block, block_type type, char *name);
-void add_file_to_dir(block_metadata *f_meta, block_metadata *p_data);
+void add_record_to_dir(block_metadata *f_meta, block_metadata *p_data);
 // get size of file in KiB (1024 bytes);
 uint32_t get_fsize(uint32_t fid);
-void remove_file_from_dir(int fid);
+void remove_record_from_dir(int r_id, int dir_id);
 block_metadata *create_base_dir(char *name);
-int create_dir(int parent_fid, char *name);
-int create_file(int parent_fid, char *name);
-void extend_block(int fid);
-bool free_block(int bid);
+uint32_t create_dir(uint32_t parent_fid, char *name);
+uint32_t create_file(uint32_t parent_fid, char *name);
+void extend_file(uint32_t fid);
+bool free_block(uint32_t bid);

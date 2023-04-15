@@ -40,6 +40,7 @@ void disable_alt();
 int check_alt();
 void keyboard_handler(struct regs *r);
 static void handle_character(unsigned char scancode);
+void virtual_keyboard_input(unsigned char ascii);
 void keyboard_input(int row, int col, char *buffer, int bf_size);
 bool is_taking_input();
 static int keyboard_input_character(char character);

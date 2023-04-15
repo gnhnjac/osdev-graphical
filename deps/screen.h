@@ -23,7 +23,7 @@
 #define ALT_OFF 11
 #define CAPS_OFF 15
 #define CYCLE_OFF 34
-
+#define VFS_OFF 45
 //refs
 void print_char(const char character, int row, int col, char attribute_byte);
 void blink_screen();

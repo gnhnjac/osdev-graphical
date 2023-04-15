@@ -5,6 +5,10 @@
 #include "strings.h"
 #include "low_level.h"
 #include "heap.h"
+#include "vfs.h"
+#include <stdint.h>
+
+uint32_t fid = 0; // current directory id
 
 void shell_main()
 {
@@ -18,7 +22,9 @@ void shell_main()
 
 	while(true)
 	{
-		print("\n> ");
+		print("\n");
+		pwd(fid);
+		print("> ");
 		char cmd_buff[300];
 		keyboard_input(-1,-1,cmd_buff,300);
 		while(is_taking_input())
@@ -49,6 +55,38 @@ void handle_command(char *cmd_buff)
 	{
 		handle_shutdown();
 	}
+	else if(strcmp(cmd, "ls"))
+	{
+		ls(fid);
+	}
+	else if(strcmp(cmd, "cd"))
+	{
+		handle_cd(cmd_buff);
+	}
+	else if(strcmp(cmd, "mkdir"))
+	{
+		handle_mkdir(cmd_buff);
+	}
+	else if(strcmp(cmd, "touch"))
+	{
+		handle_touch(cmd_buff);
+	}
+	else if(strcmp(cmd, "write"))
+	{
+		handle_write(cmd_buff);
+	}
+	else if(strcmp(cmd, "cat"))
+	{
+		handle_cat(cmd_buff);
+	}
+	else if(strcmp(cmd,"cls"))
+	{
+		clear_viewport();
+	}
+	else if(strcmp(cmd,"rm"))
+	{
+		handle_rm(cmd_buff);
+	}
 	else
 	{
 
@@ -58,6 +96,101 @@ void handle_command(char *cmd_buff)
 
 	free(cmd);
 
+}
+
+void handle_cd(char *cmd_buff)
+{
+
+	int param_count = count_substrings(cmd_buff, ' '); // including cmd
+
+	if (param_count != 2)
+		return;
+
+	char *param = seperate_and_take(cmd_buff, ' ', 1);
+	fid = get_fid_by_name(param,fid);
+	free(param);
+
+	
+}
+
+void handle_mkdir(char *cmd_buff)
+{
+
+	int param_count = count_substrings(cmd_buff, ' '); // including cmd
+
+	if (param_count != 2)
+		return;
+
+	char *param = seperate_and_take(cmd_buff, ' ', 1);
+	mkdir(param,fid);
+	free(param);
+
+	
+}
+
+void handle_touch(char *cmd_buff)
+{
+
+	int param_count = count_substrings(cmd_buff, ' '); // including cmd
+
+	if (param_count != 2)
+		return;
+
+	char *param = seperate_and_take(cmd_buff, ' ', 1);
+	touch(param,fid);
+	free(param);
+
+	
+}
+
+void handle_write(char *cmd_buff)
+{
+
+	int param_count = count_substrings(cmd_buff, ' '); // including cmd
+
+	if (param_count != 2)
+		return;
+
+	char *param = seperate_and_take(cmd_buff, ' ', 1);
+
+	clear_viewport();
+	char *buff=malloc();
+	keyboard_input(-1,-1,buff,HEAP_CHUNK_SIZE);
+	cat_through_keyboard(get_fid_by_name(param,fid));
+	while(is_taking_input())
+		continue;
+	write(get_fid_by_name(param,fid),buff);
+	free(param);
+	free(buff);
+	
+}
+
+void handle_cat(char *cmd_buff)
+{
+
+	int param_count = count_substrings(cmd_buff, ' '); // including cmd
+
+	if (param_count != 2)
+		return;
+
+	char *param = seperate_and_take(cmd_buff, ' ', 1);
+	cat(get_fid_by_name(param,fid));
+	free(param);
+	
+}
+
+void handle_rm(char *cmd_buff)
+{
+
+	int param_count = count_substrings(cmd_buff, ' '); // including cmd
+
+	if (param_count != 2)
+		return;
+
+	char *param = seperate_and_take(cmd_buff, ' ', 1);
+	free_block(get_faddr_by_id(get_fid_by_name(param,fid))->bid);
+	free(param);
+	
 }
 
 char *help_strings[3] = {

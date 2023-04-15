@@ -10,6 +10,20 @@ void memcpy (char* dest , const char* source , int count) {
 	}
 }
 
+void strcpy(char *dest, const char *source)
+{
+
+   while(*source)
+   {
+
+         *dest=*source;
+         source++;
+         dest++;
+   }
+   *dest = '\0';
+
+}
+
 char *memset(char *dest, unsigned char val, int count)
 {
     /* set 'count' bytes in 'dest' to 'val'. */

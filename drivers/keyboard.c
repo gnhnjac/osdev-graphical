@@ -316,6 +316,22 @@ static void handle_character(unsigned char scancode)
 
 }
 
+void virtual_keyboard_input(unsigned char ascii)
+{
+
+  int character_status = 0; // 0 = print
+
+  if (taking_input)
+    character_status = keyboard_input_character(ascii);
+  if (character_status != -1)
+    putchar(ascii);
+  if (taking_input)
+  {
+    set_cursor_input_coords(get_cursor_row(), get_cursor_col());
+  }
+
+}
+
 // row = the row you want to use, col = the col you want to use, bf_size = how many characters, including \n should you take from the user buffer = pointer to buffer.
 // if row<0 then row=cursor row, if col<0 then col=cursor col.
 void keyboard_input(int row, int col, char *buffer, int bf_size)
