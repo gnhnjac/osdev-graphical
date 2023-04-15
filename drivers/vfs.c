@@ -456,7 +456,22 @@ bool free_block(uint32_t bid)
 		else if(block->type == Dir)
 		{
 
-			//todo recursive removal of directory
+			dir_record *record_base = (dir_record *)((char *)block+META_SIZE);
+
+
+			while(record_base)
+			{
+
+				if(!strcmp(record_base->name,".") && !strcmp(record_base->name,"..")) // skip . and .. records
+				{
+
+					free_block(get_faddr_by_id(record_base->fid)->bid);
+
+				}
+
+				record_base = record_base->next_record;
+
+			}
 
 		}
 
