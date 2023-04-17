@@ -12,7 +12,9 @@
 // [n,n,n,n,caps,shift,alt,ctrl]
 static unsigned char kstatus = 0;
 static bool taking_input = false;
+static bool taking_char = false;
 static char *input_buffer;
+static char *char_buffer;
 static unsigned int buffer_index = 0;
 static unsigned int buffer_limit = 0;
 static unsigned int orig_scroll_index = 0;
@@ -199,7 +201,6 @@ void keyboard_handler(struct regs *r)
     /* Read from the keyboard's data buffer */
     scancode = inb(PS_DATA);
 
-
     /* If the top bit of the byte we read from the keyboard is
     *  set, that means that a key has just been released */
     if (scancode & 0x80)
@@ -294,6 +295,8 @@ static void handle_character(unsigned char scancode)
   {
     if (taking_input)
       character_status = keyboard_input_character(kbdus_shift[scancode]);
+    else if (taking_char)
+      keyboard_get_character(kbdus_shift[scancode]);
     if (character_status != -1)
       putchar(kbdus_shift[scancode]);
   }
@@ -305,6 +308,8 @@ static void handle_character(unsigned char scancode)
       ascii -= 'a'-'A';
     if (taking_input)
       character_status = keyboard_input_character(ascii);
+    else if (taking_char)
+      keyboard_get_character(ascii);
     if (character_status != -1)
       putchar(ascii);
   }
@@ -336,6 +341,9 @@ void virtual_keyboard_input(unsigned char ascii)
 // if row<0 then row=cursor row, if col<0 then col=cursor col.
 void keyboard_input(int row, int col, char *buffer, int bf_size)
 {
+
+  if(taking_char)
+    return;
 
   taking_input = true;
 
@@ -371,6 +379,13 @@ bool is_taking_input()
 
 }
 
+bool is_taking_char()
+{
+
+  return taking_char;
+
+}
+
 // returns -1 if reached limit (start/end) and must be supplied with \n, zero if continuing and 1 if finished successfully.
 static int keyboard_input_character(char character)
 {
@@ -402,6 +417,48 @@ static int keyboard_input_character(char character)
   buffer_index++;
 
   return 0;
+
+}
+
+// row = the row you want to use, col = the col you want to use
+// if row<0 then row=cursor row, if col<0 then col=cursor col.
+void getchar(int row, int col, char *buffer)
+{
+
+  if(taking_input)
+    return;
+
+  taking_char = true;
+
+  if(row < 0)
+    row = get_cursor_row();
+  if(col < 0)
+    col = get_cursor_col();
+
+  if (row < TOP)
+    row = TOP;
+  else if (row >= MAX_ROWS)
+    row = MAX_ROWS-1;
+
+  if (col < 0)
+    col = 0;
+  else if (col >= MAX_COLS)
+    col = MAX_COLS-1;
+
+  set_cursor_input_coords(row, col);
+
+  char_buffer = buffer;
+
+  orig_scroll_index = get_scroll_index() + get_cursor_row() - TOP;
+
+}
+
+static void keyboard_get_character(char character)
+{
+  fit_to_scroll(orig_scroll_index);
+  attach_cursor_to_input();
+  taking_char = false;
+  *char_buffer = character;
 
 }
 

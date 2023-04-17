@@ -43,5 +43,8 @@ static void handle_character(unsigned char scancode);
 void virtual_keyboard_input(unsigned char ascii);
 void keyboard_input(int row, int col, char *buffer, int bf_size);
 bool is_taking_input();
+bool is_taking_char();
 static int keyboard_input_character(char character);
+void getchar(int row, int col, char *buffer);
+static void keyboard_get_character(char character);
 void keyboard_install();

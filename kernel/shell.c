@@ -87,6 +87,10 @@ void handle_command(char *cmd_buff)
 	{
 		handle_rm(cmd_buff);
 	}
+	else if(strcmp(cmd,"size"))
+	{
+		handle_size(cmd_buff);
+	}
 	else
 	{
 
@@ -154,12 +158,21 @@ void handle_write(char *cmd_buff)
 	char *param = seperate_and_take(cmd_buff, ' ', 1);
 
 	clear_viewport();
-	char *buff=malloc();
-	keyboard_input(-1,-1,buff,HEAP_CHUNK_SIZE);
-	cat_through_keyboard(get_fid_by_name(param,fid));
-	while(is_taking_input())
-		continue;
-	write(get_fid_by_name(param,fid),buff);
+	cat(get_fid_by_name(param,fid));
+
+	char buff[1];
+
+	do
+	{
+		getchar(-1,-1,buff);
+
+		while(is_taking_char())
+			continue;
+ 
+		write(get_fid_by_name(param,fid),buff);
+
+	} while (*buff != 27); // 27 is escape ascii
+
 	free(param);
 	free(buff);
 	
@@ -189,6 +202,20 @@ void handle_rm(char *cmd_buff)
 
 	char *param = seperate_and_take(cmd_buff, ' ', 1);
 	free_block(get_faddr_by_id(get_fid_by_name(param,fid))->bid);
+	free(param);
+	
+}
+
+void handle_size(char *cmd_buff)
+{
+
+	int param_count = count_substrings(cmd_buff, ' '); // including cmd
+
+	if (param_count != 2)
+		return;
+
+	char *param = seperate_and_take(cmd_buff, ' ', 1);
+	printf("file %s has size %d bytes",param,size(get_fid_by_name(param,fid)));
 	free(param);
 	
 }

@@ -24,6 +24,7 @@ void handle_touch(char *cmd_buff);
 void handle_write(char *cmd_buff);
 void handle_cat(char *cmd_buff);
 void handle_rm(char *cmd_buff);
+void handle_size(char *cmd_buff);
 void handle_help(char *cmd_buff);
 int get_help_index(char *cmd);
 void handle_reboot();

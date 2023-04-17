@@ -53,9 +53,17 @@ void print_char(const char character, int row, int col, char attribute_byte)
 			offset = get_screen_offset(TOP, 0);
 
 		}
-		*(vidmem+offset) = ' ';
+		*(vidmem+offset) = 0;
 		*(vidmem+offset+1) = WHITE_ON_BLACK;
-		set_cursor(offset);
+
+		while(!*(vidmem+offset))
+		{
+
+			offset -= 2;
+
+		}
+
+		set_cursor(offset+2);
 		return;
 	}
 	else if (character == '\t')
@@ -353,7 +361,7 @@ void clear_viewport()
 	{
 		for (int j = 0; j < 78; j++)
 		{
-			*(video_memory + i*2*MAX_COLS + j*2) = ' ';
+			*(video_memory + i*2*MAX_COLS + j*2) = 0;
 			*(video_memory + i*2*MAX_COLS + j*2 + 1) = WHITE_ON_BLACK;
 		}
 	}
@@ -369,7 +377,7 @@ void clear_screen()
 
 	for(int i = 0; i < 2*MAX_ROWS*MAX_COLS; i += 2)
 	{
-		*(video_memory + i) = ' ';
+		*(video_memory + i) = 0;
 		*(video_memory + i + 1) = WHITE_ON_BLACK;
 	}
 	set_cursor_coords(0,0);
@@ -531,7 +539,7 @@ void set_timer_ticks(unsigned int ticks)
 {	
 	int cursor_coords = get_cursor();
 	set_cursor_coords(0,CYCLE_OFF);
-	printf("%d          ",ticks);
+	printf("%d     ",ticks);
 	set_cursor(cursor_coords);
 }
 

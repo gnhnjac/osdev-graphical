@@ -119,58 +119,51 @@ uint32_t get_fid_by_name(char *name, uint32_t fid)
 
 }
 
-void write(uint32_t fid, char *str)
+void write(uint32_t fid, char *chr)
 {
+
+	if (*chr == 27) // esc
+		return;
+
 
 	block_metadata *meta = get_faddr_by_id(fid);
 	char *ptr = (char *)((char *)meta+META_SIZE);
-	uint32_t written = 0;
 
-	while(*str)
+	while (meta->data_pointer == BLOCK_SIZE-META_SIZE)
 	{
-
-		if (written == BLOCK_SIZE-META_SIZE)
-		{
-			meta->data_pointer = written;
+		if(!meta->child_block)
 			extend_file(meta->fid);
-			meta = meta->child_block;
-			ptr = (char *)((char *)meta+META_SIZE);
-			written = 0;
-		}
-
-		*ptr = *str;
-
-		*ptr++;
-		*str++;
-		written++;
-
+		meta = meta->child_block;
+		ptr = (char *)((char *)meta+META_SIZE);
 	}
 
-	meta->data_pointer = written;
-
-}
-
-void cat_through_keyboard(uint32_t fid)
-{
-	block_metadata *meta = get_faddr_by_id(fid);
-	char *ptr = (char *)((char *)meta+META_SIZE);
-	uint32_t read = 0;
-	while(meta)
+	if(*chr == '\b') // backspace
 	{
-		if(*ptr)
-			virtual_keyboard_input(*ptr);
 
-		*ptr++;
-		read++;
-		if (read == BLOCK_SIZE-META_SIZE)
+		if (meta->data_pointer == 0)
+		{
+			if(meta->type == File)
+				return;
+			if(meta->parent_block->type == File || meta->parent_block->type == SubFile)
+			{
+
+				meta->parent_block->data_pointer -= 1;
+				free_block(meta->bid);
+			}
+		} 
+		else
 		{
 
-			meta = meta->child_block;
-			ptr = (char *)((char *)meta+META_SIZE);
+			meta->data_pointer-=1;
+			return;
 
 		}
 
 	}
+
+	*(ptr + meta->data_pointer) = *chr;
+
+	meta->data_pointer += 1;
 
 }
 
@@ -195,6 +188,21 @@ void cat(uint32_t fid)
 		}
 
 	}
+
+}
+
+// get file size in bytes
+uint32_t size(uint32_t fid)
+{
+	block_metadata *meta = get_faddr_by_id(fid);
+	uint32_t size = 0;
+	while(meta)
+	{
+		size += meta->data_pointer;
+		meta = meta->child_block;
+	}
+
+	return size;
 
 }
 
