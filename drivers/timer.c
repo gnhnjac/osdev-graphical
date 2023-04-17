@@ -24,8 +24,6 @@ void timer_handler(struct regs *r)
 {
     /* Increment our 'tick count' */
     timer_ticks++;
-    if (is_screen_initialized())
-        set_timer_ticks(timer_ticks);
 }
 
 /* Sets up the system clock by installing the timer handler

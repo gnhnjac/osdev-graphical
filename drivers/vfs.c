@@ -54,7 +54,7 @@ void set_vfs_screen_stats()
 
 	int cursor_coords = get_cursor();
 	set_cursor_coords(0,VFS_OFF);
-	printf("VFS: BLKS=%d, FLS=%d, DIRS=%d   ",blocks,files,directories);
+	printf("BLKS=%d, FLS=%d, DIRS=%d   ",blocks,files,directories);
 	set_cursor(cursor_coords);
 
 }
@@ -71,7 +71,7 @@ void ls(uint32_t fid)
 		else
 			print("D ");
 
-		printf("%s, %dKiB\n",cur_record->name,cur_record->size);
+		printf("%s, %dKiB, id=%d\n",cur_record->name,get_fsize(cur_record->fid),cur_record->fid);
 		cur_record = cur_record->next_record;
 	}
 
@@ -98,6 +98,25 @@ void touch(char *name, uint32_t parent_fid)
 
 }
 
+void concat(char *name, uint32_t fid1, uint32_t fid2, uint32_t pid)
+{
+
+	touch(name, pid);
+
+	uint32_t new_fid = get_fid_by_name(name,pid);
+
+	for(int i = 0; i < size(fid1); i++)
+	{
+		write(new_fid, get_nth_char(fid1, i), 1);
+	}
+
+	for(int i = 0; i < size(fid2); i++)
+	{
+		write(new_fid, get_nth_char(fid2, i), 1);
+	}
+
+}
+
 uint32_t get_fid_by_name(char *name, uint32_t fid)
 {
 
@@ -119,10 +138,21 @@ uint32_t get_fid_by_name(char *name, uint32_t fid)
 
 }
 
-void write(uint32_t fid, char *chr)
+void reset_file(uint32_t fid)
+{
+	block_metadata *meta = get_faddr_by_id(fid);
+	while(meta->child_block)
+	{
+		free_block(meta->child_block->bid);
+	}
+	meta->data_pointer = 0;
+}
+
+// raw refers to whether to take note to escape characters and backspaces.
+void write(uint32_t fid, char *chr, int raw)
 {
 
-	if (*chr == 27) // esc
+	if (*chr == 27 && !raw) // esc
 		return;
 
 
@@ -137,7 +167,7 @@ void write(uint32_t fid, char *chr)
 		ptr = (char *)((char *)meta+META_SIZE);
 	}
 
-	if(*chr == '\b') // backspace
+	if(*chr == '\b' && !raw) // backspace
 	{
 
 		if (meta->data_pointer == 0)
@@ -177,7 +207,7 @@ void cat(uint32_t fid)
 		if(*ptr)
 			printf("%c",*ptr);
 
-		*ptr++;
+		ptr++;
 		read++;
 		if (read == BLOCK_SIZE-META_SIZE)
 		{
@@ -188,6 +218,33 @@ void cat(uint32_t fid)
 		}
 
 	}
+
+}
+
+char get_nth_char(uint32_t fid, uint32_t n)
+{
+
+	block_metadata *meta = get_faddr_by_id(fid);
+	char *ptr = (char *)((char *)meta+META_SIZE);
+	uint32_t read = 0;
+
+	while(meta && read < meta->data_pointer && n > 0)
+	{
+
+		ptr+=min(n,BLOCK_SIZE-META_SIZE);
+		read+=min(n,BLOCK_SIZE-META_SIZE);
+		n-=min(n,BLOCK_SIZE-META_SIZE);
+		if (read == BLOCK_SIZE-META_SIZE)
+		{
+			read = 0;
+			meta = meta->child_block;
+			ptr = (char *)((char *)meta+META_SIZE);
+
+		}
+
+	}
+
+	return *ptr;
 
 }
 
@@ -229,7 +286,7 @@ block_metadata *get_faddr_by_id(uint32_t fid)
 {
 	char *base = (char *)VFS_BASE;
 
-	while(((block_metadata *)base)->fid!=fid)
+	while(((block_metadata *)base)->fid!=fid || ((block_metadata *)base)->type == SubFile)
 		base += BLOCK_SIZE;
 
 	return (block_metadata *)base;
@@ -274,10 +331,11 @@ block_metadata *create_block(block_metadata *parent_block, block_type type, char
 	metadata->bid = get_bid_by_faddr((block_metadata *)base_ptr);
 
 	block_metadata *base = (block_metadata *)base_ptr;
-
+	memset((char *)base,0,BLOCK_SIZE);
 	memcpy((char *)base,(char *)metadata,META_SIZE);
 
-	add_record_to_dir(base, parent_block);
+	if(type == File || type == Dir)
+		add_record_to_dir(base, parent_block);
 
 	if(type == Dir)
 	{
@@ -306,7 +364,6 @@ void add_record_to_dir(block_metadata *f_meta, block_metadata *p_data)
 	dir_record *record = (dir_record *)malloc();
 	record->fid = f_meta->fid;
 	memcpy(record->name,f_meta->name,10);
-	record->size = get_fsize(f_meta->fid);
 	record->occupied = true;
 
 	dir_record *base = (dir_record *)((char *)p_data + META_SIZE);
@@ -331,14 +388,13 @@ uint32_t get_fsize(uint32_t fid)
 {
 	block_metadata *fbase = get_faddr_by_id(fid);
 	uint32_t size = 0;
-	while (fbase)
+	while(fbase)
 	{
-		fbase = fbase->child_block;
 		size += BLOCK_SIZE/1024;
+		fbase = fbase->child_block;
 	}
 
 	return size;
-
 }
 
 void remove_record_from_dir(int r_id, int dir_id)

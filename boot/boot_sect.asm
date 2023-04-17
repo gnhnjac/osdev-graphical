@@ -27,7 +27,7 @@ load_kernel: ; note that dx is changed here!
 	push 0x1000 ; es offset
 	push 0 ; bx offset
 	push dx ; drive number
-	push 90 ; sectors to be read
+	push 98 ; sectors to be read
 	push 1 ; start sector in LBA
 	call disk_load
 

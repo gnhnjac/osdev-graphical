@@ -78,11 +78,11 @@ void enable_mouse()
 	mouse_enabled = true;
 	save_to_mouse_buffer();
 	int prev_cursor = get_cursor();
-	print_char(' ',MOUSEY,MOUSEX,0x40);
+	print_char(0,MOUSEY,MOUSEX,0x40);
 	if (MOUSEY < 24)
-		print_char(' ',MOUSEY+1,MOUSEX,0x40);
+		print_char(0,MOUSEY+1,MOUSEX,0x40);
 	if (MOUSEX < 79)
-		print_char(' ',MOUSEY,MOUSEX+1,0x40);
+		print_char(0,MOUSEY,MOUSEX+1,0x40);
 	set_cursor(prev_cursor);
 }
 
@@ -133,11 +133,11 @@ void mouse_handler(struct regs *r)
 
 		save_to_mouse_buffer();
 		
-		print_char(' ',MOUSEY,MOUSEX,0x40);
+		print_char(0,MOUSEY,MOUSEX,0x40);
 		if (MOUSEY < 24)
-			print_char(' ',MOUSEY+1,MOUSEX,0x40);
+			print_char(0,MOUSEY+1,MOUSEX,0x40);
 		if (MOUSEX < 79)
-			print_char(' ',MOUSEY,MOUSEX+1,0x40);
+			print_char(0,MOUSEY,MOUSEX+1,0x40);
 		set_cursor(prev_cursor);
 	}
 
@@ -171,7 +171,7 @@ void mouse_handler(struct regs *r)
 	if (right_click)
 	{
 		int prev_cursor = get_cursor();
-		print_char(' ',MOUSEY-1,MOUSEX-1,color_attr << 4);
+		print_char(0,MOUSEY-1,MOUSEX-1,color_attr << 4);
 		set_cursor(prev_cursor);
 		color_attr += 1;
 		color_attr = color_attr % 8;

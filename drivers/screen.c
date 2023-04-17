@@ -18,12 +18,18 @@ int screen_initialized = 0;
 
 int scroll_index = 0;
 
+bool scrolling_enabled = true;
+
 static uint8_t cursor_input_row = 0;
 static uint8_t cursor_input_col = 0;
 
 /* Print a char on the screen at col, row, or at cursor position */
 void print_char(const char character, int row, int col, char attribute_byte) 
 {
+
+	if(character == 27) // don't print escape character
+		return;
+
 	/* Create a byte ( char ) pointer to the start of video memory */
 	char *vidmem = (char *)VIDEO_ADDRESS;
 	/* If attribute byte is zero , assume the default style . */
@@ -355,6 +361,10 @@ int printf(const char *fmt, ...)
 void clear_viewport() 
 {
 
+	#ifdef BOCHS
+		disable_mouse();
+	#endif
+
 	char *video_memory = (char *)VIDEO_ADDRESS;
 
 	for(int i = TOP; i < MAX_ROWS; i += 1)
@@ -367,6 +377,10 @@ void clear_viewport()
 	}
 	//Move the cursor back to the top left .
 	set_cursor_coords(TOP,0);
+
+	#ifdef BOCHS
+		enable_mouse();
+	#endif
 }
 
 // clear whole screen
@@ -508,7 +522,7 @@ void init_screen()
 
 	// Initialize stats
 
-	print_at("CTRL SHIFT ALT CAPS | CLOCK_TICKS=", 0, 0, WHITE_ON_BLACK);
+	print_at("CTRL SHIFT ALT CAPS | VFS:", 0, 0, WHITE_ON_BLACK);
 
 	set_cursor_coords(TOP,0);
 
@@ -533,14 +547,6 @@ void switch_top_bar_value(int offset, int len)
 
 	}
 
-}
-
-void set_timer_ticks(unsigned int ticks)
-{	
-	int cursor_coords = get_cursor();
-	set_cursor_coords(0,CYCLE_OFF);
-	printf("%d     ",ticks);
-	set_cursor(cursor_coords);
 }
 
 void push_to_buffer(char buffer[][2*MAX_COLS], char *line, int buffer_rows)
@@ -572,7 +578,7 @@ void pop_from_buffer(char buffer[][2*MAX_COLS],char *dst_buffer, int buffer_rows
 
 void scroll_up()
 {
-	if (scroll_index == 0)
+	if (scroll_index == 0 || !scrolling_enabled)
 		return;
 	int cursor_row = get_cursor_row();
 	int cursor_col = get_cursor_col();
@@ -603,7 +609,7 @@ void scroll_up()
 
 void scroll_down()
 {
-	if (scroll_index == BUFFER_TOP_ROWS)
+	if (scroll_index == BUFFER_TOP_ROWS || !scrolling_enabled)
 		return;
 	int cursor_row = get_cursor_row();
 	int cursor_col = get_cursor_col();
@@ -664,6 +670,9 @@ void hide_scroll_bar()
 void set_scroll_pos_mouse(int pos_index)
 {
 
+	if(!scrolling_enabled)
+		return;
+
 	int target_scroll_index = remap(pos_index, TOP, MAX_ROWS-1, 0, BUFFER_TOP_ROWS);
 
 	while(target_scroll_index > scroll_index)
@@ -676,6 +685,9 @@ void set_scroll_pos_mouse(int pos_index)
 void set_scroll_pos(int target_scroll_index)
 {
 
+	if(!scrolling_enabled)
+		return;
+
 	while(target_scroll_index > scroll_index)
 		scroll_down();
 	while(target_scroll_index < scroll_index)
@@ -685,6 +697,9 @@ void set_scroll_pos(int target_scroll_index)
 
 void fit_to_scroll(int target_scroll_index)
 {
+
+	if(!scrolling_enabled)
+		return;
 
 	while(target_scroll_index - scroll_index >= VIEWPORT_ROWS)
 		scroll_down();
@@ -698,6 +713,20 @@ int get_scroll_index()
 {
 
 	return scroll_index;
+
+}
+
+void enable_scrolling()
+{
+
+	scrolling_enabled = true;
+
+}
+
+void disable_scrolling()
+{
+
+	scrolling_enabled = false;
 
 }
 

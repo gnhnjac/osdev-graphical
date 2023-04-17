@@ -30,7 +30,6 @@ struct d_record
 {
 	uint32_t fid;
 	char name[10];
-	uint32_t size;
 	bool occupied;
 	dir_record *next_record;
 
@@ -44,9 +43,12 @@ void ls(uint32_t fid);
 void pwd(uint32_t fid);
 void mkdir(char *name, uint32_t parent_fid);
 void touch(char *name, uint32_t parent_fid);
+void concat(char *name, uint32_t fid1, uint32_t fid2, uint32_t pid);
 uint32_t get_fid_by_name(char *name, uint32_t fid);
-void write(uint32_t fid, char *chr);
+void reset_file(uint32_t fid);
+void write(uint32_t fid, char *chr, int raw);
 void cat(uint32_t fid);
+char get_nth_char(uint32_t fid, uint32_t n);
 uint32_t size(uint32_t fid);
 uint32_t get_next_fid();
 block_metadata *get_faddr_by_id(uint32_t fid);

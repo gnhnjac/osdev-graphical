@@ -22,8 +22,7 @@
 #define SHIFT_OFF 5
 #define ALT_OFF 11
 #define CAPS_OFF 15
-#define CYCLE_OFF 34
-#define VFS_OFF 45
+#define VFS_OFF 27
 //refs
 void print_char(const char character, int row, int col, char attribute_byte);
 void blink_screen();
@@ -52,7 +51,6 @@ void clear_line(char *line);
 void init_screen();
 int is_screen_initialized();
 void switch_top_bar_value(int offset, int len);
-void set_timer_ticks(unsigned int ticks);
 void push_to_buffer(char buffer[][2*MAX_COLS], char *line, int buffer_rows);
 void pop_from_buffer(char buffer[][2*MAX_COLS],char *dst_buffer, int buffer_rows);
 void scroll_up();
@@ -63,3 +61,5 @@ void set_scroll_pos_mouse(int pos_index);
 void set_scroll_pos(int target_scroll_index);
 void fit_to_scroll(int target_scroll_index);
 int get_scroll_index();
+void enable_scrolling();
+void disable_scrolling();
