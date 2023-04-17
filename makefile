@@ -9,7 +9,7 @@ HEADERS = $(wildcard deps/*.h)
 # the ’.c’ extension of filenames in C_SOURCES with ’.o’
 OBJ = ${C_SOURCES:.c=.o}
 
-emu = QEMU
+emu = BOCHS
 
 # Default make target .
 all: clean pre-build os-image

@@ -107,12 +107,12 @@ void concat(char *name, uint32_t fid1, uint32_t fid2, uint32_t pid)
 
 	for(int i = 0; i < size(fid1); i++)
 	{
-		write(new_fid, get_nth_char(fid1, i), 1);
+		write(new_fid, &get_nth_char(fid1, i), 1);
 	}
 
 	for(int i = 0; i < size(fid2); i++)
 	{
-		write(new_fid, get_nth_char(fid2, i), 1);
+		write(new_fid, &get_nth_char(fid2, i), 1);
 	}
 
 }
