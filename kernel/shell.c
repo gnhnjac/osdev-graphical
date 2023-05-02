@@ -450,7 +450,7 @@ char *help_strings[14] = {
 	"Changes directory to the specified directory\nUsage: cd DIR",
 	"Creates a new directory in the current directory with the specified name\nUsage: mkdir NAME",
 	"Makes a new file in the current directory with the specified name\nUsage: touch NAME",
-	"Opens a text editor to write text to a file with the specified name, press esc to exit it\nUsage: write NAME",
+	"Opens a text editor to write text to a file with the specified name, press esc to exit it\nUsage: write NAME\n2nd optional parameter is -o to override the previous contents of the file.",
 	"Prints out the contents of a file\nUsage: cat NAME",
 	"Clears the screen\nUsage: cls",
 	"Removes a file or directory within the current directory with the specified name\nUsage: rm NAME",

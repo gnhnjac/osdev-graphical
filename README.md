@@ -4,4 +4,5 @@ An operating system incorporating protected mode with a mouse driver, keyboard d
 
 0x10k-0x50k -> os
 0x50k-0x70k -> malloc heap
-0x70k-0x95k -> vfs
+0x70k-0xa5k -> vfs
+b8k -> screen mem io

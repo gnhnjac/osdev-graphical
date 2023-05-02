@@ -4,7 +4,7 @@
 #define sizeof(type) (char *)(&type+1) - (char*)(&type)
 
 #define VFS_BASE 0x70000
-#define VFS_CEILING 0x95000
+#define VFS_CEILING 0xa5000
 #define BLOCK_SIZE 4096
 
 typedef enum{File,SubFile,Dir} block_type; // add symbolic link maybe
