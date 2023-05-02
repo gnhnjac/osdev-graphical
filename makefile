@@ -11,8 +11,10 @@ OBJ = ${C_SOURCES:.c=.o}
 
 emu = BOCHS
 
+DEPS := $(OBJ:.o=.d)
+
 # Default make target .
-all: clean pre-build os-image
+all: pre-build os-image
 
 # Run bochs
 run: all
@@ -39,9 +41,11 @@ kernel.bin: kernel/kernel_entry.o ${OBJ}
 	@objcopy -O binary kernel.tmp kernel.bin
 	@del /f kernel.tmp
 
+-include ${DEPS}
+
 # Generic rule for building ’somefile.o’ from ’somefile.c’
-%.o: %.c ${HEADERS}
-	@gcc -m32 -ffreestanding -c $< -I ./deps -o $@ -D $(emu)
+%.o: %.c
+	@gcc -m32 -ffreestanding -MMD -c $< -I ./deps -o $@ -D $(emu)
 
 # Build our kernel entry object file.
 #$< is the first dependancy and $@ is the target file
@@ -60,6 +64,7 @@ clean:
 	@del /s /q *.bin 
 	@del /s /q *.o
 	@del /s /q *.dis
+	@del /s /q *.d
 	@del os-image
 
 # Disassemble our kernel - might be useful for debugging .

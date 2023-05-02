@@ -16,10 +16,11 @@ source_file_name = path.basename(source_file);
 
 header_file = Path(f'deps/{source_file_name[:-1]}h')
 
-header_file.touch(exist_ok=True)
+if not path.isfile(header_file):
+	with open(header_file, 'w') as f:
+		pass
 
 source_matches = []
-header_matches = []
 
 with open(source_file, 'r') as f:
 	for line in f.readlines():
@@ -28,10 +29,17 @@ with open(source_file, 'r') as f:
 			source_matches.append(remove_last_occurrence(found[0], '{').rstrip())
 
 with open(header_file, 'r') as f:
-	header_file_contents = f.read().split('//refs', 1)[0] + '//refs'
+	contents = f.read()
+	header_file_contents = contents.split('//refs', 1)[0] + '//refs'
+	header_file_functions = list(map(lambda x: x[:-1],filter(lambda x: x != '', contents.split('//refs', 1)[1].split('\n'))))
+
+if header_file_functions == source_matches:
+	sys.exit(0)
+
+print("Making headers for " + source_file)
 with open(header_file, 'w') as f:
 	f.write(header_file_contents)
 	for func in source_matches:
 
-		print(f"Adding {func}")
+		#print(f"Adding {func}")
 		f.write('\n'+func+';')

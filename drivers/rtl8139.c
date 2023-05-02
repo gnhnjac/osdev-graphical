@@ -123,7 +123,7 @@ void rtl8139_handler(struct regs *r)
 
 
 }
-int lol = 1;
+
 void receive_packet()
 {
 
