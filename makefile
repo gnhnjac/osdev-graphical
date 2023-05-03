@@ -9,7 +9,7 @@ HEADERS = $(wildcard deps/*.h)
 # the ’.c’ extension of filenames in C_SOURCES with ’.o’
 OBJ = ${C_SOURCES:.c=.o}
 
-emu = BOCHS
+emu = QEMU
 
 DEPS := $(OBJ:.o=.d)
 

@@ -3,10 +3,9 @@
 #include "memory.h"
 #include "heap.h"
 #include "std.h"
-#include <stdint.h>
 #include "screen.h"
 
-void int_to_str(int n, char *buffer, int base)
+void int_to_str_padding(int n, char *buffer, int base, int padding)
 {
 	char digits[] = {'0','1','2','3','4','5','6','7','8','9','A','B','C','D','E','F'};
 
@@ -26,12 +25,24 @@ void int_to_str(int n, char *buffer, int base)
 
 	} while (temp_n);
 
-	int i = 0;
 	if (neg)
 	{
 		n_of_digits += 1;
 		buffer[0] = '-';
 	}
+
+	uint32_t i = neg;
+	padding -= n_of_digits;
+	if(padding > 0)
+	{
+		while(padding > 0)
+		{
+			buffer[i++] = '0';
+			n_of_digits++;
+			padding--;
+		}
+	}
+	i = 0;
 	do
 	{	
 
@@ -43,6 +54,13 @@ void int_to_str(int n, char *buffer, int base)
 	} while(n);
 
 	buffer[n_of_digits] = 0;
+
+}
+
+void int_to_str(int n, char *buffer, int base)
+{
+
+	int_to_str_padding(n,buffer,base,0);
 
 }
 
@@ -65,6 +83,25 @@ void byte_to_str(unsigned char n, char *buffer, int base)
 	} while(n);
 
 	buffer[n_of_digits] = 0;
+
+}
+
+uint32_t decimal_to_uint(char *str)
+{
+
+	uint32_t result = 0;
+	uint32_t power = 1;
+
+	for(int i = strlen(str)-1; i >= 0; i--)
+	{
+
+		result += (str[i]-'0')*power;
+
+		power *= 10;
+
+	}
+
+	return result;
 
 }
 

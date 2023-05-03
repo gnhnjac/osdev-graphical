@@ -6,6 +6,7 @@
 #include "low_level.h"
 #include "heap.h"
 #include "vfs.h"
+#include "timer.h"
 #include <stdint.h>
 
 uint32_t fid = 0; // current directory id
@@ -13,12 +14,16 @@ uint32_t fid = 0; // current directory id
 void shell_main()
 {
 
-	print("Please write your name: ");
-	char name_buff[30];
-	keyboard_input(-1,-1,name_buff,30);
+	print("Please write the time in the following format (hh:mm): ");
+	char time_buff[5+1];
+	keyboard_input(-1,-1,time_buff,6);
 	while(is_taking_input())
 		continue;
-	printf("\nHello, %s!",name_buff);
+	
+	strip_character(time_buff, ' ');
+	time_buff[2] = 0; // null instead of :
+
+	set_time(decimal_to_uint(time_buff),decimal_to_uint(time_buff+3));
 
 	while(true)
 	{
