@@ -1,5 +1,5 @@
-#define HEAP_ADDR 0x100000
-#define HEAP_CEILING 0x300000
+#define HEAP_ADDR 0x200000
+#define HEAP_CEILING 0x400000
 #define HEAP_CHUNK_SIZE 4096
 
 //refs

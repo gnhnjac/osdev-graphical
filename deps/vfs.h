@@ -3,7 +3,7 @@
 
 #define sizeof(type) (char *)(&type+1) - (char*)(&type)
 
-#define VFS_BASE 0x300000
+#define VFS_BASE 0x400000
 #define VFS_CEILING 0x600000
 #define BLOCK_SIZE 4096
 

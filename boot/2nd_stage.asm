@@ -1,6 +1,12 @@
 org 0x1000
 bits 16
 
+; where the kernel is to be loaded to in protected mode
+%define IMAGE_PMODE_BASE 0x100000
+
+; where the kernel is to be loaded to in real mode
+%define IMAGE_RMODE_BASE 0x10000
+
 mov [BOOT_DRIVE], dl ; mbr drive number saved in dl
 mov [boot_info+multiboot_info.bootDevice], dl
 
@@ -30,7 +36,7 @@ load_kernel: ; note that dx is changed here!
 	mov dl, [BOOT_DRIVE]
 	xor dh, dh
 
-	push 0x1000 ; es offset
+	push IMAGE_RMODE_BASE/16 ; es offset
 	push 0 ; bx offset
 	push dx ; drive number
 	push 100 ; sectors to be read
@@ -41,6 +47,21 @@ load_kernel: ; note that dx is changed here!
 
 bits 32
 BEGIN_PM:
+	
+	push copy_kernel_msg
+	call print_str_mem32
+
+COPY_KERNEL_IMG:
+	mov	eax, 100
+ 	mov ebx, 512
+ 	mul	ebx
+ 	mov	ebx, 4
+ 	div	ebx ; because of movsd we only need the number of bytes / 4
+ 	cld
+ 	mov esi, IMAGE_RMODE_BASE
+ 	mov	edi, IMAGE_PMODE_BASE
+ 	mov	ecx, eax
+ 	rep	movsd  
 
 	push pm_msg
 	call print_str_mem32
@@ -49,7 +70,7 @@ BEGIN_PM:
 	mov	ebx, 0
  
 	push dword boot_info
-	call 0x10000 ;Execute Kernel
+	call IMAGE_PMODE_BASE ;Execute Kernel
 
 	add	esp, 4
  
@@ -210,7 +231,8 @@ bits 32
 %include "switch_to_pm.asm"
 
 ; variables
-load_kernel_msg db 'Loading kernel into memory at 0x10000', 0xa, 0xd, 0
+load_kernel_msg db 'Loading kernel into memory at 0x3000', 0xa, 0xd, 0
+copy_kernel_msg db 'Copying kernel into memory at 0x100000', 0xa, 0xd, 0
 pm_msg db 'Successfully switched to 32-bit protected mode!', 0
 BOOT_DRIVE db 0
 
