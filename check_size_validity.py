@@ -39,7 +39,7 @@ filename = 'kernel.bin'
 
 file_stats = os.stat(filename)
 
-with open('boot/boot_sect.asm', 'r') as f:
+with open('boot/2nd_stage.asm', 'r') as f:
 	boot_sector_file_contents = f.read()
 	for line in boot_sector_file_contents.split('\n'):
 		match = re.findall('^.*push +(\d+) +; sectors to be read.*$',line)

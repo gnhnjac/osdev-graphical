@@ -105,6 +105,36 @@ uint32_t decimal_to_uint(char *str)
 
 }
 
+void uint_to_str(int n, char *buffer, int base)
+{
+	char digits[] = {'0','1','2','3','4','5','6','7','8','9','A','B','C','D','E','F'};
+
+	uint32_t u_n = (uint32_t)n; 
+	int temp_n = u_n;
+	int n_of_digits = 0;
+	do
+	{
+
+		n_of_digits++;
+		temp_n /= base;
+
+	} while (temp_n);
+
+	uint32_t i = 0;
+	do
+	{	
+
+		int digit = digits[u_n%base];
+		*(buffer + n_of_digits - 1 - i) = digit;
+		i++;
+		u_n /= base;
+
+	} while(u_n);
+
+	buffer[n_of_digits] = 0;
+
+}
+
 int strlen(char *str)
 {
 	int len = 0;

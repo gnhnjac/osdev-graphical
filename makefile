@@ -29,8 +29,8 @@ pre-build:
 
 # This is the actual disk image that the computer loads,
 # which is the combination of our compiled bootsector and kernel
-os-image: boot/boot_sect.bin kernel.bin
-	@copy /b boot\boot_sect.bin+kernel.bin os-image > nul
+os-image: boot/boot_sect.bin boot/2nd_stage.bin kernel.bin
+	@copy /b boot\boot_sect.bin+boot\2nd_stage.bin+kernel.bin os-image > nul
 	@python check_size_validity.py
 
 # Link kernel object files into one binary, making sure the

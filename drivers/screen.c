@@ -303,6 +303,18 @@ int printf(const char *fmt, ...)
 					print(buff);
 					break;
 
+				case 'u':
+
+					uint_to_str(va_arg(valist, int), buff, 10);
+					print(buff);
+					break;
+
+				case 'U':
+
+					uint_to_str(va_arg(valist, int), buff, 16);
+					print(buff);
+					break;
+
 				case 'c':
 
 					putchar((char)va_arg(valist, int));

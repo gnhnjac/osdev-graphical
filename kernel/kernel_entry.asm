@@ -1,8 +1,8 @@
 ; Ensures that we jump straight into the kernel’s entry function.
 ; Also contains external functions that have to be written in assembly.
 bits 32
-extern _entry
-call _entry ; invoke main () in our C kernel
+extern _kmain
+call _kmain ; invoke main () in our C kernel
 jmp $ ; Hang forever when we return from the kernel
 
 global _idt_load
