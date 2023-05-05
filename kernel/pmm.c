@@ -124,7 +124,7 @@ void pmmngr_init(uint32_t mem_size, uint32_t *bitmap) {
 	_mmngr_used_blocks	=	pmmngr_get_block_count(); // the start point is that all the blocks are used
  
 	//! By default, all of memory is in use
-	memset((char *)_mmngr_memory_map, 0xf, pmmngr_get_block_count() / PMMNGR_BLOCKS_PER_BYTE);
+	memset((char *)_mmngr_memory_map, 0xff, pmmngr_get_block_count() / PMMNGR_BLOCKS_PER_BYTE);
 
 	printf("pmm initialized with %d KB of physical memory\n\n", mem_size);
 }

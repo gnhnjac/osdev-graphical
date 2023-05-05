@@ -458,7 +458,7 @@ void handle_paint(char *cmd_buff)
 	
 }
 
-char *help_strings[14] = {
+char *help_strings[15] = {
 
 	"Provides help for a certain command\nUsage: help CMD",
 	"Reboots the computer.\nUsage: reboot",
@@ -473,8 +473,8 @@ char *help_strings[14] = {
 	"Removes a file or directory within the current directory with the specified name\nUsage: rm NAME",
 	"Gives the size of the specified file in bytes\nUsage: size NAME",
 	"Concatenates 2 files and stores them in a destination file\nUsage: concat DEST F1 F2",
-	"Opens a paint editor, press esc to exit it, saves it with the specified name\nUsage: paint NAME"
-
+	"Opens a paint editor, press esc to exit it, saves it with the specified name\nUsage: paint NAME",
+	"Displays various stats\nUsage: stats",
 };
 
 void handle_help(char *cmd_buff)
@@ -489,7 +489,7 @@ void handle_help(char *cmd_buff)
 	}
 	else if (param_count == 1)
 	{
-		print("Available commands:\nhelp\nreboot\nshutdown\nls\ncd\nmkdir\ntouch\nwrite\ncat\ncls\nrm\nsize\nconcat\npaint");
+		print("Available commands:\nhelp\nreboot\nshutdown\nls\ncd\nmkdir\ntouch\nwrite\ncat\ncls\nrm\nsize\nconcat\npaint\nstats");
 	}
 	else
 	{
@@ -542,6 +542,8 @@ int get_help_index(char *cmd)
 		return 12;
 	if(strcmp(cmd,"paint"))
 		return 13;
+	if(strcmp(cmd,"stats"))
+		return 14;
 
 	return -1;
 
