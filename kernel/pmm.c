@@ -106,6 +106,11 @@ int pmmngr_get_memory_size()
 	return _mmngr_memory_size;
 }
 
+int pmmngr_get_used_blocks()
+{
+	return _mmngr_used_blocks;
+}
+
 int pmmngr_get_free_block_count()
 {
 	return _mmngr_max_blocks-_mmngr_used_blocks;
@@ -240,4 +245,28 @@ void pmmngr_free_blocks(void* p, int seq_len) {
 		_mmngr_used_blocks--;
 	}
  
+}
+
+extern void pmmngr_paging_enable (bool b);
+
+extern void pmmngr_load_PDBR (void *addr);
+
+extern void *pmmngr_get_PDBR ();
+
+void print_mem_map()
+{
+
+	for(int i = 0; i < pmmngr_get_block_count()/32; i++)
+	{
+
+		uint32_t avg = 0;
+		for(int j = 0; j < 32; j++)
+		{
+			avg += mmap_test(i*32+j);
+		}
+
+		printf("%c", (avg > 16) ? 'O' : 'F');
+
+	}
+
 }

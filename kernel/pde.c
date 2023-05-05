@@ -11,7 +11,7 @@ void pd_entry_del_attrib (pd_entry* e, uint32_t attrib)
 void pd_entry_set_frame (pd_entry* e, void *physical_addr)
 {
 	pd_entry_del_attrib(e,I86_PDE_FRAME);
-	*e |= (((uint32_t)physical_addr&0x7FFFF)<<12);
+	*e |= (uint32_t)physical_addr&I86_PDE_FRAME;
 }
 bool pd_entry_is_present (pd_entry e)
 {
@@ -38,7 +38,7 @@ bool pd_entry_is_writable (pd_entry e)
 }
 void *pd_entry_pfn (pd_entry e)
 {
-	return (void *)(e&I86_PDE_FRAME >> 12);
+	return (void *)(e&I86_PDE_FRAME);
 }
 void pd_entry_enable_global (pd_entry *e)
 {

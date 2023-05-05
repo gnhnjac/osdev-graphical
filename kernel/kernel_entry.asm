@@ -5,6 +5,65 @@ extern _kmain
 call _kmain ; invoke main () in our C kernel
 jmp $ ; Hang forever when we return from the kernel
 
+; vmm and pmm data
+
+global _vmmngr_flush_tlb_entry
+
+_vmmngr_flush_tlb_entry:
+   push ebp
+   mov ebp, esp
+   %define addr [ebp+8]
+   cli
+   invlpg addr
+   sti
+
+   pop ebp
+   ret 4
+
+global _pmmngr_paging_enable
+
+_pmmngr_paging_enable:
+   push ebp
+   mov ebp, esp
+   %define b [ebp+8]
+   pushad
+   mov   eax, cr0
+   cmp dword b, 1
+   je enable
+   jmp disable
+enable:
+   or eax, 0x80000000      ;set bit 31
+   mov   cr0, eax
+   jmp done
+disable:
+   and eax, 0x7FFFFFFF     ;clear bit 31
+   mov   cr0, eax
+done:
+   popad
+   pop ebp
+   ret 4
+
+global _pmmngr_load_PDBR
+
+_pmmngr_load_PDBR:
+   push ebp
+   mov ebp, esp
+   %define addr [ebp+8]
+   push eax
+   mov   eax, addr
+   mov   cr3, eax    ; PDBR is cr3 register in i86
+   pop eax
+   pop ebp
+   ret
+
+global _pmmngr_get_PDBR
+
+_pmmngr_get_PDBR:
+   mov   eax, cr3
+   ret
+
+; idt data
+
 global _idt_load
 extern _idtr
 

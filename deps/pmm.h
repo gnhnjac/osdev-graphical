@@ -21,6 +21,12 @@ typedef struct {
 	uint32_t	acpi_3_0;
 } memory_region;
 
+extern void pmmngr_paging_enable (bool b);
+
+extern void pmmngr_load_PDBR (void *addr);
+
+extern void *pmmngr_get_PDBR ();
+
 //refs
 //! different memory regions (in memory_region.type);
 static inline void mmap_set(int bit);
@@ -31,6 +37,7 @@ int mmap_first_free_s(int seq_len);
 int pmmngr_get_block_count();
 // get memory size in kilobytes (1024 bytes);
 int pmmngr_get_memory_size();
+int pmmngr_get_used_blocks();
 int pmmngr_get_free_block_count();
 void pmmngr_init(uint32_t mem_size, uint32_t *bitmap);
 void pmmngr_init_memory_regions(uint32_t mem_regions_addr);
@@ -40,3 +47,4 @@ void* pmmngr_alloc_block();
 void* pmmngr_alloc_blocks(int seq_len);
 void pmmngr_free_block(void* p);
 void pmmngr_free_blocks(void* p, int seq_len);
+void print_mem_map();

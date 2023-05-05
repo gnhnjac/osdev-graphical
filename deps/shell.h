@@ -18,6 +18,7 @@
 //refs
 void shell_main();
 void handle_command(char *cmd_buff);
+void handle_stats();
 void handle_cd(char *cmd_buff);
 void handle_mkdir(char *cmd_buff);
 void handle_touch(char *cmd_buff);

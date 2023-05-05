@@ -11,20 +11,19 @@
 #include "vfs.h"
 #include "multiboot.h"
 #include "pmm.h"
+#include "vmm.h"
 #include "heap.h"
 
-void kmain(uint32_t _, multiboot_info* bootinfo) {
+uint32_t kernel_size=110;
 
-	uint32_t kernel_size=100;
-
-	//! get memory size in KB (1st mb + 1-16mb memory + 16+ memory)
-	uint32_t mem_size = 1024 + bootinfo->m_memoryLo + bootinfo->m_memoryHi*64; 
-	pmmngr_init(mem_size, (uint32_t *)(0x100000 + kernel_size*512 + 0x1000));
-
-	pmmngr_init_memory_regions(0x1000 + 512*5);
+void deinit_special_regions()
+{
 
 	//! deinit the region the kernel is in as its in use
 	pmmngr_deinit_region(0x100000, kernel_size*512 + 0x1000);
+
+	//! deinit the region the pmm bitmap is in as its in use
+	pmmngr_deinit_region(0x100000 + kernel_size*512 + 0x1000, pmmngr_get_block_count()/PMMNGR_BLOCKS_PER_BYTE + 0x1000);
 
 	//! deinit the region the vfs is in as its in use
 	pmmngr_deinit_region(VFS_BASE, VFS_CEILING-VFS_BASE);
@@ -32,7 +31,25 @@ void kmain(uint32_t _, multiboot_info* bootinfo) {
 	//! deinit the region the heap is in as its in use
 	pmmngr_deinit_region(HEAP_ADDR, HEAP_CEILING-HEAP_ADDR);
 
+	// deinit first 1mb for safety reasons
+	pmmngr_deinit_region(0, 0x100000);
+
+}
+
+void kmain(uint32_t _, multiboot_info* bootinfo) {
+
 	idt_install();
+
+	//! get memory size in KB (1st mb + 1-16mb memory + 16+ memory)
+	uint32_t mem_size = 1024 + bootinfo->m_memoryLo + bootinfo->m_memoryHi*64; 
+	pmmngr_init(mem_size, (uint32_t *)(0x100000 + kernel_size*512 + 0x1000));
+
+	pmmngr_init_memory_regions(0x1000 + 512*5);
+
+	deinit_special_regions();
+
+	vmmngr_initialize();
+	
 	irq_install();
 	timer_install();
 	//display_logo();

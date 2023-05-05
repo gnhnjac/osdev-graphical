@@ -512,17 +512,6 @@ void init_screen()
 	// clear whole screen
 	clear_screen();
 
-	// initialize scroll buffers
-	for (int i = 0; i < BUFFER_TOP_ROWS; i++)
-	{
-		clear_line(top_buffer[i]);
-	}
-
-	for (int i = 0; i < BUFFER_BOT_ROWS; i++)
-	{
-		clear_line(bot_buffer[i]);
-	}
-
 	// initialize top bar
 
 	for (int i = 0; i < MAX_COLS; i++)
@@ -561,30 +550,30 @@ void switch_top_bar_value(int offset, int len)
 
 }
 
-void push_to_buffer(char buffer[][2*MAX_COLS], char *line, int buffer_rows)
+void push_to_buffer(char *buffer, char *line, int buffer_rows)
 {
 
 	for (int i = buffer_rows-2; i >= 0; i--)
 	{
 
-		memcpy(buffer[i+1], buffer[i],2*MAX_COLS);
+		memcpy(buffer[(i+1)*2*MAX_COLS], buffer[i*2*MAX_COLS],2*MAX_COLS);
 
 	}
-	memcpy(buffer[0],line, 2*MAX_COLS);
+	memcpy(buffer,line, 2*MAX_COLS);
 
 }
 
-void pop_from_buffer(char buffer[][2*MAX_COLS],char *dst_buffer, int buffer_rows)
+void pop_from_buffer(char *buffer,char *dst_buffer, int buffer_rows)
 {
-	memcpy(dst_buffer,buffer[0],2*MAX_COLS);
+	memcpy(dst_buffer,buffer,2*MAX_COLS);
 	for (int i = 1; i < buffer_rows; i++)
 	{
 
-		memcpy(buffer[i-1], buffer[i],2*MAX_COLS);
+		memcpy(buffer[(i-1)*2*MAX_COLS], buffer[i*2*MAX_COLS],2*MAX_COLS);
 
 	}
 
-	clear_line(buffer[buffer_rows-1]); // clear last buffer line
+	clear_line(buffer[(buffer_rows-1)*2*MAX_COLS]); // clear last buffer line
 
 }
 

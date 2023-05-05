@@ -53,7 +53,7 @@ image_size = file_stats.st_size
 if image_size > kernel_capacity:
 	print(f'Image size exceeds image capacity of {kernel_capacity} bytes')
 	if query_yes_no('Do you want us to update it for you?'):
-		with open('boot/boot_sect.asm', 'w') as f:
+		with open('boot/2nd_stage.asm', 'w') as f:
 			f.write(boot_sector_file_contents.replace(f'push {current_kernel_sectors}', f'push {current_kernel_sectors+SECTOR_INCREMENT}'))
 		print(f"New capacity: {100*image_size/((current_kernel_sectors+SECTOR_INCREMENT)*512):.1f}%")
 

@@ -12,7 +12,7 @@ print_str_mem32:
 	mov ebp, esp
 	%define txt [ebp+8]
 
-	pusha
+	pushad
 	mov ebx, txt
 	mov edx , VIDEO_MEMORY ; Set edx to the start of vid mem.
 
@@ -30,7 +30,7 @@ _printsm32_loop:
 	jmp _printsm32_loop ; loop around to print the next char.
 
 _printsm32_done:
-	popa
+	popad
 
 	pop ebp
 	ret 4

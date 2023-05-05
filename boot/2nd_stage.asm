@@ -39,7 +39,7 @@ load_kernel: ; note that dx is changed here!
 	push IMAGE_RMODE_BASE/16 ; es offset
 	push 0 ; bx offset
 	push dx ; drive number
-	push 100 ; sectors to be read
+	push 110 ; sectors to be read
 	push 9 ; start sector in LBA
 	call disk_load
 
@@ -52,7 +52,7 @@ BEGIN_PM:
 	call print_str_mem32
 
 COPY_KERNEL_IMG:
-	mov	eax, 100
+	mov	eax, 110
  	mov ebx, 512
  	mul	ebx
  	mov	ebx, 4

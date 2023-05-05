@@ -7,6 +7,7 @@
 #include "heap.h"
 #include "vfs.h"
 #include "timer.h"
+#include "pmm.h"
 #include <stdint.h>
 
 uint32_t fid = 0; // current directory id
@@ -100,6 +101,10 @@ void handle_command(char *cmd_buff)
 	{
 		handle_concat(cmd_buff);
 	}
+	else if(strcmp(cmd,"stats"))
+	{
+		handle_stats();
+	}
 	#ifdef BOCHS
 		else if(strcmp(cmd,"paint"))
 		{
@@ -115,6 +120,13 @@ void handle_command(char *cmd_buff)
 
 	free(cmd);
 
+}
+
+void handle_stats()
+{
+
+	printf("PMM:\nTotal memory: %dKb\nTotal Blocks: %d\nUsed Blocks: %d\nFree Blocks: %d\n",pmmngr_get_memory_size(),pmmngr_get_block_count(),pmmngr_get_used_blocks(),pmmngr_get_free_block_count());
+	print_mem_map();
 }
 
 void handle_cd(char *cmd_buff)
