@@ -1,8 +1,30 @@
-# osdev
+AKOS OPERATING SYSTEM:
 
-An operating system incorporating protected mode with a mouse driver, keyboard driver, pit, screen vga driver with shell and scrolling and hopefully a network card driver.
+Compiled using windows and gcc.
 
-0x10k-0x50k -> os
-0x50k-0x70k -> malloc heap
-0x70k-0xa5k -> vfs
-b8k -> screen mem io
+PREREQUISITES:
+
+mingw32 -> make, ld, gcc
+nasm
+python 3.x
+windows 10+
+
+CURRENTLY SUPPORTS:
+
+PS/2 DRIVERS (PIT,KEYBOARD,MOUSE)
+SHELL GUI
+VMM AND PMM (AND MEMORY ALLOCATION)
+IDT,ISRS,IRQS
+VIRTUAL FILE SYSTEM
+
+BUILD with make in the root.
+
+to start, run "make runq" to run with QEMU or "make run" to run with BOCHS, change the parameter in the makefile accordingly.
+
+type help in the shell to get a list of commands, type help COMMAND to get help for a specific command.
+
+STRUCTURE:
+
+1MB-2MB -> KERNEL
+3GB -> KERNEL
+4MB-6MB -> VFS
