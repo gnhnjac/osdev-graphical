@@ -6,6 +6,9 @@
 #include <screen.h>
 #include <keyboard.h>
 
+
+#include "vmm.h"
+
 block_metadata a;
 uint32_t META_SIZE = (char *)(&a+1) - (char*)(&a);
 dir_record b;
@@ -62,14 +65,17 @@ void set_vfs_screen_stats()
 void ls(uint32_t fid)
 {
 	dir_record *cur_record = (dir_record *)((char *)get_faddr_by_id(fid)+META_SIZE);
+	printf("v2f:%x\n",vmmngr_virt2phys(0xC001A001));
 	while (cur_record)
 	{
-		if(get_faddr_by_id(cur_record->fid)->type == File)
-			print("F ");
-		else
-			print("D ");
+		// if(get_faddr_by_id(cur_record->fid)->type == File)
+		// 	print("F ");
+		// else
+		// 	print("D ");
 
-		printf("%s, %dKiB, id=%d\n",cur_record->name,get_fsize(cur_record->fid),cur_record->fid);
+		// printf("%x\n",cur_record->fid);
+
+		// printf("%s, %dKiB, id=%d\n",cur_record->name,get_fsize(cur_record->fid),cur_record->fid);
 		cur_record = cur_record->next_record;
 	}
 
@@ -267,10 +273,9 @@ uint32_t get_next_fid()
 {
 
 	char *base = (char *)VFS_BASE;
-
 	uint32_t fid = 0;
 
-	while(((block_metadata *)base)->occupied)
+	while(((block_metadata *)base)->occupied && base < VFS_CEILING)
 	{
 
 		if(((block_metadata *)base)->type == Dir || ((block_metadata *)base)->type == File)
@@ -302,8 +307,9 @@ uint32_t get_bid_by_faddr(block_metadata *base)
 
 block_metadata *create_block(block_metadata *parent_block, block_type type, char *name)
 {
-
+	printf("v2f:%x\n",vmmngr_virt2phys(0xC001A001));
 	block_metadata *metadata = (block_metadata *)kmalloc(1);
+	printf("malloc:%U,%U\n",metadata,vmmngr_virt2phys(metadata));
 
 	metadata->parent_block = parent_block;
 
@@ -315,6 +321,8 @@ block_metadata *create_block(block_metadata *parent_block, block_type type, char
 
 	metadata->data_pointer = 0;
 
+	printf("v2fb:%x\n",vmmngr_virt2phys(0x401000));
+
 	memcpy(metadata->name,name,min(9,strlen(name)));
 	metadata->name[min(9,strlen(name))] = '\0';
 
@@ -322,6 +330,8 @@ block_metadata *create_block(block_metadata *parent_block, block_type type, char
 		metadata->fid = get_next_fid();
 	else if(type == SubFile)
 		metadata->fid = parent_block->fid;
+
+	printf("mfid:%x\n",metadata->fid);
 
 	char *base_ptr = (char *)VFS_BASE;
 
@@ -346,6 +356,8 @@ block_metadata *create_block(block_metadata *parent_block, block_type type, char
 		strcpy(false_dir->name,".");
 		strcpy(false_parent->name,"..");
 
+		printf("dir:%U\n",false_dir);
+
 		add_record_to_dir(false_dir,base);
 		add_record_to_dir(false_parent,base);
 		kfree(false_dir);
@@ -356,6 +368,8 @@ block_metadata *create_block(block_metadata *parent_block, block_type type, char
 	kfree(metadata);
 
 	set_vfs_screen_stats();
+
+	printf("fid:%x\n",metadata->fid);
 
 	return base;
 }
@@ -466,7 +480,6 @@ block_metadata *create_base_dir(char *name)
 // returns directory id
 uint32_t create_dir(uint32_t parent_fid, char *name)
 {
-
 	return create_block(get_faddr_by_id(parent_fid),Dir,name)->fid;
 
 }

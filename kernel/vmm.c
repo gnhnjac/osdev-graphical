@@ -68,7 +68,6 @@ void * vmmngr_virt2phys(void *virt)
 
    //! get page directory entry
    pd_entry* pageDirectoryEntry = vmmngr_pdirectory_lookup_entry(pageDirectory,(virtual_addr)virt);
-
    if (!pd_entry_is_present(*pageDirectoryEntry))
    	return 0;
 
@@ -77,12 +76,11 @@ void * vmmngr_virt2phys(void *virt)
 
    //! get page entry
    pt_entry* pageEntry = vmmngr_ptable_lookup_entry(pageTable,(virtual_addr)virt);
-
    if (!pt_entry_is_present(*pageEntry))
    	return 0;
-
-   // return the frame
-   return pt_entry_pfn(*pageEntry);
+   printf("%x,%x",pt_entry_pfn(*pageEntry),FRAME_OFFSET((uint32_t)virt));
+   // return the frame + offset
+   return pt_entry_pfn(*pageEntry) + FRAME_OFFSET((uint32_t)virt) ;
 
 }
 
@@ -95,18 +93,18 @@ void vmmngr_map_page (void* phys, void* virt) {
    pd_entry* e = vmmngr_pdirectory_lookup_entry(pageDirectory,(virtual_addr)virt);
 
    if (!pd_entry_is_present(*e)) {
-   		//! page table not present, allocate it
-      	ptable* table = (ptable*) pmmngr_alloc_block ();
-      	if (!table)
-         	return;
+		//! page table not present, allocate it
+   	ptable* table = (ptable*) pmmngr_alloc_block ();
+   	if (!table)
+      	return;
 
       	//! clear page table
      	vmmngr_ptable_clear(table);
 
-      	//! map in the table (Can also just do *entry |= 3) to enable these bits
-      	pd_entry_add_attrib (e, I86_PDE_PRESENT);
-      	pd_entry_add_attrib (e, I86_PDE_WRITABLE);
-      	pd_entry_set_frame (e, (void *)table);
+   	//! map in the table (Can also just do *entry |= 3) to enable these bits
+   	pd_entry_add_attrib (e, I86_PDE_PRESENT);
+   	pd_entry_add_attrib (e, I86_PDE_WRITABLE);
+   	pd_entry_set_frame (e, (void *)table);
    }
 
    //! get table

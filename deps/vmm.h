@@ -10,6 +10,7 @@ typedef uint32_t virtual_addr;
 
 #define PAGE_DIRECTORY_INDEX(x) (((x) >> 22) & 0x3ff) // get dir index part of vaddr
 #define PAGE_TABLE_INDEX(x) (((x) >> 12) & 0x3ff) // get table index part of vaddr
+#define FRAME_OFFSET(x) (((x)) & 0xfff) // get frame offset part of vaddr
 #define PAGE_GET_PHYSICAL_ADDRESS(x) (*x & ~0xfff) // get phys address from pte pointer.
 
 //! page table represents 4mb address space
@@ -20,6 +21,8 @@ typedef uint32_t virtual_addr;
 
 //! page sizes are 4k
 #define PAGE_SIZE 4096
+
+#define K_REAL_BASE 0x100000 // real kernel base. (1mb)
 
 #define K_VIRT_BASE 0xc0000000 // virtual kernel base. (3gb)
  

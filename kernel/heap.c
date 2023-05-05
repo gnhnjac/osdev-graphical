@@ -17,7 +17,7 @@ void *kmalloc(uint32_t size)
 
 	phys_addr += BLOCK_AMT_DESC_SIZE;
 
-	void *virt_addr = (void *)(K_VIRT_BASE+(uint32_t)phys_addr);
+	void *virt_addr = (void *)(K_VIRT_BASE+(uint32_t)phys_addr-K_REAL_BASE);
 
 	return virt_addr;
 
