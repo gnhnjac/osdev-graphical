@@ -42,7 +42,7 @@ file_stats = os.stat(filename)
 with open('boot/2nd_stage.asm', 'r') as f:
 	boot_sector_file_contents = f.read()
 	for line in boot_sector_file_contents.split('\n'):
-		match = re.findall('^.*push +(\d+) +; sectors to be read.*$',line)
+		match = re.findall('^.*READ_SECTORS +(\d+).*$',line)
 		if match:
 			current_kernel_sectors = int(match[0])
 
@@ -54,7 +54,7 @@ if image_size > kernel_capacity:
 	print(f'Image size exceeds image capacity of {kernel_capacity} bytes')
 	if query_yes_no('Do you want us to update it for you?'):
 		with open('boot/2nd_stage.asm', 'w') as f:
-			f.write(boot_sector_file_contents.replace(f'push {current_kernel_sectors}', f'push {current_kernel_sectors+SECTOR_INCREMENT}'))
+			f.write(boot_sector_file_contents.replace(f'READ_SECTORS {current_kernel_sectors}', f'READ_SECTORS {current_kernel_sectors+SECTOR_INCREMENT}'))
 		print(f"New capacity: {100*image_size/((current_kernel_sectors+SECTOR_INCREMENT)*512):.1f}%")
 
 elif image_size/kernel_capacity > 0.9:

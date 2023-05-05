@@ -7,6 +7,9 @@ bits 16
 ; where the kernel is to be loaded to in real mode
 %define IMAGE_RMODE_BASE 0x10000
 
+; how many sectors to read
+%define READ_SECTORS 110
+
 mov [BOOT_DRIVE], dl ; mbr drive number saved in dl
 mov [boot_info+multiboot_info.bootDevice], dl
 
@@ -39,7 +42,7 @@ load_kernel: ; note that dx is changed here!
 	push IMAGE_RMODE_BASE/16 ; es offset
 	push 0 ; bx offset
 	push dx ; drive number
-	push 110 ; sectors to be read
+	push READ_SECTORS ; sectors to be read
 	push 9 ; start sector in LBA
 	call disk_load
 
@@ -68,7 +71,8 @@ COPY_KERNEL_IMG:
 
 	mov	eax, 0x2BADB002	 ; multiboot specs say eax should be this
 	mov	ebx, 0
- 
+ 	
+ 	push dword READ_SECTORS
 	push dword boot_info
 	call IMAGE_PMODE_BASE ;Execute Kernel
 

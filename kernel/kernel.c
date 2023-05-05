@@ -14,7 +14,7 @@
 #include "vmm.h"
 #include "heap.h"
 
-uint32_t kernel_size=110;
+uint32_t kernel_size=0;
 
 void deinit_special_regions()
 {
@@ -33,7 +33,9 @@ void deinit_special_regions()
 
 }
 
-void kmain(uint32_t _, multiboot_info* bootinfo) {
+void kmain(uint32_t _, multiboot_info* bootinfo, uint32_t _kernel_size) {
+
+	kernel_size = _kernel_size;
 
 	idt_install();
 
