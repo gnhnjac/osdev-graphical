@@ -15,22 +15,14 @@ void *kmalloc(uint32_t size)
 
 	*((uint8_t *)phys_addr) = block_amt;
 
-	phys_addr += BLOCK_AMT_DESC_SIZE;
 
-	void *virt_addr = (void *)(K_VIRT_BASE+(uint32_t)phys_addr-K_REAL_BASE);
-
-	return virt_addr;
+	return phys_addr+BLOCK_AMT_DESC_SIZE;
 
 }
 
-void kfree(void *virt_addr)
+void kfree(void *phys_addr)
 {
-
-	void *phys_addr = vmmngr_virt2phys(virt_addr);
-
-	if (!phys_addr)
-		return;
-
+	printf("phys_addr:%U\n",phys_addr);
 	uint8_t block_amt = *((uint8_t *)((uint32_t)phys_addr-BLOCK_AMT_DESC_SIZE));
 
 	pmmngr_free_blocks(phys_addr, (uint32_t)block_amt);

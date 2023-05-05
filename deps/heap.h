@@ -5,4 +5,4 @@
 
 //refs
 void *kmalloc(uint32_t size);
-void kfree(void *virt_addr);
+void kfree(void *phys_addr);

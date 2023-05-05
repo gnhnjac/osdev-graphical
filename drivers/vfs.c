@@ -65,7 +65,6 @@ void set_vfs_screen_stats()
 void ls(uint32_t fid)
 {
 	dir_record *cur_record = (dir_record *)((char *)get_faddr_by_id(fid)+META_SIZE);
-	printf("v2f:%x\n",vmmngr_virt2phys(0xC001A001));
 	while (cur_record)
 	{
 		// if(get_faddr_by_id(cur_record->fid)->type == File)
@@ -90,7 +89,6 @@ void pwd(uint32_t fid)
 
 void mkdir(char *name, uint32_t parent_fid)
 {
-
 	create_dir(parent_fid,name);
 
 }
@@ -306,10 +304,10 @@ uint32_t get_bid_by_faddr(block_metadata *base)
 }
 
 block_metadata *create_block(block_metadata *parent_block, block_type type, char *name)
-{
-	printf("v2f:%x\n",vmmngr_virt2phys(0xC001A001));
+{	
+
+	uint32_t a = vmmngr_virt2phys((void *)0xC001A001);
 	block_metadata *metadata = (block_metadata *)kmalloc(1);
-	printf("malloc:%U,%U\n",metadata,vmmngr_virt2phys(metadata));
 
 	metadata->parent_block = parent_block;
 
@@ -321,8 +319,6 @@ block_metadata *create_block(block_metadata *parent_block, block_type type, char
 
 	metadata->data_pointer = 0;
 
-	printf("v2fb:%x\n",vmmngr_virt2phys(0x401000));
-
 	memcpy(metadata->name,name,min(9,strlen(name)));
 	metadata->name[min(9,strlen(name))] = '\0';
 
@@ -330,8 +326,6 @@ block_metadata *create_block(block_metadata *parent_block, block_type type, char
 		metadata->fid = get_next_fid();
 	else if(type == SubFile)
 		metadata->fid = parent_block->fid;
-
-	printf("mfid:%x\n",metadata->fid);
 
 	char *base_ptr = (char *)VFS_BASE;
 
@@ -356,8 +350,6 @@ block_metadata *create_block(block_metadata *parent_block, block_type type, char
 		strcpy(false_dir->name,".");
 		strcpy(false_parent->name,"..");
 
-		printf("dir:%U\n",false_dir);
-
 		add_record_to_dir(false_dir,base);
 		add_record_to_dir(false_parent,base);
 		kfree(false_dir);
@@ -368,8 +360,6 @@ block_metadata *create_block(block_metadata *parent_block, block_type type, char
 	kfree(metadata);
 
 	set_vfs_screen_stats();
-
-	printf("fid:%x\n",metadata->fid);
 
 	return base;
 }

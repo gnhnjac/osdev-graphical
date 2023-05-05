@@ -10,6 +10,11 @@
 #include "pmm.h"
 #include <stdint.h>
 
+
+
+
+#include "vmm.h"
+
 uint32_t fid = 0; // current directory id
 
 void shell_main()
@@ -47,6 +52,7 @@ void handle_command(char *cmd_buff)
 	strip_from_end(cmd_buff, ' ');
 
 	char *cmd = seperate_and_take(cmd_buff, ' ', 0);
+	printf("cmd::%U,curr_table:%U\n",cmd,vmmngr_get_directory()+1024*4);
 	to_lower(cmd);
 
 	if(strcmp(cmd, "help"))
@@ -149,7 +155,6 @@ void handle_cd(char *cmd_buff)
 
 void handle_mkdir(char *cmd_buff)
 {
-
 	int param_count = count_substrings(cmd_buff, ' '); // including cmd
 
 	if (param_count != 2)

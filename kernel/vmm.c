@@ -78,9 +78,9 @@ void * vmmngr_virt2phys(void *virt)
    pt_entry* pageEntry = vmmngr_ptable_lookup_entry(pageTable,(virtual_addr)virt);
    if (!pt_entry_is_present(*pageEntry))
    	return 0;
-   printf("%x,%x",pt_entry_pfn(*pageEntry),FRAME_OFFSET((uint32_t)virt));
+   printf("%x",pt_entry_pfn(*pageEntry)+FRAME_OFFSET((uint32_t)virt));
    // return the frame + offset
-   return pt_entry_pfn(*pageEntry) + FRAME_OFFSET((uint32_t)virt) ;
+   return pt_entry_pfn(*pageEntry) + FRAME_OFFSET((uint32_t)virt);
 
 }
 
