@@ -236,7 +236,7 @@ char *seperate_and_take(char* str, char seperator, int index)
 
 			if (curr_index == index)
 			{
-				char *buff = (char *)malloc();
+				char *buff = (char *)kmalloc(len+1);
 				buff[len] = 0;
 				memcpy(buff,str_start,len);
 				return buff;
@@ -253,7 +253,7 @@ char *seperate_and_take(char* str, char seperator, int index)
 
 	if (curr_index == index)
 	{
-		char *buff = (char *)malloc();
+		char *buff = (char *)kmalloc(len+1);
 		buff[len] = 0;
 		memcpy(buff,str_start,len);
 		return buff;
@@ -261,7 +261,7 @@ char *seperate_and_take(char* str, char seperator, int index)
 	}
 	else
 	{
-		char *buff = (char *)malloc();
+		char *buff = (char *)kmalloc(strlen(str)+1);
 		memcpy(buff,str,strlen(str)+1); // if didn't find seperator copy the whole thing.
 		return buff;
 	}

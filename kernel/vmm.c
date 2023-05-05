@@ -61,6 +61,31 @@ pdirectory* vmmngr_get_directory () {
 
 extern void vmmngr_flush_tlb_entry (virtual_addr addr);
 
+void * vmmngr_virt2phys(void *virt)
+{
+	//! get page directory
+   pdirectory* pageDirectory = vmmngr_get_directory ();
+
+   //! get page directory entry
+   pd_entry* pageDirectoryEntry = vmmngr_pdirectory_lookup_entry(pageDirectory,(virtual_addr)virt);
+
+   if (!pd_entry_is_present(*pageDirectoryEntry))
+   	return 0;
+
+   //! get page table
+   ptable* pageTable = (ptable*) pd_entry_pfn(*pageDirectoryEntry);
+
+   //! get page entry
+   pt_entry* pageEntry = vmmngr_ptable_lookup_entry(pageTable,(virtual_addr)virt);
+
+   if (!pt_entry_is_present(*pageEntry))
+   	return 0;
+
+   // return the frame
+   return pt_entry_pfn(*pageEntry);
+
+}
+
 void vmmngr_map_page (void* phys, void* virt) {
 
    //! get page directory
@@ -109,6 +134,14 @@ void vmmngr_ptable_clear(ptable *table)
 
 }
 
+void vmmngr_mmap(uint32_t frame_start, uint32_t virt_start, uint32_t range) // range is in 4kb units
+{
+	for (uint32_t i=0, frame=frame_start, virt=virt_start; i<range; i++, frame+=4096, virt+=4096) 
+	{
+ 		vmmngr_map_page((void *)frame,(void *)virt);
+	}
+}
+
 void vmmngr_initialize () {
 	//! allocate our page directory
 	pdirectory* dir = (pdirectory*) pmmngr_alloc_block ();
@@ -119,16 +152,10 @@ void vmmngr_initialize () {
 	_cur_directory = dir;
 
 	//! identity map 0-16mb->0-16mb
-	for (int i=0, frame=0x0, virt=0x00000000; i<1024*4; i++, frame+=4096, virt+=4096) {
-
- 		vmmngr_map_page((void *)frame,(void *)virt);
-	}
+	vmmngr_mmap(0x0,0x00000000,1024*4);
  
 	//! virtual map 3gb-3gb+16mb->0-16mb
-	for (int i=0, frame=0x100000, virt=0xc0000000; i<1024*4; i++, frame+=4096, virt+=4096) {
-
-		vmmngr_map_page((void *)frame,(void *)virt);
-	}
+	vmmngr_mmap(0x100000,K_VIRT_BASE,1024*4);
 
 	// switch to our page directory
 	vmmngr_switch_pdirectory (dir);

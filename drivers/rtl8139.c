@@ -79,11 +79,11 @@ void install_nic()
 	uint16_t ilr = pci_config_read_word(0,dev_num,0,0x3C)&0xFF; // interrupt line number which is the irq number (0-15)
  	irq_install_handler(ilr, rtl8139_handler);
 
- 	char *packet = malloc(); 
+ 	char *packet = kmalloc(1); 
 	memset(packet,0xDD,169);
 	build_ethernet_layer(packet, "\xFF\xFF\xFF\xFF\xFF\xFF",get_mac_addr(),0x806);
 	send_packet(packet,169);
-	free(packet);
+	kfree(packet);
 }
 
 // note: maximum len of packet is 1792

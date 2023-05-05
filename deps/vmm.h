@@ -20,6 +20,8 @@ typedef uint32_t virtual_addr;
 
 //! page sizes are 4k
 #define PAGE_SIZE 4096
+
+#define K_VIRT_BASE 0xc0000000 // virtual kernel base. (3gb)
  
 //! page table
 typedef struct {
@@ -41,6 +43,7 @@ pt_entry* vmmngr_ptable_lookup_entry (ptable* p,virtual_addr addr);
 pd_entry* vmmngr_pdirectory_lookup_entry (pdirectory* p, virtual_addr addr);
 bool vmmngr_switch_pdirectory (pdirectory* dir);
 pdirectory* vmmngr_get_directory ();
+void * vmmngr_virt2phys(void *virt);
 void vmmngr_map_page (void* phys, void* virt);
 void vmmngr_pdirectory_clear(pdirectory *dir);
 void vmmngr_ptable_clear(ptable *table);

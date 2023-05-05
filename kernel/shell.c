@@ -118,7 +118,7 @@ void handle_command(char *cmd_buff)
 
 	}
 
-	free(cmd);
+	kfree(cmd);
 
 }
 
@@ -142,7 +142,7 @@ void handle_cd(char *cmd_buff)
 	strip_from_end(param, ' ');
 
 	fid = get_fid_by_name(param,fid);
-	free(param);
+	kfree(param);
 
 	
 }
@@ -160,7 +160,7 @@ void handle_mkdir(char *cmd_buff)
 	strip_from_end(param, ' ');
 
 	mkdir(param,fid);
-	free(param);
+	kfree(param);
 
 	
 }
@@ -177,12 +177,12 @@ void handle_touch(char *cmd_buff)
 	if (get_fid_by_name(param,fid) != fid)
 	{
 		printf("file %s already exists",param);
-		free(param);
+		kfree(param);
 		return;
 	}
 
 	touch(param,fid);
-	free(param);
+	kfree(param);
 
 	
 }
@@ -202,7 +202,7 @@ void handle_concat(char *cmd_buff)
 	if (get_fid_by_name(param,fid) != fid)
 	{
 		printf("file %s already exists",param);
-		free(param);
+		kfree(param);
 		return;
 	}
 
@@ -215,8 +215,8 @@ void handle_concat(char *cmd_buff)
 	if (fid1 == fid)
 	{
 		printf("file %s doesn't exist",param2);
-		free(param);
-		free(param2);
+		kfree(param);
+		kfree(param2);
 		return;
 	}
 
@@ -229,16 +229,16 @@ void handle_concat(char *cmd_buff)
 	if (fid2 == fid)
 	{
 		printf("file %s doesn't exist",param3);
-		free(param);
-		free(param2);
-		free(param3);
+		kfree(param);
+		kfree(param2);
+		kfree(param3);
 		return;
 	}
 
 	concat(param,fid1,fid2,fid);
-	free(param);
-	free(param2);
-	free(param3);
+	kfree(param);
+	kfree(param2);
+	kfree(param3);
 	
 }
 
@@ -264,11 +264,11 @@ void handle_write(char *cmd_buff)
 		else
 		{
 			printf("unknown option %s", option);
-			free(option);
+			kfree(option);
 			return;
 		}
 
-		free(option);
+		kfree(option);
 
 	}
 
@@ -308,7 +308,7 @@ void handle_write(char *cmd_buff)
 
 	} while (*buff != 27); // 27 is escape ascii
 
-	free(param);
+	kfree(param);
 	
 }
 
@@ -329,12 +329,12 @@ void handle_cat(char *cmd_buff)
 	if(file_fid == fid)
 	{
 		printf("file %s not found.", param);
-		free(param);
+		kfree(param);
 		return;
 	}
 
 	cat(file_fid);
-	free(param);
+	kfree(param);
 	
 }
 
@@ -351,7 +351,7 @@ void handle_rm(char *cmd_buff)
 	strip_from_end(param, ' ');
 
 	free_block(get_faddr_by_id(get_fid_by_name(param,fid))->bid);
-	free(param);
+	kfree(param);
 	
 }
 
@@ -372,12 +372,12 @@ void handle_size(char *cmd_buff)
 	if(file_fid == fid)
 	{
 		printf("file %s not found.", param);
-		free(param);
+		kfree(param);
 		return;
 	}
 
 	printf("file %s has size %d bytes",param,size(file_fid));
-	free(param);
+	kfree(param);
 	
 }
 
@@ -454,7 +454,7 @@ void handle_paint(char *cmd_buff)
 	clear_viewport();
 	enable_scrolling();
 
-	free(param);
+	kfree(param);
 	
 }
 
@@ -506,7 +506,7 @@ void handle_help(char *cmd_buff)
 		{
 			printf("%s",help_strings[str_index]);
 		}
-		free(param);
+		kfree(param);
 
 	}
 }

@@ -422,7 +422,7 @@ int handle_scrolling(int cursor_offset)
 	hide_scroll_bar();
 	disable_mouse();
 	char *first_line = (char *)(VIDEO_ADDRESS + get_screen_offset(TOP, 0));
-	push_to_buffer((char **)top_buffer, first_line, BUFFER_TOP_ROWS);
+	push_to_buffer((char *)top_buffer, first_line, BUFFER_TOP_ROWS);
 
 	for (int i = TOP+1; i < MAX_ROWS; i++)
 	{
@@ -556,7 +556,7 @@ void push_to_buffer(char *buffer, char *line, int buffer_rows)
 	for (int i = buffer_rows-2; i >= 0; i--)
 	{
 
-		memcpy(buffer[(i+1)*2*MAX_COLS], buffer[i*2*MAX_COLS],2*MAX_COLS);
+		memcpy(&buffer[(i+1)*2*MAX_COLS], &buffer[i*2*MAX_COLS],2*MAX_COLS);
 
 	}
 	memcpy(buffer,line, 2*MAX_COLS);
@@ -569,11 +569,11 @@ void pop_from_buffer(char *buffer,char *dst_buffer, int buffer_rows)
 	for (int i = 1; i < buffer_rows; i++)
 	{
 
-		memcpy(buffer[(i-1)*2*MAX_COLS], buffer[i*2*MAX_COLS],2*MAX_COLS);
+		memcpy(&buffer[(i-1)*2*MAX_COLS], &buffer[i*2*MAX_COLS],2*MAX_COLS);
 
 	}
 
-	clear_line(buffer[(buffer_rows-1)*2*MAX_COLS]); // clear last buffer line
+	clear_line(&buffer[(buffer_rows-1)*2*MAX_COLS]); // clear last buffer line
 
 }
 
@@ -585,7 +585,7 @@ void scroll_up()
 	int cursor_col = get_cursor_col();
 	hide_scroll_bar();
 	char *last_line = (char *)(VIDEO_ADDRESS + get_screen_offset(MAX_ROWS-1, 0));
-	push_to_buffer(bot_buffer, last_line, BUFFER_BOT_ROWS);
+	push_to_buffer((char *)bot_buffer, last_line, BUFFER_BOT_ROWS);
 
 	disable_mouse();
 	for (int i =  MAX_ROWS-2; i >= TOP; i--)
@@ -597,7 +597,7 @@ void scroll_up()
 
 	char *first_line = (char *)(VIDEO_ADDRESS + get_screen_offset(TOP, 0));
 
-	pop_from_buffer(top_buffer, first_line, BUFFER_TOP_ROWS);
+	pop_from_buffer((char *)top_buffer, first_line, BUFFER_TOP_ROWS);
 
 	enable_mouse();
 
@@ -618,7 +618,7 @@ void scroll_down()
 	disable_mouse();
 
 	char *first_line = (char *)(VIDEO_ADDRESS + get_screen_offset(TOP, 0));
-	push_to_buffer(top_buffer, first_line, BUFFER_TOP_ROWS);
+	push_to_buffer((char *)top_buffer, first_line, BUFFER_TOP_ROWS);
 
 	for (int i = TOP+1; i < MAX_ROWS; i++)
 	{
@@ -628,7 +628,7 @@ void scroll_down()
 	}
 
 	char *last_line = (char *)(VIDEO_ADDRESS + get_screen_offset(MAX_ROWS-1, 0));
-	pop_from_buffer(bot_buffer, last_line, BUFFER_BOT_ROWS);
+	pop_from_buffer((char *)bot_buffer, last_line, BUFFER_BOT_ROWS);
 
 	enable_mouse();
 

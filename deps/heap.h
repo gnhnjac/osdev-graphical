@@ -1,7 +1,8 @@
-#define HEAP_ADDR 0x200000
-#define HEAP_CEILING 0x400000
+#include <stdint.h>
+
 #define HEAP_CHUNK_SIZE 4096
+#define	BLOCK_AMT_DESC_SIZE 1
 
 //refs
-void *malloc();
-void free(void *addr);
+void *kmalloc(uint32_t size);
+void kfree(void *virt_addr);

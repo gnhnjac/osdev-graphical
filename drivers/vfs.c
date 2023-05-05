@@ -61,9 +61,7 @@ void set_vfs_screen_stats()
 
 void ls(uint32_t fid)
 {
-
 	dir_record *cur_record = (dir_record *)((char *)get_faddr_by_id(fid)+META_SIZE);
-
 	while (cur_record)
 	{
 		if(get_faddr_by_id(cur_record->fid)->type == File)
@@ -305,7 +303,7 @@ uint32_t get_bid_by_faddr(block_metadata *base)
 block_metadata *create_block(block_metadata *parent_block, block_type type, char *name)
 {
 
-	block_metadata *metadata = (block_metadata *)malloc();
+	block_metadata *metadata = (block_metadata *)kmalloc(1);
 
 	metadata->parent_block = parent_block;
 
@@ -341,20 +339,21 @@ block_metadata *create_block(block_metadata *parent_block, block_type type, char
 
 	if(type == Dir)
 	{
-		block_metadata *false_dir = (block_metadata *)malloc();
-		block_metadata *false_parent = (block_metadata *)malloc();
+		block_metadata *false_dir = (block_metadata *)kmalloc(1);
+		block_metadata *false_parent = (block_metadata *)kmalloc(1);
 		memcpy((char *)false_dir,(char *)metadata,META_SIZE);
 		memcpy((char *)false_parent,(char *)parent_block,META_SIZE);
 		strcpy(false_dir->name,".");
 		strcpy(false_parent->name,"..");
+
 		add_record_to_dir(false_dir,base);
 		add_record_to_dir(false_parent,base);
-		free(false_dir);
-		free(false_parent);
+		kfree(false_dir);
+		kfree(false_parent);
 
 	}
 
-	free(metadata);
+	kfree(metadata);
 
 	set_vfs_screen_stats();
 
@@ -363,7 +362,7 @@ block_metadata *create_block(block_metadata *parent_block, block_type type, char
 
 void add_record_to_dir(block_metadata *f_meta, block_metadata *p_data)
 {
-	dir_record *record = (dir_record *)malloc();
+	dir_record *record = (dir_record *)kmalloc(1);
 	record->fid = f_meta->fid;
 	memcpy(record->name,f_meta->name,10);
 	record->occupied = true;
@@ -381,7 +380,7 @@ void add_record_to_dir(block_metadata *f_meta, block_metadata *p_data)
 
 	memcpy((char *)pivot,(char *)record,RECORD_SIZE);
 
-	free(record);
+	kfree(record);
 
 }
 
@@ -420,7 +419,7 @@ void remove_record_from_dir(int r_id, int dir_id)
 block_metadata *create_base_dir(char *name)
 {
 
-	block_metadata *metadata = (block_metadata *)malloc();
+	block_metadata *metadata = (block_metadata *)kmalloc(1);
 
 	metadata->child_block = 0;
 
@@ -443,8 +442,8 @@ block_metadata *create_base_dir(char *name)
 
 	memcpy((char *)base,(char *)metadata,META_SIZE);
 
-	block_metadata *false_dir = (block_metadata *)malloc();
-	block_metadata *false_parent = (block_metadata *)malloc();
+	block_metadata *false_dir = (block_metadata *)kmalloc(1);
+	block_metadata *false_parent = (block_metadata *)kmalloc(1);
 
 	memcpy((char *)false_dir,(char *)metadata,META_SIZE);
 	memcpy((char *)false_parent,(char *)metadata->parent_block,META_SIZE);
@@ -454,9 +453,9 @@ block_metadata *create_base_dir(char *name)
 	add_record_to_dir(false_dir,base);
 	add_record_to_dir(false_parent,base);
 
-	free(metadata);
-	free(false_dir);
-	free(false_parent);
+	kfree(metadata);
+	kfree(false_dir);
+	kfree(false_parent);
 
 	set_vfs_screen_stats();
 

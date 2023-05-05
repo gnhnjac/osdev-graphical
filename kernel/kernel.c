@@ -28,9 +28,6 @@ void deinit_special_regions()
 	//! deinit the region the vfs is in as its in use
 	pmmngr_deinit_region(VFS_BASE, VFS_CEILING-VFS_BASE);
 
-	//! deinit the region the heap is in as its in use
-	pmmngr_deinit_region(HEAP_ADDR, HEAP_CEILING-HEAP_ADDR);
-
 	// deinit first 1mb for safety reasons
 	pmmngr_deinit_region(0, 0x100000);
 

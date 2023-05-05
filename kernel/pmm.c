@@ -80,12 +80,14 @@ int mmap_first_free_s(int seq_len) {
 						current_set_first_index = i*4*8+j; // bit number, 4*8 is just int size.
 					current_seq_len++;
 				}
+				else
+					current_seq_len = 0;
 			}
 		}
 		else
 			current_seq_len = 0;
 
-		if (current_seq_len == seq_len)
+		if (current_seq_len >= seq_len)
 		{
 
 			return current_set_first_index;

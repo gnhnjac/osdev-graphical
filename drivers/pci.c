@@ -92,7 +92,7 @@ void pci_config_write_word(uint8_t bus, uint8_t slot, uint8_t func, uint8_t offs
 
 // mallocs the return
 pci_info *pci_get_dev_credentials(uint8_t bus, uint8_t slot) {
-    pci_info *dev = (pci_info *)malloc();
+    pci_info *dev = (pci_info *)kmalloc(4);
     dev->d_id = 0;
     /* Try and read the first configuration register. Since there are no
      * vendors that == 0xFFFF, it must be a non-existent device. */
@@ -111,7 +111,7 @@ int pci_get_device_number(pci_info *dev)
 		pci_info *creds = pci_get_dev_credentials(0,n);
 		if (dev->v_id==creds->v_id && dev->d_id==creds->d_id)
 			break;
-		free(creds);
+		kfree(creds);
 
 	}
 	if (n == 256)
