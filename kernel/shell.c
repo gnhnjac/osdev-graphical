@@ -52,7 +52,6 @@ void handle_command(char *cmd_buff)
 	strip_from_end(cmd_buff, ' ');
 
 	char *cmd = seperate_and_take(cmd_buff, ' ', 0);
-	printf("cmd::%U,curr_table:%U\n",cmd,vmmngr_get_directory()+1024*4);
 	to_lower(cmd);
 
 	if(strcmp(cmd, "help"))

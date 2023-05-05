@@ -67,14 +67,12 @@ void ls(uint32_t fid)
 	dir_record *cur_record = (dir_record *)((char *)get_faddr_by_id(fid)+META_SIZE);
 	while (cur_record)
 	{
-		// if(get_faddr_by_id(cur_record->fid)->type == File)
-		// 	print("F ");
-		// else
-		// 	print("D ");
+		if(get_faddr_by_id(cur_record->fid)->type == File)
+			print("F ");
+		else
+			print("D ");
 
-		// printf("%x\n",cur_record->fid);
-
-		// printf("%s, %dKiB, id=%d\n",cur_record->name,get_fsize(cur_record->fid),cur_record->fid);
+		printf("%s, %dKiB, id=%d\n",cur_record->name,get_fsize(cur_record->fid),cur_record->fid);
 		cur_record = cur_record->next_record;
 	}
 
@@ -275,7 +273,6 @@ uint32_t get_next_fid()
 
 	while(((block_metadata *)base)->occupied && base < VFS_CEILING)
 	{
-
 		if(((block_metadata *)base)->type == Dir || ((block_metadata *)base)->type == File)
 			fid++;
 		base += BLOCK_SIZE;
@@ -306,7 +303,6 @@ uint32_t get_bid_by_faddr(block_metadata *base)
 block_metadata *create_block(block_metadata *parent_block, block_type type, char *name)
 {	
 
-	uint32_t a = vmmngr_virt2phys((void *)0xC001A001);
 	block_metadata *metadata = (block_metadata *)kmalloc(1);
 
 	metadata->parent_block = parent_block;

@@ -22,7 +22,6 @@ void *kmalloc(uint32_t size)
 
 void kfree(void *phys_addr)
 {
-	printf("phys_addr:%U\n",phys_addr);
 	uint8_t block_amt = *((uint8_t *)((uint32_t)phys_addr-BLOCK_AMT_DESC_SIZE));
 
 	pmmngr_free_blocks(phys_addr, (uint32_t)block_amt);

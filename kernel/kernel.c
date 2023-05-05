@@ -28,8 +28,8 @@ void deinit_special_regions()
 	//! deinit the region the vfs is in as its in use
 	pmmngr_deinit_region(VFS_BASE, VFS_CEILING-VFS_BASE);
 
-	// deinit first 1mb for safety reasons
-	pmmngr_deinit_region(0, 0x100000);
+	// deinit first 2mb for safety reasons
+	pmmngr_deinit_region(0, 0x200000);
 
 }
 

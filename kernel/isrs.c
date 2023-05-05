@@ -121,7 +121,7 @@ void fault_handler(struct regs *r)
         /* Display the description for the Exception that occurred.
         *  In this tutorial, we will simply halt the system using an
         *  infinite loop */
-        //clear_screen();
+        clear_screen();
         if (r->int_no > 18)
             print_at("Reserved", 0, 0, 0);
         else
