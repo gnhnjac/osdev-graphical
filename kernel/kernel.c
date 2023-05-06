@@ -52,14 +52,10 @@ void kmain(uint32_t _, multiboot_info* bootinfo, uint32_t _kernel_size) {
 	irq_install();
 	timer_install();
 	//display_logo();
-	#ifdef QEMU
-			//install_nic();
-	#endif
+	//install_nic();
 	ps2_init();
 	keyboard_install();
-	#ifdef BOCHS
-		mouse_install(); // mouse has issues in qemu.
-	#endif
+	mouse_install();
 	init_screen();
 	init_vfs();
 

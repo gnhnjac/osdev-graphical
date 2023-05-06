@@ -192,9 +192,18 @@ unsigned char kbdus_shift[128] =
     0,  /* All other keys are undefined */
 };
 
+//! read status from keyboard controller
+char kybrd_ctrl_read_status () {
+
+  return inb (PS_CTRL);
+}
+
 /* Handles the keyboard interrupt */
 void keyboard_handler(struct regs *r)
 {
+
+    if (!(kybrd_ctrl_read_status()&1))
+        return;
 
     unsigned char scancode;
 
@@ -464,11 +473,11 @@ static void keyboard_get_character(char character)
 
 void keyboard_install()
 {
-    // reset the keyboard
-    uint8_t tmp = inb(0x61);
-    outb(0x61, tmp | 0x80);
-    outb(0x61, tmp & 0x7F);
-    inb(PS_DATA); // ack
+    // // reset the keyboard
+    // uint8_t tmp = inb(0x61);
+    // outb(0x61, tmp | 0x80);
+    // outb(0x61, tmp & 0x7F);
+    // inb(PS_DATA); // ack
 
     irq_install_handler(1, keyboard_handler);
 

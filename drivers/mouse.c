@@ -4,6 +4,7 @@
 #include "screen.h"
 #include "mouse.h"
 #include "std.h"
+#include "keyboard.h"
 #include <stdint.h>
 #include <stdbool.h>
 
@@ -84,18 +85,27 @@ void enable_mouse()
 	if (MOUSEX < 79)
 		print_char(0,MOUSEY,MOUSEX+1,0x40);
 	set_cursor(prev_cursor);
+
 }
 
 void mouse_handler(struct regs *r)
 {
 
+	#ifdef BOCHS
 	mouse_wait(0);
+	#endif
 	uint8_t flags = inb(PS_DATA);
+	#ifdef BOCHS
 	mouse_wait(0);
+	#endif
 	uint8_t xmov = inb(PS_DATA);
+	#ifdef BOCHS
 	mouse_wait(0);
+	#endif
 	uint8_t ymov = inb(PS_DATA);
+	#ifdef BOCHS
 	mouse_wait(0);
+	#endif
 	uint8_t zmov = inb(PS_DATA);
 
 
@@ -104,6 +114,7 @@ void mouse_handler(struct regs *r)
 
 	if (interval % 5 == 0)
 	{
+
 		int8_t rel_x = xmov - ((flags << 4) & 0x100); // produce 2s complement only if the neg bit is set
 		int8_t rel_y = ymov - ((flags << 3) & 0x100); // produce 2s complement only if the neg bit is set
 		// handle mouse mvmt
@@ -139,8 +150,9 @@ void mouse_handler(struct regs *r)
 		if (MOUSEX < 79)
 			print_char(0,MOUSEY,MOUSEX+1,0x40);
 		set_cursor(prev_cursor);
-	}
 
+	}
+	
 	interval++;
 
 	// handle scrolling
