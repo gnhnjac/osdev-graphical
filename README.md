@@ -8,6 +8,7 @@ mingw32 -> make, ld, gcc
 nasm
 python 3.x
 windows 10+
+qemu emulator/bochs emulator (bochs is much slower)
 
 CURRENTLY SUPPORTS:
 

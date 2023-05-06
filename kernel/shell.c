@@ -110,12 +110,10 @@ void handle_command(char *cmd_buff)
 	{
 		handle_stats();
 	}
-	#ifdef BOCHS
-		else if(strcmp(cmd,"paint"))
-		{
-			handle_paint(cmd_buff);
-		}
-	#endif
+	else if(strcmp(cmd,"paint"))
+	{
+		handle_paint(cmd_buff);
+	}
 	else
 	{
 

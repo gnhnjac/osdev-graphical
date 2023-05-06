@@ -48,7 +48,8 @@ int mmap_first_free() {
  
 	//! find the first free bit
 	for (uint32_t i=0; i< pmmngr_get_block_count() / 32; i++) {
-		if (_mmngr_memory_map[i] != 0xffffffff) // if not all blocks in this int sized buffer are full then check for the empty one.
+		// if not all blocks in this int sized buffer are full then check for the empty one.
+		if (_mmngr_memory_map[i] != 0xffffffff)
 		{
 			for (int j=0; j<32; j++) {		//! test each bit in the dword
  
@@ -69,7 +70,8 @@ int mmap_first_free_s(int seq_len) {
 	//! find the first free bit
 	for (uint32_t i=0; i< pmmngr_get_block_count() / 32; i++)
 	{
-		if (_mmngr_memory_map[i] != 0xffffffff) // if not all blocks in this int sized buffer are full then check for the empty one.
+		// if not all blocks in this int sized buffer are full then check for the empty one.
+		if (_mmngr_memory_map[i] != 0xffffffff)
 		{
 			for (int j=0; j<32; j++) {		//! test each bit in the dword
  
@@ -82,17 +84,19 @@ int mmap_first_free_s(int seq_len) {
 				}
 				else
 					current_seq_len = 0;
+
+				if (current_seq_len == seq_len)
+				{
+
+					return current_set_first_index;
+
+				}
+
 			}
 		}
 		else
 			current_seq_len = 0;
 
-		if (current_seq_len >= seq_len)
-		{
-
-			return current_set_first_index;
-
-		}
  	}
 	return -1;
 }
