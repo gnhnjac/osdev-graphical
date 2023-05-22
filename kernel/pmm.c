@@ -265,6 +265,11 @@ void print_mem_map()
 	for(int i = 0; i < pmmngr_get_block_count()/32; i++)
 	{
 
+		if (i % 50 == 0)
+		{
+			printf("\n0x%x: ",i*32*PMMNGR_BLOCK_SIZE);
+		}
+
 		uint32_t avg = 0;
 		for(int j = 0; j < 32; j++)
 		{

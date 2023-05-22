@@ -235,7 +235,7 @@ bits 32
 %include "switch_to_pm.asm"
 
 ; variables
-load_kernel_msg db 'Loading kernel into memory at 0x3000', 0xa, 0xd, 0
+load_kernel_msg db 'Loading kernel into memory at 0x10000', 0xa, 0xd, 0
 copy_kernel_msg db 'Copying kernel into memory at 0x100000', 0xa, 0xd, 0
 pm_msg db 'Successfully switched to 32-bit protected mode!', 0
 BOOT_DRIVE db 0

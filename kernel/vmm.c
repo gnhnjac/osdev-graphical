@@ -144,6 +144,7 @@ void vmmngr_initialize () {
 	pdirectory* dir = (pdirectory*) pmmngr_alloc_block ();
 	if (!dir)
 		return;
+
 	vmmngr_pdirectory_clear (dir); // clear it out
 	// store current directory
 	_cur_directory = dir;

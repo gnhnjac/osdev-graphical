@@ -173,7 +173,9 @@ void mouse_handler(struct regs *r)
 	{
 		if (MOUSEX == 79) // if on scroll bar
 		{
+			disable_mouse();
 			set_scroll_pos_mouse(MOUSEY);
+			enable_mouse();
 		}
 		else
 		{
@@ -258,7 +260,7 @@ void mouse_install()
 	set_mouse_rate(200);
 	set_mouse_rate(100);
 	set_mouse_rate(80);
-	printf("MOUSE ID: %d\n",identify());
+	//printf("MOUSE ID: %d\n",identify());
 
 	mouse_write(MOUSE_PACKET);// activate data send
 

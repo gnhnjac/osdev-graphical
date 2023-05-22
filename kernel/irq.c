@@ -70,7 +70,6 @@ void irq_remap(void)
 void irq_install()
 {
     irq_remap();
-
     idt_set_gate(32, (void *)irq0, 0x8E);
 	idt_set_gate(33, (void *)irq1, 0x8E);
 	idt_set_gate(34, (void *)irq2, 0x8E);

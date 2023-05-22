@@ -440,13 +440,12 @@ int handle_scrolling(int cursor_offset)
 
 	}
 
-	enable_mouse();
-
 	cursor_offset -= 2*MAX_COLS;
 
 	if (scroll_index != BUFFER_TOP_ROWS)
 		scroll_index++;
 	draw_scroll_bar();
+	enable_mouse();
 	set_cursor_coords(cursor_row-1,cursor_col);
 	cursor_input_row -=1;
 
