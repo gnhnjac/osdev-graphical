@@ -40,7 +40,7 @@ void kfree(void *phys_addr)
 {
 	uint32_t block_amt = *((uint32_t *)((uint32_t)phys_addr-BLOCK_AMT_DESC_SIZE));
 
-	kmalloc_free_blocks(phys_addr, (uint32_t)block_amt);
+	kmalloc_free_blocks(phys_addr-BLOCK_AMT_DESC_SIZE, (uint32_t)block_amt);
 
 }
 
@@ -208,15 +208,25 @@ void heap_init()
 
 }
 
-void print_stats()
+void print_heap_stats()
 {
 
 	printf("available blocks: %d\nused blocks: %d\n",_alloc_max_blocks,_alloc_used_blocks);
 	print("heap image:\n");
 
-	for (int i = 0; i < alloc_get_block_count(); i++)
+	for (int i = 0; i < alloc_get_block_count()/128; i++)
 	{
 
+			if (i % 50 == 0)
+				print("\n");
+
+			uint32_t avg = 0;
+			for(int j = 0; j < 128; j++)
+			{
+				avg += _alloc_mmap_test(i*128+j);
+			}
+
+			putchar((avg > 128) ? 'O' : 'F');
 
 
 	}

@@ -276,7 +276,7 @@ void print_mem_map()
 			avg += mmap_test(i*32+j);
 		}
 
-		printf("%c", (avg > 16) ? 'O' : 'F');
+		putchar((avg > 16) ? 'O' : 'F');
 
 	}
 

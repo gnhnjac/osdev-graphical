@@ -26,4 +26,4 @@ void* kmalloc_alloc_blocks(int seq_len);
 void kmalloc_free_block(void* p);
 void kmalloc_free_blocks(void* p, int seq_len);
 void heap_init();
-void print_stats();
+void print_heap_stats();

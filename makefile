@@ -27,6 +27,10 @@ runq: all
 pre-build:
 	@python update_headers.py
 
+# @dd if=/dev/zero of=os-image bs=512 count=2880
+# @dd if=boot/boot_sect.bin of=os-image bs=512 count=1
+# @WINIMAGE os-image /H /I boot/stage2~.bin
+# @WINIMAGE os-image /H /I kernel~.bin
 # This is the actual disk image that the computer loads,
 # which is the combination of our compiled bootsector and kernel
 os-image: boot/boot_sect.bin boot/2nd_stage.bin kernel.bin
@@ -66,6 +70,9 @@ clean:
 	@del /s /q *.dis
 	@del /s /q *.d
 	@del os-image
+
+# inspect:
+# 	@WINIMAGE os-image
 
 # Disassemble our kernel - might be useful for debugging .
 kernel.dis: kernel.bin
