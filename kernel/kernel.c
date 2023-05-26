@@ -31,8 +31,8 @@ void deinit_special_regions()
 	//! deinit the region the kernel heap is in as its in use
 	pmmngr_deinit_region(HEAP_BASE, HEAP_CEILING-HEAP_BASE);
 
-	// deinit first 2mb for safety reasons (stack is there, bios is there, kernel is there etc...)
-	pmmngr_deinit_region(0, 0x200000);
+	// deinit first 1mb for safety reasons (stack is there, bios is there)
+	pmmngr_deinit_region(0, 0x100000);
 
 }
 

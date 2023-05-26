@@ -165,6 +165,9 @@ void pmmngr_init_memory_regions(uint32_t mem_regions_addr)
 
 // clean certain region from occupation for use.
 void pmmngr_init_region(uint32_t base, uint32_t size) {
+
+	if (size % PMMNGR_BLOCK_SIZE != 0)
+		size += PMMNGR_BLOCK_SIZE - size % PMMNGR_BLOCK_SIZE;
  
 	int align = base / PMMNGR_BLOCK_SIZE;
 	int blocks = size / PMMNGR_BLOCK_SIZE;
@@ -178,7 +181,10 @@ void pmmngr_init_region(uint32_t base, uint32_t size) {
 }
 
 void pmmngr_deinit_region(uint32_t base, uint32_t size) {
- 
+
+	if (size % PMMNGR_BLOCK_SIZE != 0)
+		size += PMMNGR_BLOCK_SIZE - size % PMMNGR_BLOCK_SIZE;
+
 	int align = base / PMMNGR_BLOCK_SIZE;
 	int blocks = size / PMMNGR_BLOCK_SIZE;
  
