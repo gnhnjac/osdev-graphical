@@ -2,6 +2,7 @@
 ; ===================================
 ; LOADS A FAT12 FILE TO A LOCATION
 ; PARMAMS: FILE LOCATION IN ES:BX, IMAGE NAME IN [IMAGE_NAME]
+; RET: SECTORS READ IN DI
 ; ===================================
 load_fat12:
     push bx ; push file location for later
@@ -33,7 +34,7 @@ LOAD_ROOT:
     add WORD [datasector], cx ; add root directory sectors to base of root directory to get data sector
  	; base sector of root directory is in ax
       
-; read root directory into memory (7C00:0500)
+; read root directory into memory (0:0500)
  
     mov     bx, 0x0500                            ; copy root dir above bootcode
     call    disk_load_short
@@ -82,7 +83,7 @@ LOAD_FAT:
 
     mov     ax, WORD [bpbReservedSectors]       ; adjust for bootsector
       
-; read FAT into memory (7C00:0500)
+; read FAT into memory (0:0500)
 
     mov     bx, 0x0500                          ; copy FAT above bootcode
     call    disk_load_short
@@ -96,12 +97,15 @@ LOAD_FAT:
 ; Load Stage 2
 ;----------------------------------------------------
 
+    xor di, di ; sectors read is returned in di
+
  LOAD_IMAGE:
 
     mov     ax, WORD [cluster]                  ; cluster to read
     call    ClusterLBA                          ; convert cluster to LBA, get start sector to read from
     xor     cx, cx
     mov     cl, BYTE [bpbSectorsPerCluster]     ; sectors to read
+    add di, cx ; add sectors read to di
     ; offset in es:bx
     call    disk_load_short
       

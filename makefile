@@ -32,18 +32,19 @@ pre-build:
 # @python check_size_validity.py
 # This is the actual disk image that the computer loads,
 # which is the combination of our compiled bootsector and kernel
-os-image: boot/BOOTLDR.SYS boot/STAGE2.SYS KERNEL.SYS makefile
-	@dd if=/dev/zero of=os-image bs=512 count=2880
-	@dd if=boot/BOOTLDR.SYS of=os-image bs=512 count=1
-	@WINIMAGE os-image /H /I boot/STAGE2.SYS
-	@WINIMAGE os-image /H /I KERNEL.SYS
+os-image: boot/BOOTLDR.SYS boot/STAGE2.SYS KERNEL.SYS
+	@dd if=/dev/zero of=floppy.img bs=512 count=2880
+	@dd if=boot/BOOTLDR.SYS of=floppy.img bs=512 count=1
+	@WINIMAGE floppy.img /H /I boot/STAGE2.SYS
+	@WINIMAGE floppy.img /H /I KERNEL.SYS
+	@dd if=floppy.img of=os-image bs=512 count=2000
 
 # Link kernel object files into one binary, making sure the
 # entry code is right at the start of the binary.
 # $^ is substituted with all of the target's dependency files
 KERNEL.SYS: kernel/kernel_entry.o ${OBJ}
 	@ld -m i386pe -o kernel.tmp -T link.ld $^
-	@objcopy -O binary kernel.tmp KERNEL.SYS
+	@objcopy --set-section-flags .bss=alloc,load,contents -O binary kernel.tmp KERNEL.SYS
 	@del /f kernel.tmp
 
 -include ${DEPS}
@@ -70,6 +71,7 @@ clean:
 	@del /s /q *.SYS
 	@del /s /q *.o
 	@del /s /q *.dis
+	@del /s /q *.img
 	@del /s /q *.d
 	@del os-image
 

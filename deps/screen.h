@@ -12,8 +12,8 @@
 #define REG_SCREEN_DATA 0x3D5 // Internal register data
 
 // scroll buffer values
-#define BUFFER_TOP_ROWS 0xFF
-#define BUFFER_BOT_ROWS 0xFF
+#define BUFFER_TOP_ROWS 100
+#define BUFFER_BOT_ROWS 100
 
 // top bar constants
 #define TOP 2

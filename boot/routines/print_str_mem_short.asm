@@ -9,7 +9,7 @@ print_str_mem_short:
 	pusha
 
 	mov ah, 0x0e
-	xor bx, bx ; page 0
+	xor bh, bh ; page 0
 
 _printsm_loop:
 	lodsb ; put in al the char in our memory + offset (si)

@@ -18,6 +18,14 @@ load_loop:
 	pop ax
 	inc ax ; add sectors read to start_sector
 	add bx, 512
+	jnc didnt_overflow ; bx overflowed
+
+	; if bx overflowed means bx reached 0x10000/512 = 0x80, that means we need to add 0x1000 to es
+	mov ax, es
+	add ax, 0x1000
+	mov es, ax
+
+didnt_overflow:
 	pop cx
 	loop load_loop
 	

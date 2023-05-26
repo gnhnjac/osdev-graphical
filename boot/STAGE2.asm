@@ -1,4 +1,4 @@
-org 0x1000
+org 0x3000
 bits 16
 
 ; where the kernel is to be loaded to in protected mode
@@ -6,9 +6,6 @@ bits 16
 
 ; where the kernel is to be loaded to in real mode
 %define IMAGE_RMODE_BASE 0x10000
-
-; how many sectors to read
-%define READ_SECTORS 110
 
 mov [BOOT_DRIVE], dl ; mbr drive number saved in dl
 mov [boot_info+multiboot_info.bootDevice], dl
@@ -25,7 +22,7 @@ mov	word [boot_info+multiboot_info.memoryLo], ax
 
 xor ax, ax
 mov	es, ax
-mov	di, 0x1000 + 512*5 ; 3 reserved sectors for the memory map
+mov	di, 0x3000 + 512*5 ; 3 reserved sectors for the memory map
 call BiosGetMemoryMap
 
 ; switch to 32 bit protected mode
@@ -40,6 +37,8 @@ load_kernel: ; note that dx is changed here!
 	mov es, ax
 	xor bx, bx
 	call load_fat12
+	mov [READ_SECTORS], di
+
 	ret
 
 bits 32
@@ -49,7 +48,8 @@ BEGIN_PM:
 	call print_str_mem32
 
 COPY_KERNEL_IMG:
-	mov	eax, READ_SECTORS
+	xor eax, eax
+	mov	ax, [READ_SECTORS]
  	mov ebx, 512
  	mul	ebx
  	mov	ebx, 4
@@ -66,7 +66,9 @@ COPY_KERNEL_IMG:
 	mov	eax, 0x2BADB002	 ; multiboot specs say eax should be this
 	mov	ebx, 0
  	
- 	push dword READ_SECTORS
+ 	xor edx, edx
+ 	mov dx, [READ_SECTORS]
+ 	push edx
 	push dword boot_info
 	call IMAGE_PMODE_BASE ;Execute Kernel
 
@@ -235,6 +237,7 @@ copy_kernel_msg db 'Copying kernel into memory at 0x100000', 0xa, 0xd, 0
 pm_msg db 'Successfully switched to 32-bit protected mode!', 0
 BOOT_DRIVE db 0
 IMAGE_NAME db 'KERNEL  SYS'
+READ_SECTORS dw 0
 
 times 512*5-($-$$) db 0 ; occupy exactly 5 sectors
 
