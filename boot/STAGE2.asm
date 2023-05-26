@@ -33,19 +33,13 @@ call switch_to_pm
 
 load_kernel: ; note that dx is changed here!
 
-	push load_kernel_msg
-	call print_str_mem
+	mov si, load_kernel_msg
+	call print_str_mem_short
 
-	mov dl, [BOOT_DRIVE]
-	xor dh, dh
-
-	push IMAGE_RMODE_BASE/16 ; es offset
-	push 0 ; bx offset
-	push dx ; drive number
-	push READ_SECTORS ; sectors to be read
-	push 9 ; start sector in LBA
-	call disk_load
-
+	mov ax, IMAGE_RMODE_BASE/16 ; es offset
+	mov es, ax
+	xor bx, bx
+	call load_fat12
 	ret
 
 bits 32
@@ -55,7 +49,7 @@ BEGIN_PM:
 	call print_str_mem32
 
 COPY_KERNEL_IMG:
-	mov	eax, 110
+	mov	eax, READ_SECTORS
  	mov ebx, 512
  	mul	ebx
  	mov	ebx, 4
@@ -84,11 +78,12 @@ COPY_KERNEL_IMG:
 
 bits 16
 ; 16 bit rm files
-%include "print_str_mem.asm"
+%include "print_str_mem_short.asm"
 ;%include "print_hex_word.asm"
-%include "disk_load.asm"
+%include "disk_load_short.asm"
 %include "gdt.asm"
-
+%include "bpb.asm"
+%include "load_fat12.asm"
 ;---------------------------------------------
 ;	Get memory size for >64M configuations
 ;	ret\ ax=KB between 1MB and 16MB
@@ -239,6 +234,7 @@ load_kernel_msg db 'Loading kernel into memory at 0x10000', 0xa, 0xd, 0
 copy_kernel_msg db 'Copying kernel into memory at 0x100000', 0xa, 0xd, 0
 pm_msg db 'Successfully switched to 32-bit protected mode!', 0
 BOOT_DRIVE db 0
+IMAGE_NAME db 'KERNEL  SYS'
 
 times 512*5-($-$$) db 0 ; occupy exactly 5 sectors
 

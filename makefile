@@ -2,6 +2,7 @@
 # match the patterns
 C_SOURCES = $(wildcard kernel/*.c drivers/*.c utils/*.c)
 HEADERS = $(wildcard deps/*.h)
+ASM_FILES = $(wildcard boot/routines/*.asm)
 
 # TODO : Make sources dep on all header files.
 
@@ -27,22 +28,22 @@ runq: all
 pre-build:
 	@python update_headers.py
 
-# @dd if=/dev/zero of=os-image bs=512 count=2880
-# @dd if=boot/boot_sect.bin of=os-image bs=512 count=1
-# @WINIMAGE os-image /H /I boot/stage2~.bin
-# @WINIMAGE os-image /H /I kernel~.bin
+# @copy /b boot\boot_sect.bin+boot\2nd_stage.bin+kernel.bin os-image > nul
+# @python check_size_validity.py
 # This is the actual disk image that the computer loads,
 # which is the combination of our compiled bootsector and kernel
-os-image: boot/boot_sect.bin boot/2nd_stage.bin kernel.bin
-	@copy /b boot\boot_sect.bin+boot\2nd_stage.bin+kernel.bin os-image > nul
-	@python check_size_validity.py
+os-image: boot/BOOTLDR.SYS boot/STAGE2.SYS KERNEL.SYS makefile
+	@dd if=/dev/zero of=os-image bs=512 count=2880
+	@dd if=boot/BOOTLDR.SYS of=os-image bs=512 count=1
+	@WINIMAGE os-image /H /I boot/STAGE2.SYS
+	@WINIMAGE os-image /H /I KERNEL.SYS
 
 # Link kernel object files into one binary, making sure the
 # entry code is right at the start of the binary.
 # $^ is substituted with all of the target's dependency files
-kernel.bin: kernel/kernel_entry.o ${OBJ}
+KERNEL.SYS: kernel/kernel_entry.o ${OBJ}
 	@ld -m i386pe -o kernel.tmp -T link.ld $^
-	@objcopy -O binary kernel.tmp kernel.bin
+	@objcopy -O binary kernel.tmp KERNEL.SYS
 	@del /f kernel.tmp
 
 -include ${DEPS}
@@ -61,18 +62,19 @@ kernel.bin: kernel/kernel_entry.o ${OBJ}
 # Assemble the boot sector to raw machine code
 # The -I options tells nasm where to find our useful assembly
 # routines that we include in boot_sect.asm
-%.bin : %.asm
+%.SYS : %.asm ${ASM_FILES}
 	@nasm $< -f bin -I 'boot/routines/' -o $@
 
 clean:
 	@del /s /q *.bin 
+	@del /s /q *.SYS
 	@del /s /q *.o
 	@del /s /q *.dis
 	@del /s /q *.d
 	@del os-image
 
-# inspect:
-# 	@WINIMAGE os-image
+inspect:
+	@WINIMAGE os-image
 
 # Disassemble our kernel - might be useful for debugging .
 kernel.dis: kernel.bin

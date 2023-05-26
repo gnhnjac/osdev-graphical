@@ -458,6 +458,7 @@ void handle_paint(char *cmd_buff)
 	}
 	clear_viewport();
 	enable_scrolling();
+	enable_mouse();
 
 	kfree(param);
 	

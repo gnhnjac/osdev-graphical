@@ -2,19 +2,13 @@ bits 16
 
 ; ===================================
 ; PRINTS OUT A STRING FROM MEMORY (null terminated)
-; PARMAMS: MESSAGE OFFSET
+; DS:SI => null terminated string
 ; ===================================
-print_str_mem:
-	push bp
-	mov bp, sp
-	%define txt [bp+4]
-
-	push ax
-	push bx
-	push si
+print_str_mem_short:
+	
+	pusha
 
 	mov ah, 0x0e
-	mov si, txt
 	xor bx, bx ; page 0
 
 _printsm_loop:
@@ -24,10 +18,7 @@ _printsm_loop:
 	int 0x10
 	jmp _printsm_loop
 _printsm_end:
+	
+	popa
 
-	pop si
-	pop bx
-	pop ax
-	pop bp
-
-	ret 2
+	ret
