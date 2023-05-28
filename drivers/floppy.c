@@ -4,6 +4,7 @@
 #include "timer.h"
 #include "screen.h"
 #include "dma.h"
+#include "memory.h"
 volatile bool flpydsk_irq_finished = false;
 
 uint8_t _CurrentDrive = 0;
@@ -461,6 +462,27 @@ void* flpydsk_read_sector (int sectorLBA) {
 	flpydsk_rw_sector (head, track, sector, floppy_dir_read);
 	flpydsk_control_motor (false);
  
-	//! warning: this is a bit hackish
 	return (void*) floppy_dmabuf;
+}
+
+void flpydsk_write_sector (int sectorLBA, void *data) {
+ 
+	if (_CurrentDrive >= 4)
+		return 0;
+ 
+	//! convert LBA sector to CHS
+	int head=0, track=0, sector=1;
+	flpydsk_lba_to_chs (sectorLBA, &head, &track, &sector);
+
+	//! turn motor on and seek to track
+	flpydsk_control_motor (true);
+	if (flpydsk_seek (track, head) != 0)
+		return 0;
+ 	
+	// copy data to dma buffer
+	memcpy((char *)floppy_dmabuf, (char *)data, 512)
+
+	//! write sector and turn motor off
+	flpydsk_rw_sector (head, track, sector, floppy_dir_write);
+	flpydsk_control_motor (false);
 }

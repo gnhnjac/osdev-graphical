@@ -71,6 +71,12 @@ void kmain(uint32_t _, multiboot_info* bootinfo, uint32_t _kernel_size) {
 	//! install floppy disk to IR 38, uses IRQ 6
 	flpydsk_install ();
 
+	uint8_t data[512];
+
+	printf("data:%x",data);
+
+	memset((char *)data,0,512);
+
 	void *sect = flpydsk_read_sector(0);
 
 	printf("sect:%x\n",sect);
