@@ -13,6 +13,7 @@
 #include "pmm.h"
 #include "vmm.h"
 #include "heap.h"
+#include "floppy.h"
 
 uint32_t kernel_size=0;
 
@@ -64,7 +65,24 @@ void kmain(uint32_t _, multiboot_info* bootinfo, uint32_t _kernel_size) {
 
 	init_vfs();
 
-	shell_main(); // start terminal
+	//! set drive 0 as current drive
+	flpydsk_set_working_drive (0);
+
+	//! install floppy disk to IR 38, uses IRQ 6
+	flpydsk_install ();
+
+	void *sect = flpydsk_read_sector(0);
+
+	printf("sect:%x\n",sect);
+
+	for(int i = 0; i < 512; i++)
+	{
+
+		printf("%X",*(uint8_t *)((uint32_t)sect+i));
+
+	}
+
+	//shell_main(); // start terminal
 
 	return;
 }

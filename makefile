@@ -37,7 +37,7 @@ os-image: boot/BOOTLDR.SYS boot/STAGE2.SYS KERNEL.SYS
 	@dd if=boot/BOOTLDR.SYS of=floppy.img bs=512 count=1
 	@WINIMAGE floppy.img /H /I boot/STAGE2.SYS
 	@WINIMAGE floppy.img /H /I KERNEL.SYS
-	@dd if=floppy.img of=os-image bs=512 count=2000
+	@dd if=floppy.img of=os-image bs=512 count=2800
 
 # Link kernel object files into one binary, making sure the
 # entry code is right at the start of the binary.

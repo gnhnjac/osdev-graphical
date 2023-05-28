@@ -252,7 +252,7 @@ isr_common_stub:
 _irq%+i:
     cli
     push byte 0 ; these dont push an error so for stack consistency we push 0
-    push byte i ; ith interrupt in our isr table
+    push byte i ; ith interrupt in our irq table
     jmp irq_common_stub
 %assign i i+1
 %endrep
