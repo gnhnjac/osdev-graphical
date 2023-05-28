@@ -3,6 +3,7 @@
 #include "floppy.h"
 #include "timer.h"
 #include "screen.h"
+#include "dma.h"
 volatile bool flpydsk_irq_finished = false;
 
 uint8_t _CurrentDrive = 0;
@@ -407,47 +408,39 @@ void flpydsk_set_working_drive (uint8_t d)
 
 static void flpydsk_dma_init(floppy_dir dir) {
 
-    union {
-        unsigned char b[4]; // 4 bytes
-        unsigned long l;    // 1 long = 32-bit
-    } a, c; // address and count
+	union{
+      uint8_t byte[4];//Lo[0], Mid[1], Hi[2]
+      unsigned long l;
+    }a, c;
 
-    a.l = (unsigned) &floppy_dmabuf;
-    c.l = (unsigned) floppy_dmalen - 1; // -1 because of DMA counting
+    a.l=(unsigned)&floppy_dmabuf;
+    c.l=(unsigned)floppy_dmalen-1;
 
-    // check that address is at most 24-bits (under 16MB)
-    // check that count is at most 16-bits (DMA limit)
-    // check that if we add count and address we don't get a carry
-    // (DMA can't deal with such a carry, this is the 64k boundary limit)
-    if((a.l >> 24) || (c.l >> 16) || (((a.l&0xffff)+c.l)>>16)) {
-        print("floppy_dma_init: static buffer problem\n");
+    //Check for buffer issues
+    if ((a.l >> 24) || (c.l >> 16) || (((a.l & 0xffff)+c.l) >> 16)){
+        print("flpydsk_dma_init: static buffer problem\n");
+        return;
     }
 
-    unsigned char mode;
-    switch(dir) {
-        // 01:0:0:01:10 = single/inc/no-auto/to-mem/chan2
-        case floppy_dir_read:  mode = 0x46; break;
-        // 01:0:0:10:10 = single/inc/no-auto/from-mem/chan2
-        case floppy_dir_write: mode = 0x4a; break;
-        default: print("floppy_dma_init: invalid direction");
-                 return; // not reached, please "mode user uninitialized"
+    dma_reset (2); // reset the dma
+    dma_mask_channel( FDC_DMA_CHANNEL );//Mask channel 2
+    dma_reset_flipflop ( 2 );//Flipflop reset on DMA 2
+
+    dma_set_address( FDC_DMA_CHANNEL, a.byte[0],a.byte[1]);//first 16 bits of buffer address
+    dma_set_external_page_register(2, a.byte[2]);//last 8 bits of buffer address in the extended page register
+    dma_reset_flipflop( 2 );//Flipflop reset on DMA 2
+
+    dma_set_count( FDC_DMA_CHANNEL, c.byte[0],c.byte[1]);//Set count
+    if (dir == floppy_dir_read)
+    {
+   		dma_set_read ( FDC_DMA_CHANNEL );
+    }
+    else
+    {
+   		dma_set_write( FDC_DMA_CHANNEL );
     }
 
-    outb(0x0a, 0x06);   // mask chan 2
-
-    outb(0x0c, 0xff);   // reset flip-flop
-    outb(0x04, a.b[0]); //  - address low byte
-    outb(0x04, a.b[1]); //  - address high byte
-
-    outb(0x81, a.b[2]); // external page register
-
-    outb(0x0c, 0xff);   // reset flip-flop
-    outb(0x05, c.b[0]); //  - count low byte
-    outb(0x05, c.b[1]); //  - count high byte
-
-    outb(0x0b, mode);   // set mode (see above)
-
-    outb(0x0a, 0x02);   // unmask chan 2
+    dma_unmask_all( 2 );//Unmask channel 2
 }
 
 void* flpydsk_read_sector (int sectorLBA) {

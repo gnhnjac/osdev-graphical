@@ -51,4 +51,52 @@ enum DMA1_CHANNEL_IO {
 	DMA1_CHAN7_COUNT_REG = 0xce,
 };
 
+enum DMA0_PAGE_REG {
+
+	DMA_PAGE_EXTRA0 = 0x80, //! Also diagnostics port
+	DMA_PAGE_CHAN2_ADDRBYTE2 = 0x81,
+	DMA_PAGE_CHAN3_ADDRBYTE2 = 0x82,
+	DMA_PAGE_CHAN1_ADDRBYTE2 = 0x83,
+	DMA_PAGE_EXTRA1 = 0x84,
+	DMA_PAGE_EXTRA2 = 0x85,
+	DMA_PAGE_EXTRA3 = 0x86,
+	DMA_PAGE_CHAN6_ADDRBYTE2 = 0x87,
+	DMA_PAGE_CHAN7_ADDRBYTE2 = 0x88,
+	DMA_PAGE_CHAN5_ADDRBYTE2 = 0x89,
+	DMA_PAGE_EXTRA4 = 0x8c,
+	DMA_PAGE_EXTRA5 = 0x8d,
+	DMA_PAGE_EXTRA6 = 0x8e,
+	DMA_PAGE_DRAM_REFRESH = 0x8f //!no longer used in new PCs
+};
+
+enum DMA_MODE_REG_MASK {
+
+	DMA_MODE_MASK_SEL = 3,
+
+	DMA_MODE_MASK_TRA = 0xc,
+	DMA_MODE_SELF_TEST = 0,
+	DMA_MODE_READ_TRANSFER =4,
+	DMA_MODE_WRITE_TRANSFER = 8,
+
+	DMA_MODE_MASK_AUTO = 0x10,
+	DMA_MODE_MASK_IDEC = 0x20,
+
+	DMA_MODE_MASK = 0xc0,
+	DMA_MODE_TRANSFER_ON_DEMAND= 0,
+	DMA_MODE_TRANSFER_SINGLE = 0x40,
+	DMA_MODE_TRANSFER_BLOCK = 0x80,
+	DMA_MODE_TRANSFER_CASCADE = 0xC0
+};
+
 //refs
+void dma_set_address(uint8_t channel, uint8_t low, uint8_t high);
+void dma_set_count(uint8_t channel, uint8_t low, uint8_t high);
+void dma_set_external_page_register (uint8_t reg, uint8_t val);
+void dma_set_mode (uint8_t channel, uint8_t mode);
+void dma_set_read (uint8_t channel);
+void dma_set_write (uint8_t channel);
+void dma_mask_channel(uint8_t channel);
+void dma_unmask_channel (uint8_t channel);
+void dma_reset_flipflop(int dma);
+void dma_reset (int dma);
+void dma_unmask_all (int dma);

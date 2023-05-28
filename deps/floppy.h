@@ -78,6 +78,7 @@ enum FLPYDSK_SECTOR_DTL {
 
 #define FLPY_SECTORS_PER_TRACK 18
 #define FLPYDSK_CMD_PERPENDICULAR 0x12
+#define FDC_DMA_CHANNEL 2
 
 // specify operation on floppy disk and dma
 typedef enum {
