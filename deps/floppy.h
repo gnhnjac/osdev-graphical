@@ -110,3 +110,4 @@ void flpydsk_install();
 void flpydsk_set_working_drive (uint8_t d);
 static void flpydsk_dma_init(floppy_dir dir);
 void* flpydsk_read_sector (int sectorLBA);
+void flpydsk_write_sector (int sectorLBA, void *data);

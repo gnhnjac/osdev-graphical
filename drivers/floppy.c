@@ -13,9 +13,9 @@ uint8_t _CurrentDrive = 0;
 // must be large enough for whatever DMA transfer we might desire
 // and must not cross 64k borders so easiest thing is to align it
 // to 2^N boundary at least as big as the block
-#define floppy_dmalen 0x4800
-static const char floppy_dmabuf[floppy_dmalen]
-                  __attribute__((aligned(8192)));
+#define floppy_dmalen 512 // we want it to hold 1 sector at a time! we don't want to read multiple sectors from the floppy
+static const char floppy_dmabuf[floppy_dmalen];
+                  //__attribute__((aligned(8192)));
 
 void flpydsk_handler()
 {
@@ -92,10 +92,9 @@ int flpydsk_rw_sector (uint8_t head, uint8_t track, uint8_t sector, floppy_dir d
 		flpydsk_send_command ( head);
 		flpydsk_send_command ( sector);
 		flpydsk_send_command ( FLPYDSK_SECTOR_DTL_512 );
-		// flpydsk_send_command (
-		// 	( ( sector + 1 ) >= FLPY_SECTORS_PER_TRACK )
-		// 		? FLPY_SECTORS_PER_TRACK : sector + 1 );
-		flpydsk_send_command(FLPY_SECTORS_PER_TRACK);
+		flpydsk_send_command (
+			( ( sector + 1 ) >= FLPY_SECTORS_PER_TRACK )
+				? FLPY_SECTORS_PER_TRACK : sector + 1 ); // where to stop
 		flpydsk_send_command ( FLPYDSK_GAP3_LENGTH_3_5 );
 		flpydsk_send_command ( 0xff );
 	 
@@ -423,13 +422,13 @@ static void flpydsk_dma_init(floppy_dir dir) {
         return;
     }
 
-    dma_reset (2); // reset the dma
+    dma_reset (FDC_DMA_CHANNEL); // reset the dma
     dma_mask_channel( FDC_DMA_CHANNEL );//Mask channel 2
-    dma_reset_flipflop ( 2 );//Flipflop reset on DMA 2
+    dma_reset_flipflop ( FDC_DMA_CHANNEL );//Flipflop reset on DMA 2
 
     dma_set_address( FDC_DMA_CHANNEL, a.byte[0],a.byte[1]);//first 16 bits of buffer address
-    dma_set_external_page_register(2, a.byte[2]);//last 8 bits of buffer address in the extended page register
-    dma_reset_flipflop( 2 );//Flipflop reset on DMA 2
+    dma_set_external_page_register(FDC_DMA_CHANNEL, a.byte[2]);//last 8 bits of buffer address in the extended page register
+    dma_reset_flipflop( FDC_DMA_CHANNEL );//Flipflop reset on DMA 2
 
     dma_set_count( FDC_DMA_CHANNEL, c.byte[0],c.byte[1]);//Set count
     if (dir == floppy_dir_read)
@@ -441,7 +440,7 @@ static void flpydsk_dma_init(floppy_dir dir) {
    		dma_set_write( FDC_DMA_CHANNEL );
     }
 
-    dma_unmask_all( 2 );//Unmask channel 2
+    dma_unmask_all( FDC_DMA_CHANNEL );//Unmask channel 2
 }
 
 void* flpydsk_read_sector (int sectorLBA) {
@@ -468,7 +467,7 @@ void* flpydsk_read_sector (int sectorLBA) {
 void flpydsk_write_sector (int sectorLBA, void *data) {
  
 	if (_CurrentDrive >= 4)
-		return 0;
+		return;
  
 	//! convert LBA sector to CHS
 	int head=0, track=0, sector=1;
@@ -477,10 +476,10 @@ void flpydsk_write_sector (int sectorLBA, void *data) {
 	//! turn motor on and seek to track
 	flpydsk_control_motor (true);
 	if (flpydsk_seek (track, head) != 0)
-		return 0;
+		return;
  	
 	// copy data to dma buffer
-	memcpy((char *)floppy_dmabuf, (char *)data, 512)
+	memcpy((char *)floppy_dmabuf, (char *)data, 512);
 
 	//! write sector and turn motor off
 	flpydsk_rw_sector (head, track, sector, floppy_dir_write);
