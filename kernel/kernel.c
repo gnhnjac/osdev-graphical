@@ -64,7 +64,7 @@ void kmain(uint32_t _, multiboot_info* bootinfo, uint32_t _kernel_size) {
 	keyboard_install();
 	mouse_install();
 
-	init_vfs();
+	tmpfsys_init();
 
 	//! set drive 0 as current drive
 	flpydsk_set_working_drive (0);

@@ -69,7 +69,7 @@ void handle_command(char *cmd_buff)
 	}
 	else if(strcmp(cmd, "ls"))
 	{
-		ls(fid);
+		//ls(fid);
 	}
 	else if(strcmp(cmd, "cd"))
 	{
@@ -138,34 +138,34 @@ void handle_stats()
 void handle_cd(char *cmd_buff)
 {
 
-	int param_count = count_substrings(cmd_buff, ' '); // including cmd
+	// int param_count = count_substrings(cmd_buff, ' '); // including cmd
 
-	if (param_count != 2)
-		return;
+	// if (param_count != 2)
+	// 	return;
 
-	char *param = seperate_and_take(cmd_buff, ' ', 1);
-	strip_from_start(param, ' ');
-	strip_from_end(param, ' ');
+	// char *param = seperate_and_take(cmd_buff, ' ', 1);
+	// strip_from_start(param, ' ');
+	// strip_from_end(param, ' ');
 
-	fid = get_fid_by_name(param,fid);
-	kfree(param);
+	// fid = get_fid_by_name(param,fid);
+	// kfree(param);
 
 	
 }
 
 void handle_mkdir(char *cmd_buff)
 {
-	int param_count = count_substrings(cmd_buff, ' '); // including cmd
+	// int param_count = count_substrings(cmd_buff, ' '); // including cmd
 
-	if (param_count != 2)
-		return;
+	// if (param_count != 2)
+	// 	return;
 
-	char *param = seperate_and_take(cmd_buff, ' ', 1);
-	strip_from_start(param, ' ');
-	strip_from_end(param, ' ');
+	// char *param = seperate_and_take(cmd_buff, ' ', 1);
+	// strip_from_start(param, ' ');
+	// strip_from_end(param, ' ');
 
-	mkdir(param,fid);
-	kfree(param);
+	// mkdir(param,fid);
+	// kfree(param);
 
 	
 }
@@ -173,21 +173,21 @@ void handle_mkdir(char *cmd_buff)
 void handle_touch(char *cmd_buff)
 {
 
-	int param_count = count_substrings(cmd_buff, ' '); // including cmd
+	// int param_count = count_substrings(cmd_buff, ' '); // including cmd
 
-	char *param = seperate_and_take(cmd_buff, ' ', 1);
-	strip_from_start(param, ' ');
-	strip_from_end(param, ' ');
+	// char *param = seperate_and_take(cmd_buff, ' ', 1);
+	// strip_from_start(param, ' ');
+	// strip_from_end(param, ' ');
 
-	if (get_fid_by_name(param,fid) != fid)
-	{
-		printf("file %s already exists",param);
-		kfree(param);
-		return;
-	}
+	// if (get_fid_by_name(param,fid) != fid)
+	// {
+	// 	printf("file %s already exists",param);
+	// 	kfree(param);
+	// 	return;
+	// }
 
-	touch(param,fid);
-	kfree(param);
+	// touch(param,fid);
+	// kfree(param);
 
 	
 }
@@ -195,272 +195,272 @@ void handle_touch(char *cmd_buff)
 void handle_concat(char *cmd_buff)
 {
 
-	int param_count = count_substrings(cmd_buff, ' '); // including cmd
+	// int param_count = count_substrings(cmd_buff, ' '); // including cmd
 
-	if (param_count != 4)
-		return;
+	// if (param_count != 4)
+	// 	return;
 
-	char *param = seperate_and_take(cmd_buff, ' ', 1);
-	strip_from_start(param, ' ');
-	strip_from_end(param, ' ');
+	// char *param = seperate_and_take(cmd_buff, ' ', 1);
+	// strip_from_start(param, ' ');
+	// strip_from_end(param, ' ');
 
-	if (get_fid_by_name(param,fid) != fid)
-	{
-		printf("file %s already exists",param);
-		kfree(param);
-		return;
-	}
+	// if (get_fid_by_name(param,fid) != fid)
+	// {
+	// 	printf("file %s already exists",param);
+	// 	kfree(param);
+	// 	return;
+	// }
 
-	char *param2 = seperate_and_take(cmd_buff, ' ', 2);
-	strip_from_start(param2, ' ');
-	strip_from_end(param2, ' ');
+	// char *param2 = seperate_and_take(cmd_buff, ' ', 2);
+	// strip_from_start(param2, ' ');
+	// strip_from_end(param2, ' ');
 
-	uint32_t fid1 = get_fid_by_name(param2,fid);
+	// uint32_t fid1 = get_fid_by_name(param2,fid);
 
-	if (fid1 == fid)
-	{
-		printf("file %s doesn't exist",param2);
-		kfree(param);
-		kfree(param2);
-		return;
-	}
+	// if (fid1 == fid)
+	// {
+	// 	printf("file %s doesn't exist",param2);
+	// 	kfree(param);
+	// 	kfree(param2);
+	// 	return;
+	// }
 
-	char *param3 = seperate_and_take(cmd_buff, ' ', 3);
-	strip_from_start(param3, ' ');
-	strip_from_end(param3, ' ');
+	// char *param3 = seperate_and_take(cmd_buff, ' ', 3);
+	// strip_from_start(param3, ' ');
+	// strip_from_end(param3, ' ');
 
-	uint32_t fid2 = get_fid_by_name(param3,fid);
+	// uint32_t fid2 = get_fid_by_name(param3,fid);
 
-	if (fid2 == fid)
-	{
-		printf("file %s doesn't exist",param3);
-		kfree(param);
-		kfree(param2);
-		kfree(param3);
-		return;
-	}
+	// if (fid2 == fid)
+	// {
+	// 	printf("file %s doesn't exist",param3);
+	// 	kfree(param);
+	// 	kfree(param2);
+	// 	kfree(param3);
+	// 	return;
+	// }
 
-	concat(param,fid1,fid2,fid);
-	kfree(param);
-	kfree(param2);
-	kfree(param3);
+	// concat(param,fid1,fid2,fid);
+	// kfree(param);
+	// kfree(param2);
+	// kfree(param3);
 	
 }
 
 void handle_write(char *cmd_buff)
 {
 
-	int param_count = count_substrings(cmd_buff, ' '); // including cmd
+	// int param_count = count_substrings(cmd_buff, ' '); // including cmd
 
-	if (param_count < 2 || param_count > 3)
-		return;
+	// if (param_count < 2 || param_count > 3)
+	// 	return;
 
-	int override = 0;
+	// int override = 0;
 
-	if(param_count == 3)
-	{
+	// if(param_count == 3)
+	// {
 
-		char *option = seperate_and_take(cmd_buff, ' ', 2);
+	// 	char *option = seperate_and_take(cmd_buff, ' ', 2);
 
-		if (strcmp(option, "-o"))
-		{
-			override = 1;
-		}
-		else
-		{
-			printf("unknown option %s", option);
-			kfree(option);
-			return;
-		}
+	// 	if (strcmp(option, "-o"))
+	// 	{
+	// 		override = 1;
+	// 	}
+	// 	else
+	// 	{
+	// 		printf("unknown option %s", option);
+	// 		kfree(option);
+	// 		return;
+	// 	}
 
-		kfree(option);
+	// 	kfree(option);
 
-	}
+	// }
 
-	char *param = seperate_and_take(cmd_buff, ' ', 1);
-	strip_from_start(param, ' ');
-	strip_from_end(param, ' ');
+	// char *param = seperate_and_take(cmd_buff, ' ', 1);
+	// strip_from_start(param, ' ');
+	// strip_from_end(param, ' ');
 
-	clear_viewport();
+	// clear_viewport();
 
 
-	uint32_t file_fid = get_fid_by_name(param,fid);
+	// uint32_t file_fid = get_fid_by_name(param,fid);
 	
-	if(file_fid == fid)
-	{
-		handle_touch(cmd_buff);
-		file_fid = get_fid_by_name(param,fid);
-	}
-	else if(!override)
-	{
-		cat(file_fid);
-	}
-	else
-	{
-		reset_file(file_fid);
-	}
+	// if(file_fid == fid)
+	// {
+	// 	handle_touch(cmd_buff);
+	// 	file_fid = get_fid_by_name(param,fid);
+	// }
+	// else if(!override)
+	// {
+	// 	cat(file_fid);
+	// }
+	// else
+	// {
+	// 	reset_file(file_fid);
+	// }
 
-	char buff[1];
+	// char buff[1];
 
-	do
-	{
-		getchar(-1,-1,buff);
+	// do
+	// {
+	// 	getchar(-1,-1,buff);
 
-		while(is_taking_char())
-			continue;
+	// 	while(is_taking_char())
+	// 		continue;
  
-		write(file_fid,buff, 0);
+	// 	write(file_fid,buff, 0);
 
-	} while (*buff != 27); // 27 is escape ascii
+	// } while (*buff != 27); // 27 is escape ascii
 
-	kfree(param);
+	// kfree(param);
 	
 }
 
 void handle_cat(char *cmd_buff)
 {
 
-	int param_count = count_substrings(cmd_buff, ' '); // including cmd
+	// int param_count = count_substrings(cmd_buff, ' '); // including cmd
 
-	if (param_count != 2)
-		return;
+	// if (param_count != 2)
+	// 	return;
 
-	char *param = seperate_and_take(cmd_buff, ' ', 1);
-	strip_from_start(param, ' ');
-	strip_from_end(param, ' ');
+	// char *param = seperate_and_take(cmd_buff, ' ', 1);
+	// strip_from_start(param, ' ');
+	// strip_from_end(param, ' ');
 
-	uint32_t file_fid = get_fid_by_name(param,fid);
+	// uint32_t file_fid = get_fid_by_name(param,fid);
 
-	if(file_fid == fid)
-	{
-		printf("file %s not found.", param);
-		kfree(param);
-		return;
-	}
+	// if(file_fid == fid)
+	// {
+	// 	printf("file %s not found.", param);
+	// 	kfree(param);
+	// 	return;
+	// }
 
-	cat(file_fid);
-	kfree(param);
+	// cat(file_fid);
+	// kfree(param);
 	
 }
 
 void handle_rm(char *cmd_buff)
 {
 
-	int param_count = count_substrings(cmd_buff, ' '); // including cmd
+	// int param_count = count_substrings(cmd_buff, ' '); // including cmd
 
-	if (param_count != 2)
-		return;
+	// if (param_count != 2)
+	// 	return;
 
-	char *param = seperate_and_take(cmd_buff, ' ', 1);
-	strip_from_start(param, ' ');
-	strip_from_end(param, ' ');
+	// char *param = seperate_and_take(cmd_buff, ' ', 1);
+	// strip_from_start(param, ' ');
+	// strip_from_end(param, ' ');
 
-	free_block(get_faddr_by_id(get_fid_by_name(param,fid))->bid);
-	kfree(param);
+	// free_block(get_faddr_by_id(get_fid_by_name(param,fid))->bid);
+	// kfree(param);
 	
 }
 
 void handle_size(char *cmd_buff)
 {
 
-	int param_count = count_substrings(cmd_buff, ' '); // including cmd
+	// int param_count = count_substrings(cmd_buff, ' '); // including cmd
 
-	if (param_count != 2)
-		return;
+	// if (param_count != 2)
+	// 	return;
 
-	char *param = seperate_and_take(cmd_buff, ' ', 1);
-	strip_from_start(param, ' ');
-	strip_from_end(param, ' ');
+	// char *param = seperate_and_take(cmd_buff, ' ', 1);
+	// strip_from_start(param, ' ');
+	// strip_from_end(param, ' ');
 
-	uint32_t file_fid = get_fid_by_name(param,fid);
+	// uint32_t file_fid = get_fid_by_name(param,fid);
 
-	if(file_fid == fid)
-	{
-		printf("file %s not found.", param);
-		kfree(param);
-		return;
-	}
+	// if(file_fid == fid)
+	// {
+	// 	printf("file %s not found.", param);
+	// 	kfree(param);
+	// 	return;
+	// }
 
-	printf("file %s has size %d bytes",param,size(file_fid));
-	kfree(param);
+	// printf("file %s has size %d bytes",param,size(file_fid));
+	// kfree(param);
 	
 }
 
 void handle_paint(char *cmd_buff)
 {
 
-	int param_count = count_substrings(cmd_buff, ' '); // including cmd
+	// int param_count = count_substrings(cmd_buff, ' '); // including cmd
 
-	if (param_count != 2)
-		return;
+	// if (param_count != 2)
+	// 	return;
 
-	char *param = seperate_and_take(cmd_buff, ' ', 1);
-	strip_from_start(param, ' ');
-	strip_from_end(param, ' ');
+	// char *param = seperate_and_take(cmd_buff, ' ', 1);
+	// strip_from_start(param, ' ');
+	// strip_from_end(param, ' ');
 
-	disable_scrolling();
-	clear_viewport();
+	// disable_scrolling();
+	// clear_viewport();
 
-	uint32_t file_fid = get_fid_by_name(param,fid);
+	// uint32_t file_fid = get_fid_by_name(param,fid);
 
-	if(file_fid == fid) // didn't find file
-	{
-		handle_touch(cmd_buff);
-		file_fid = get_fid_by_name(param,fid);
-	}
-	else
-	{
-		disable_mouse();
-		int n = 0;
-		for (int i = TOP; i < MAX_ROWS; i++)
-		{
+	// if(file_fid == fid) // didn't find file
+	// {
+	// 	handle_touch(cmd_buff);
+	// 	file_fid = get_fid_by_name(param,fid);
+	// }
+	// else
+	// {
+	// 	disable_mouse();
+	// 	int n = 0;
+	// 	for (int i = TOP; i < MAX_ROWS; i++)
+	// 	{
 
-			for(int j = 0; j < MAX_COLS-2; j++)
-			{
+	// 		for(int j = 0; j < MAX_COLS-2; j++)
+	// 		{
 
-				char ascii = get_nth_char(file_fid, n);
-				char attrib = get_nth_char(file_fid, n+1);
-				print_char(ascii,i,j,attrib);
+	// 			char ascii = get_nth_char(file_fid, n);
+	// 			char attrib = get_nth_char(file_fid, n+1);
+	// 			print_char(ascii,i,j,attrib);
 
-				n+=2;
+	// 			n+=2;
 
-			}
+	// 		}
 
-		}
-		enable_mouse();
-	}
+	// 	}
+	// 	enable_mouse();
+	// }
 
-	char buff[1];
+	// char buff[1];
 
-	do
-	{
-		getchar(-1,-1,buff);
+	// do
+	// {
+	// 	getchar(-1,-1,buff);
 
-		while(is_taking_char())
-			continue;
+	// 	while(is_taking_char())
+	// 		continue;
 
-	} while (*buff != 27); // 27 is escape ascii
+	// } while (*buff != 27); // 27 is escape ascii
 
-	disable_mouse();
-	reset_file(file_fid);
-	char *vidmem = (char *)VIDEO_ADDRESS;
-	for (int i = TOP; i < MAX_ROWS; i++)
-	{
+	// disable_mouse();
+	// reset_file(file_fid);
+	// char *vidmem = (char *)VIDEO_ADDRESS;
+	// for (int i = TOP; i < MAX_ROWS; i++)
+	// {
 
-		for(int j = 0; j < MAX_COLS-2; j++)
-		{
+	// 	for(int j = 0; j < MAX_COLS-2; j++)
+	// 	{
 
-			write(file_fid,vidmem+get_screen_offset(i,j), 1);
-			write(file_fid,vidmem+get_screen_offset(i,j)+1, 1);
+	// 		write(file_fid,vidmem+get_screen_offset(i,j), 1);
+	// 		write(file_fid,vidmem+get_screen_offset(i,j)+1, 1);
 
-		}
+	// 	}
 
-	}
-	clear_viewport();
-	enable_scrolling();
-	enable_mouse();
+	// }
+	// clear_viewport();
+	// enable_scrolling();
+	// enable_mouse();
 
-	kfree(param);
+	// kfree(param);
 	
 }
 
