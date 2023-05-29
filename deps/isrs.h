@@ -1,3 +1,4 @@
+#pragma once
 /* This defines what the stack looks like after an ISR was running */
 struct regs
 {

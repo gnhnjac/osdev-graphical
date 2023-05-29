@@ -1,3 +1,4 @@
+#pragma once
 #include <stdint.h>
 
 typedef struct _FILE {
@@ -9,9 +10,18 @@ typedef struct _FILE {
 	uint32_t    eof;
 	uint32_t    position;
 	uint32_t    currentCluster;
-	uint32_t    device;
+	uint32_t    deviceID;
 
 }FILE, *PFILE;
+
+typedef struct _FILELIST *PFILELIST;
+
+typedef struct _FILELIST {
+
+	FILE f;
+	PFILELIST next;
+
+}FILELIST;
 
 #define FS_FILE       0
 #define FS_DIRECTORY  1
@@ -21,12 +31,19 @@ typedef struct _FILE {
 typedef struct _FILE_SYSTEM {
 
 	char Name [8];
-	FILE               (*Directory)  (const char* DirectoryName);
 	void	           (*Mount)      ();
 	void               (*Read)       (PFILE file, unsigned char* Buffer, unsigned int Length);
 	void	           (*Close)      (PFILE);
-	FILE               (*Open)       (const char* FileName);
+	FILE               (*Open)       (char* FileName);
+	PFILELIST              (*OpenDir)    (char* FileName);
 
 }FILESYSTEM, *PFILESYSTEM;
 
 //refs
+FILE volOpenFile (const char* fname);
+PFILELIST volOpenDir (const char* fname);
+void volCloseFile (PFILE file);
+void volReadFile (PFILE file, unsigned char* Buffer, unsigned int Length);
+void volRegisterFileSystem (PFILESYSTEM fsys, unsigned int deviceID);
+void volUnregisterFileSystem (PFILESYSTEM fsys);
+void volUnregisterFileSystemByID (unsigned int deviceID);

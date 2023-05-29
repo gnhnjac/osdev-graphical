@@ -13,8 +13,8 @@ uint32_t RECORD_SIZE = (char *)(&b+1) - (char*)(&b);
 
 void tmpfsys_init()
 {
-	char *base = (char *)VFS_BASE;
-	while ((uint32_t)base < VFS_CEILING)
+	char *base = (char *)TFSYS_BASE;
+	while ((uint32_t)base < TFSYS_CEILING)
 	{
 		((block_metadata *)base)->occupied = 0;
 
@@ -27,13 +27,13 @@ void tmpfsys_init()
 void set_tfsys_screen_stats()
 {
 
-	char *base = (char *)VFS_BASE;
+	char *base = (char *)TFSYS_BASE;
 
 	uint32_t blocks = 0;
 	uint32_t files = 0;
 	uint32_t directories = 0;
 
-	while ((uint32_t)base < VFS_CEILING)
+	while ((uint32_t)base < TFSYS_CEILING)
 	{
 
 		if (((block_metadata *)base)->occupied)
@@ -265,10 +265,10 @@ uint32_t size(uint32_t fid)
 uint32_t get_next_fid()
 {
 
-	char *base = (char *)VFS_BASE;
+	char *base = (char *)TFSYS_BASE;
 	uint32_t fid = 0;
 
-	while(((block_metadata *)base)->occupied && base < VFS_CEILING)
+	while(((block_metadata *)base)->occupied && base < (char *)TFSYS_CEILING)
 	{
 		if(((block_metadata *)base)->type == Dir || ((block_metadata *)base)->type == File)
 			fid++;
@@ -281,7 +281,7 @@ uint32_t get_next_fid()
 
 block_metadata *get_faddr_by_id(uint32_t fid)
 {
-	char *base = (char *)VFS_BASE;
+	char *base = (char *)TFSYS_BASE;
 
 	while(((block_metadata *)base)->fid!=fid || ((block_metadata *)base)->type == SubFile)
 		base += BLOCK_SIZE;
@@ -293,7 +293,7 @@ block_metadata *get_faddr_by_id(uint32_t fid)
 uint32_t get_bid_by_faddr(block_metadata *base)
 {
 
-	return ((uint32_t)base-VFS_BASE)/BLOCK_SIZE;
+	return ((uint32_t)base-TFSYS_BASE)/BLOCK_SIZE;
 
 }
 
@@ -320,7 +320,7 @@ block_metadata *create_block(block_metadata *parent_block, block_type type, char
 	else if(type == SubFile)
 		metadata->fid = parent_block->fid;
 
-	char *base_ptr = (char *)VFS_BASE;
+	char *base_ptr = (char *)TFSYS_BASE;
 
 	while(((block_metadata *)base_ptr)->occupied)
 		base_ptr += BLOCK_SIZE;
@@ -352,7 +352,7 @@ block_metadata *create_block(block_metadata *parent_block, block_type type, char
 
 	kfree(metadata);
 
-	set_vfs_screen_stats();
+	set_tfsys_screen_stats();
 
 	return base;
 }
@@ -433,7 +433,7 @@ block_metadata *create_base_dir(char *name)
 
 	metadata->bid = 0;
 
-	block_metadata *base = (block_metadata *)VFS_BASE;
+	block_metadata *base = (block_metadata *)TFSYS_BASE;
 
 	metadata->parent_block = base;
 
@@ -493,7 +493,7 @@ bool free_block(uint32_t bid)
 	if (bid == 0) // can't free base directory
 		return false;
 
-	block_metadata *block = (block_metadata *)(VFS_BASE + bid*BLOCK_SIZE);
+	block_metadata *block = (block_metadata *)(TFSYS_BASE + bid*BLOCK_SIZE);
 
 	if (block->type == File || block->type == Dir)
 	{

@@ -81,20 +81,19 @@ int flpydsk_rw_sector (uint8_t head, uint8_t track, uint8_t sector, floppy_dir d
 		//! set the DMA for read transfer
 		flpydsk_dma_init(dir);
 
-		wait_milliseconds(20);
+		//wait_milliseconds(20);
 	 
 		//! read in a sector
 		flpydsk_send_command (
-			((dir == floppy_dir_read) ? FDC_CMD_READ_SECT : FDC_CMD_WRITE_SECT) | FDC_CMD_EXT_MULTITRACK |
-			FDC_CMD_EXT_SKIP | FDC_CMD_EXT_DENSITY);
+			((dir == floppy_dir_read) ? FDC_CMD_READ_SECT : FDC_CMD_WRITE_SECT) | FDC_CMD_EXT_DENSITY | FDC_CMD_EXT_MULTITRACK);
 		flpydsk_send_command ( head << 2 | _CurrentDrive );
 		flpydsk_send_command ( track);
 		flpydsk_send_command ( head);
 		flpydsk_send_command ( sector);
 		flpydsk_send_command ( FLPYDSK_SECTOR_DTL_512 );
 		flpydsk_send_command (
-			( ( sector + 1 ) >= FLPY_SECTORS_PER_TRACK )
-				? FLPY_SECTORS_PER_TRACK : sector + 1 ); // where to stop
+			( ( sector + 1 ) >= FLPY_288_SECTORS_PER_TRACK )
+				? FLPY_288_SECTORS_PER_TRACK : sector + 1 ); // where to stop
 		flpydsk_send_command ( FLPYDSK_GAP3_LENGTH_3_5 );
 		flpydsk_send_command ( 0xff );
 	 
@@ -310,12 +309,12 @@ void flpydsk_reset () {
 		flpydsk_check_int (&st0,&cyl);
  
 	// //! transfer speed 500kb/s for 1.44M floppy
-	// flpydsk_write_ccr (0);
+	//flpydsk_write_ccr (0);
 
 	//! transfer speed 1mb/s for 2.88M floppy
 	flpydsk_write_ccr (3);
 
-	flpydsk_set_perpendicular_mode(true);
+	//flpydsk_set_perpendicular_mode(true);
 
 	//! pass mechanical drive info. steprate=3ms, unload time=240ms, load time=16ms
 	flpydsk_drive_data (13,1,240,true);
@@ -357,14 +356,14 @@ void flpydsk_control_motor (bool b) {
 		flpydsk_write_dor (FLPYDSK_DOR_MASK_RESET | FLPYDSK_DOR_MASK_DMA);
 
 	//! in all cases; wait a little bit for the motor to spin up/turn off
-	wait_milliseconds (20);
+	//wait_milliseconds (20);
 }
 
 void flpydsk_lba_to_chs (int lba,int *head,int *track,int *sector) {
  
-   *head = ( lba % ( FLPY_SECTORS_PER_TRACK * 2 ) ) / ( FLPY_SECTORS_PER_TRACK );
-   *track = lba / ( FLPY_SECTORS_PER_TRACK * 2 );
-   *sector = lba % FLPY_SECTORS_PER_TRACK + 1;
+   *head = ( lba % ( FLPY_288_SECTORS_PER_TRACK * 2 ) ) / ( FLPY_288_SECTORS_PER_TRACK );
+   *track = lba / ( FLPY_288_SECTORS_PER_TRACK * 2 );
+   *sector = lba % FLPY_288_SECTORS_PER_TRACK + 1;
 }
 
 static const char * drive_types[8] = {

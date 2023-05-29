@@ -38,10 +38,12 @@ void *kmalloc(uint32_t size)
 
 void kfree(void *phys_addr)
 {
-	uint32_t block_amt = *((uint32_t *)((uint32_t)phys_addr-BLOCK_AMT_DESC_SIZE));
+	if (phys_addr)
+	{
+		uint32_t block_amt = *((uint32_t *)((uint32_t)phys_addr-BLOCK_AMT_DESC_SIZE));
 
-	kmalloc_free_blocks(phys_addr-BLOCK_AMT_DESC_SIZE, (uint32_t)block_amt);
-
+		kmalloc_free_blocks(phys_addr-BLOCK_AMT_DESC_SIZE, (uint32_t)block_amt);
+	}
 }
 
 // occupy a block

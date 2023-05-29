@@ -8,6 +8,7 @@
 #include "vfs.h"
 #include "timer.h"
 #include "pmm.h"
+#include "memory.h"
 #include "heap.h"
 #include <stdint.h>
 
@@ -16,10 +17,14 @@
 
 #include "vmm.h"
 
-uint32_t fid = 0; // current directory id
+char *path = 0; // current path
 
 void shell_main()
 {
+
+	path = kmalloc(3+1);
+
+	strcpy(path,"a:\\");
 
 	print("Please write the time in the following format (hh:mm): ");
 	char time_buff[5+1];
@@ -35,7 +40,7 @@ void shell_main()
 	while(true)
 	{
 		print("\n");
-		pwd(fid);
+		printf("%s",path);
 		print("> ");
 		char cmd_buff[300];
 		keyboard_input(-1,-1,cmd_buff,300);
@@ -70,6 +75,7 @@ void handle_command(char *cmd_buff)
 	else if(strcmp(cmd, "ls"))
 	{
 		//ls(fid);
+		handle_ls();
 	}
 	else if(strcmp(cmd, "cd"))
 	{
@@ -135,21 +141,64 @@ void handle_stats()
 	print_heap_stats();
 }
 
+void handle_ls()
+{
+
+	PFILELIST lst = volOpenDir(path);
+
+	while (lst)
+	{
+		printf("%s\n",lst->f.name);
+
+		volCloseFile(&lst->f);
+
+		PFILELIST tmp = lst->next;
+
+		kfree(lst);
+
+		lst = tmp;
+	}
+
+}
+
 void handle_cd(char *cmd_buff)
 {
 
-	// int param_count = count_substrings(cmd_buff, ' '); // including cmd
+	int param_count = count_substrings(cmd_buff, ' '); // including cmd
 
-	// if (param_count != 2)
-	// 	return;
+	if (param_count != 2)
+		return;
 
-	// char *param = seperate_and_take(cmd_buff, ' ', 1);
-	// strip_from_start(param, ' ');
-	// strip_from_end(param, ' ');
+	char *param = seperate_and_take(cmd_buff, ' ', 1);
+	strip_from_start(param, ' ');
+	strip_from_end(param, ' ');
 
-	// fid = get_fid_by_name(param,fid);
-	// kfree(param);
+	char *new_path;
 
+	if (count_substrings(param,'\\') == 1)
+	{
+		new_path = kmalloc(strlen(param)+strlen(path)+1+((path[strlen(path)-1] == '\\') ? 0 : 1));
+		strcpy(new_path,path);
+		strcpy(new_path+strlen(path)+((path[strlen(path)-1] == '\\') ? 0 : 1),param);
+
+		if (path[strlen(path)-1] != '\\')
+			new_path[strlen(path)] = '\\';
+	}
+	else
+	{
+		new_path = kmalloc(strlen(param)+1);
+		strcpy(new_path,param);
+	}
+
+	FILE f = volOpenFile(new_path);
+
+	if (f.flags == FS_DIRECTORY)
+		path = new_path;
+	else
+		kfree(new_path);
+
+	volCloseFile(&f);
+	kfree(param);
 	
 }
 
@@ -320,26 +369,48 @@ void handle_write(char *cmd_buff)
 void handle_cat(char *cmd_buff)
 {
 
-	// int param_count = count_substrings(cmd_buff, ' '); // including cmd
+	int param_count = count_substrings(cmd_buff, ' '); // including cmd
 
-	// if (param_count != 2)
-	// 	return;
+	if (param_count != 2)
+		return;
 
-	// char *param = seperate_and_take(cmd_buff, ' ', 1);
-	// strip_from_start(param, ' ');
-	// strip_from_end(param, ' ');
+	char *param = seperate_and_take(cmd_buff, ' ', 1);
+	strip_from_start(param, ' ');
+	strip_from_end(param, ' ');
 
-	// uint32_t file_fid = get_fid_by_name(param,fid);
+	char *file_path;
 
-	// if(file_fid == fid)
-	// {
-	// 	printf("file %s not found.", param);
-	// 	kfree(param);
-	// 	return;
-	// }
+	if (count_substrings(param,'\\') == 1)
+	{
+		file_path = kmalloc(strlen(param)+strlen(path)+1+((path[strlen(path)-1] == '\\') ? 0 : 1));
+		strcpy(file_path,path);
+		strcpy(file_path+strlen(path)+((path[strlen(path)-1] == '\\') ? 0 : 1),param);
 
-	// cat(file_fid);
-	// kfree(param);
+		if (path[strlen(path)-1] != '\\')
+			file_path[strlen(path)] = '\\';
+	}
+	else
+	{
+		file_path = kmalloc(strlen(param)+1);
+		strcpy(file_path,param);
+	}
+
+	FILE f = volOpenFile(file_path);
+
+	if (f.flags == FS_FILE)
+	{
+		char *buff = (char *)kmalloc(f.fileLength + 1);
+
+		volReadFile(&f,buff,f.fileLength);
+
+		buff[f.fileLength] = 0;
+
+		printf("%s",buff);
+	}
+
+	volCloseFile(&f);
+	kfree(param);
+	kfree(file_path);
 	
 }
 

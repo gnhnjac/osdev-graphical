@@ -137,6 +137,10 @@ void uint_to_str(int n, char *buffer, int base)
 
 int strlen(char *str)
 {
+
+	if (!str)
+		return 0;
+
 	int len = 0;
 	while (*str++)
 	{
@@ -156,6 +160,19 @@ void to_lower(char *str)
 
 		if ('A' <= str[i] && str[i] <= 'Z')
 			str[i] += 'a'-'A';
+
+	}
+
+}
+
+void to_upper(char *str)
+{
+
+	for(int i = 0; i < strlen(str); i++)
+	{
+
+		if ('a' <= str[i] && str[i] <= 'z')
+			str[i] -= 'a'-'A';
 
 	}
 
@@ -243,7 +260,7 @@ char *seperate_and_take(char* str, char seperator, int index)
 
 			}
 			str_start = str+i+1;
-			len = 0;
+			len = -1;
 			curr_index++;
 
 		}
@@ -274,7 +291,7 @@ int count_substrings(char *str, char seperator)
 
 	int count = 1;
 
-	for (int i = 0; i < strlen(str); i++)
+	for (int i = 1; i < strlen(str); i++)
 	{
 
 		if (str[i] == seperator)

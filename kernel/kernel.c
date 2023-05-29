@@ -8,13 +8,15 @@
 #include "rtl8139.h"
 #include "ps2.h"
 #include "network.h"
-#include "vfs.h"
 #include "multiboot.h"
 #include "pmm.h"
 #include "vmm.h"
 #include "heap.h"
 #include "floppy.h"
 #include "memory.h"
+#include "tmpfsys.h"
+#include "fat12fsys.h"
+#include "vfs.h"
 
 uint32_t kernel_size=0;
 
@@ -28,7 +30,7 @@ void deinit_special_regions()
 	pmmngr_deinit_region(0x100000 + kernel_size*512, pmmngr_get_block_count()/PMMNGR_BLOCKS_PER_BYTE);
 
 	//! deinit the region the vfs is in as its in use
-	pmmngr_deinit_region(VFS_BASE, VFS_CEILING-VFS_BASE);
+	pmmngr_deinit_region(TFSYS_BASE, TFSYS_CEILING-TFSYS_BASE);
 
 	//! deinit the region the kernel heap is in as its in use
 	pmmngr_deinit_region(HEAP_BASE, HEAP_CEILING-HEAP_BASE);
@@ -64,7 +66,7 @@ void kmain(uint32_t _, multiboot_info* bootinfo, uint32_t _kernel_size) {
 	keyboard_install();
 	mouse_install();
 
-	tmpfsys_init();
+	//tmpfsys_init();
 
 	//! set drive 0 as current drive
 	flpydsk_set_working_drive (0);
@@ -72,18 +74,10 @@ void kmain(uint32_t _, multiboot_info* bootinfo, uint32_t _kernel_size) {
 	//! install floppy disk to IR 38, uses IRQ 6
 	flpydsk_install ();
 
-	void *sect = flpydsk_read_sector(0);
+	// initialize the fat12 file system driver
+	fat12fsys_init ();
 
-	printf("sect:%x\n",sect);
-
-	for(int i = 0; i < 512; i++)
-	{
-
-		printf("%X",*(uint8_t *)((uint32_t)sect+i));
-
-	}
-
-	//shell_main(); // start terminal
+	shell_main(); // start terminal
 
 	return;
 }
