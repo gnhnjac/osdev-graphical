@@ -46,6 +46,21 @@ short *memsetw(short *dest, unsigned short val, int count)
     }
 }
 
+bool memcmp(char *m1, char *m2, uint32_t len)
+{
+
+   for (int i = 0; i < len; i++)
+   {
+
+      if (*(m1+i) != *(m2+i))
+         return false;
+
+   }
+
+   return true;
+
+}
+
 void hexdump(void *mem, int count)
 {
 

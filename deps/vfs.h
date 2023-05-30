@@ -33,9 +33,11 @@ typedef struct _FILE_SYSTEM {
 	char Name [8];
 	void	           (*Mount)      ();
 	void               (*Read)       (PFILE file, unsigned char* Buffer, unsigned int Length);
+	void               (*Write)      (PFILE file, unsigned char* Buffer, unsigned int Length);
 	void	           (*Close)      (PFILE);
 	FILE               (*Open)       (char* FileName);
-	PFILELIST              (*OpenDir)    (char* FileName);
+	PFILELIST          (*OpenDir)    (char* FileName);
+	void               (*Create)     (FILE directory, char *FileName, uint32_t flags);
 
 }FILESYSTEM, *PFILESYSTEM;
 
@@ -44,6 +46,7 @@ FILE volOpenFile (const char* fname);
 PFILELIST volOpenDir (const char* fname);
 void volCloseFile (PFILE file);
 void volReadFile (PFILE file, unsigned char* Buffer, unsigned int Length);
+void volCreateFile (PFILE file, char *fname, uint32_t flags);
 void volRegisterFileSystem (PFILESYSTEM fsys, unsigned int deviceID);
 void volUnregisterFileSystem (PFILESYSTEM fsys);
 void volUnregisterFileSystemByID (unsigned int deviceID);

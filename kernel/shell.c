@@ -132,6 +132,30 @@ void handle_command(char *cmd_buff)
 
 }
 
+char *join_path(char* p, char* ext)
+{
+
+	char *new_path;
+
+	if (count_substrings(ext,'\\') == 1)
+	{
+		new_path = kmalloc(strlen(ext)+strlen(p)+1+((p[strlen(p)-1] == '\\') ? 0 : 1));
+		strcpy(new_path,p);
+		strcpy(new_path+strlen(p)+((p[strlen(p)-1] == '\\') ? 0 : 1),ext);
+
+		if (p[strlen(p)-1] != '\\')
+			new_path[strlen(p)] = '\\';
+	}
+	else
+	{
+		new_path = kmalloc(strlen(ext)+1);
+		strcpy(new_path,ext);
+	}
+
+	return new_path;
+
+}
+
 void handle_stats()
 {
 
@@ -173,27 +197,13 @@ void handle_cd(char *cmd_buff)
 	strip_from_start(param, ' ');
 	strip_from_end(param, ' ');
 
-	char *new_path;
-
-	if (count_substrings(param,'\\') == 1)
-	{
-		new_path = kmalloc(strlen(param)+strlen(path)+1+((path[strlen(path)-1] == '\\') ? 0 : 1));
-		strcpy(new_path,path);
-		strcpy(new_path+strlen(path)+((path[strlen(path)-1] == '\\') ? 0 : 1),param);
-
-		if (path[strlen(path)-1] != '\\')
-			new_path[strlen(path)] = '\\';
-	}
-	else
-	{
-		new_path = kmalloc(strlen(param)+1);
-		strcpy(new_path,param);
-	}
-
+	char *new_path = join_path(path,param);
 	FILE f = volOpenFile(new_path);
 
-	if (f.flags == FS_DIRECTORY)
+	if (f.flags == FS_DIRECTORY){
+		kfree(path);
 		path = new_path;
+	}
 	else
 		kfree(new_path);
 
@@ -204,17 +214,41 @@ void handle_cd(char *cmd_buff)
 
 void handle_mkdir(char *cmd_buff)
 {
-	// int param_count = count_substrings(cmd_buff, ' '); // including cmd
+	int param_count = count_substrings(cmd_buff, ' '); // including cmd
 
-	// if (param_count != 2)
-	// 	return;
+	if (param_count != 2)
+		return;
 
-	// char *param = seperate_and_take(cmd_buff, ' ', 1);
-	// strip_from_start(param, ' ');
-	// strip_from_end(param, ' ');
+	char *param = seperate_and_take(cmd_buff, ' ', 1);
+	strip_from_start(param, ' ');
+	strip_from_end(param, ' ');
 
-	// mkdir(param,fid);
-	// kfree(param);
+	char *new_path = join_path(path,param);
+
+	char *dir_name = 0;
+
+	for (int i = strlen(new_path)-1; i >= 0; i--)
+	{
+
+		if (new_path[i] == '\\')
+		{
+			dir_name = new_path+i+1;
+			new_path[i] = 0;
+			break;
+		}
+
+	}
+
+	FILE fold = volOpenFile(new_path);
+
+	if (fold.flags == FS_DIRECTORY){
+		volCreateFile(&fold, dir_name, FS_DIRECTORY);
+	}
+
+	volCloseFile(&fold);
+
+	kfree(param);
+	kfree(new_path);
 
 	
 }
@@ -222,22 +256,41 @@ void handle_mkdir(char *cmd_buff)
 void handle_touch(char *cmd_buff)
 {
 
-	// int param_count = count_substrings(cmd_buff, ' '); // including cmd
+	int param_count = count_substrings(cmd_buff, ' '); // including cmd
 
-	// char *param = seperate_and_take(cmd_buff, ' ', 1);
-	// strip_from_start(param, ' ');
-	// strip_from_end(param, ' ');
+	if (param_count != 2)
+		return;
 
-	// if (get_fid_by_name(param,fid) != fid)
-	// {
-	// 	printf("file %s already exists",param);
-	// 	kfree(param);
-	// 	return;
-	// }
+	char *param = seperate_and_take(cmd_buff, ' ', 1);
+	strip_from_start(param, ' ');
+	strip_from_end(param, ' ');
 
-	// touch(param,fid);
-	// kfree(param);
+	char *new_path = join_path(path,param);
 
+	char *f_name = 0;
+
+	for (int i = strlen(new_path)-1; i >= 0; i--)
+	{
+
+		if (new_path[i] == '\\')
+		{
+			f_name = new_path+i+1;
+			new_path[i] = 0;
+			break;
+		}
+
+	}
+
+	FILE fold = volOpenFile(new_path);
+
+	if (fold.flags == FS_DIRECTORY){
+		volCreateFile(&fold, f_name, FS_FILE);
+	}
+
+	volCloseFile(&fold);
+
+	kfree(param);
+	kfree(new_path);
 	
 }
 
@@ -378,23 +431,7 @@ void handle_cat(char *cmd_buff)
 	strip_from_start(param, ' ');
 	strip_from_end(param, ' ');
 
-	char *file_path;
-
-	if (count_substrings(param,'\\') == 1)
-	{
-		file_path = kmalloc(strlen(param)+strlen(path)+1+((path[strlen(path)-1] == '\\') ? 0 : 1));
-		strcpy(file_path,path);
-		strcpy(file_path+strlen(path)+((path[strlen(path)-1] == '\\') ? 0 : 1),param);
-
-		if (path[strlen(path)-1] != '\\')
-			file_path[strlen(path)] = '\\';
-	}
-	else
-	{
-		file_path = kmalloc(strlen(param)+1);
-		strcpy(file_path,param);
-	}
-
+	char *file_path = join_path(path,param);
 	FILE f = volOpenFile(file_path);
 
 	if (f.flags == FS_FILE)
@@ -406,6 +443,8 @@ void handle_cat(char *cmd_buff)
 		buff[f.fileLength] = 0;
 
 		printf("%s",buff);
+
+		kfree(buff);
 	}
 
 	volCloseFile(&f);
@@ -434,26 +473,26 @@ void handle_rm(char *cmd_buff)
 void handle_size(char *cmd_buff)
 {
 
-	// int param_count = count_substrings(cmd_buff, ' '); // including cmd
+	int param_count = count_substrings(cmd_buff, ' '); // including cmd
 
-	// if (param_count != 2)
-	// 	return;
+	if (param_count != 2)
+		return;
 
-	// char *param = seperate_and_take(cmd_buff, ' ', 1);
-	// strip_from_start(param, ' ');
-	// strip_from_end(param, ' ');
+	char *param = seperate_and_take(cmd_buff, ' ', 1);
+	strip_from_start(param, ' ');
+	strip_from_end(param, ' ');
 
-	// uint32_t file_fid = get_fid_by_name(param,fid);
+	char *file_path = join_path(path,param);
+	FILE f = volOpenFile(file_path);
 
-	// if(file_fid == fid)
-	// {
-	// 	printf("file %s not found.", param);
-	// 	kfree(param);
-	// 	return;
-	// }
+	if(f.flags != FS_INVALID)
+	{
+		printf("file %s has size %d bytes",f.name,f.fileLength);
+	}
 
-	// printf("file %s has size %d bytes",param,size(file_fid));
-	// kfree(param);
+	volCloseFile(&f);
+	kfree(param);
+	kfree(file_path);
 	
 }
 

@@ -90,6 +90,15 @@ void volReadFile (PFILE file, unsigned char* Buffer, unsigned int Length) {
 	}
 }
 
+void volCreateFile (PFILE file, char *fname, uint32_t flags) {
+
+	if (file)
+	{
+		if (_FileSystems [file->deviceID])
+			_FileSystems[file->deviceID]->Create (*file,fname,flags);
+	}
+}
+
 void volRegisterFileSystem (PFILESYSTEM fsys, unsigned int deviceID) {
 
 	static int i=0; // is in the data segment

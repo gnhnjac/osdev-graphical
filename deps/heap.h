@@ -12,6 +12,7 @@
 
 //refs
 void *kmalloc(uint32_t size);
+void *kcalloc(uint32_t size);
 void kfree(void *phys_addr);
 static inline void _alloc_mmap_set(int bit);
 static inline void _alloc_mmap_unset(int bit);

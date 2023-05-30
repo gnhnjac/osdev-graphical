@@ -36,6 +36,17 @@ void *kmalloc(uint32_t size)
 
 }
 
+void *kcalloc(uint32_t size)
+{
+
+	void *ptr = kmalloc(size);
+
+	memset(ptr,0,size);
+
+	return ptr;
+
+}
+
 void kfree(void *phys_addr)
 {
 	if (phys_addr)
