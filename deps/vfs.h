@@ -11,8 +11,20 @@ typedef struct _FILE {
 	uint32_t    position;
 	uint32_t    currentCluster;
 	uint32_t    deviceID;
+	uint16_t    TimeCreated;
+	uint16_t    DateCreated;
 
 }FILE, *PFILE;
+
+// date format:
+// Bits 0-4: Day (0-31)
+// Bits 5-8: Month (0-12)
+// Bits 9-15: Year
+
+// time format:
+// Bits 0-4: Second
+// Bits 5-10: Minute
+// Bits 11-15: Hour
 
 typedef struct _FILELIST *PFILELIST;
 

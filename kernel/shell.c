@@ -170,9 +170,20 @@ void handle_ls()
 
 	PFILELIST lst = volOpenDir(path);
 
+	uint32_t sz = 0;
+	uint32_t fls = 0;
+	uint32_t dirs = 0;
+
 	while (lst)
 	{
-		printf("%s\n",lst->f.name);
+		printf("%s    %d %d-%d-%d\n",lst->f.name,lst->f.fileLength,lst->f.DateCreated&0x1F,(lst->f.DateCreated&0x1F0)>>5,(lst->f.DateCreated&(0b1111111<<9))>>10);
+
+		sz += lst->f.fileLength;
+
+		if (lst->f.flags == FS_DIRECTORY)
+			dirs++;
+		else
+			fls++;
 
 		volCloseFile(&lst->f);
 
@@ -181,7 +192,11 @@ void handle_ls()
 		kfree(lst);
 
 		lst = tmp;
+
 	}
+
+	printf("%d File(s)    %d Bytes.\n",fls,sz);
+	printf("%d Dir(s)",dirs);
 
 }
 
@@ -436,15 +451,13 @@ void handle_cat(char *cmd_buff)
 
 	if (f.flags == FS_FILE)
 	{
-		char *buff = (char *)kmalloc(f.fileLength + 1);
+		char *buff = "x";
 
-		volReadFile(&f,buff,f.fileLength);
-
-		buff[f.fileLength] = 0;
-
-		printf("%s",buff);
-
-		kfree(buff);
+		while (!f.eof)
+		{
+			volReadFile(&f,buff,1);
+			printf("%c",*buff);
+		}
 	}
 
 	volCloseFile(&f);

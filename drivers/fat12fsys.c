@@ -148,6 +148,8 @@ FILE fat12fsys_root_open (char* FileName) {
 				file.eof            = 0;
 				file.position = 0;
 				file.fileLength     = directory->FileSize;
+				file.DateCreated = directory->DateCreated;
+				file.TimeCreated = directory->TimeCreated;  
 
 				//! set file type
 				if (directory->Attrib == 0x10)
@@ -417,12 +419,7 @@ void fat12fsys_rw (PFILE file, unsigned char* Buffer, unsigned int Length, flopp
 		}
 		else
 		{
-			// if (file->flags == FS_DIRECTORY)
-			// {
 
-			// 	printf("writing to sector %d,length:%d",physSector,Length);
-
-			// }
 			//! read in sector
 			sector = (unsigned char*) flpydsk_read_sector ( physSector );
 
@@ -431,6 +428,8 @@ void fat12fsys_rw (PFILE file, unsigned char* Buffer, unsigned int Length, flopp
 
 			flpydsk_write_sector ( physSector, sector );
 		}
+
+		uint32_t old_pos = file->position;
 
 		if (Length < SECTOR_SIZE-file->position)
 		{
@@ -462,8 +461,6 @@ void fat12fsys_rw (PFILE file, unsigned char* Buffer, unsigned int Length, flopp
 			nextCluster >>= 4;      //grab high 12 bits
 		else
 			nextCluster &= 0x0FFF;   //grab low 12 bits
-
-		uint32_t old_pos = file->position;
 
 		Length -= (SECTOR_SIZE-old_pos);
 
@@ -539,6 +536,8 @@ FILE fat12fsys_subdir_open (FILE kFile, char* filename)
 				file.fileLength     = pkDir->FileSize;
 				file.eof            = 0;
 				file.position =     0;
+				file.DateCreated = pkDir->DateCreated;
+				file.TimeCreated = pkDir->TimeCreated;
 
 				//! set file type
 				if (pkDir->Attrib == 0x10)
@@ -578,7 +577,6 @@ PFILELIST fat12fsys_open_dir (char *path)
 	}
 
 	int sector = 0;
-
 	//! read directory
 	while ( true ) {
 
@@ -606,7 +604,6 @@ PFILELIST fat12fsys_open_dir (char *path)
 
 		//! 16 entries in buffer (per sector of the directory)
 		for (unsigned int i = 0; i < 16; i++) {
-
 			if (pkDir->FirstCluster != 0)
 			{
 				FILE file;
@@ -622,6 +619,8 @@ PFILELIST fat12fsys_open_dir (char *path)
 				file.fileLength     = pkDir->FileSize;
 				file.eof            = 0;
 				file.position = 0;
+				file.DateCreated = pkDir->DateCreated;
+				file.TimeCreated = pkDir->TimeCreated;
 
 				//! set file type
 				if (pkDir->Attrib == 0x10)
