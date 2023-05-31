@@ -7,29 +7,33 @@ PREREQUISITES:
 mingw32 -> make, ld, gcc
 nasm
 python 3.x
-windows 10+
+windows 32 bit
 qemu emulator/bochs emulator (bochs is much slower)
 dd
 WinImage
 
 CURRENTLY SUPPORTS:
 
-BOOT FROM VIRTUAL FLOPPY DRIVE WITH FAT12 FS
-PS/2 DRIVERS (PIT,KEYBOARD,MOUSE)
-SHELL GUI
-VMM AND PMM (AND KHEAP MEMORY ALLOCATION)
+Boot from virtualfloppy drive with fat12 fs minidriver
+PS/2 drivers (pit,keyboard,mouse)
+Shell gui
+VMM and PMM (and kheap memory allocation)
 IDT,ISRS,IRQS
-VIRTUAL FILE SYSTEM
+3.5 inch floppy driver
+Virtual file system with volume manager, fat12 filesystem and RAM file system
 
 BUILD with make in the root.
 
 to start, run "make runq" to run with QEMU or "make run" to run with BOCHS, change the parameter in the makefile accordingly.
 
-type help in the shell to get a list of commands, type help COMMAND to get help for a specific command.
+to view fat12 filesystem run "make inspect", the filesystem builds from the folder "root" in the make directory, put all the stuff in there.
 
-PHYSICAL MEMORY STRUCTURE:
+type help in the shell to get a list of commands, type "help COMMAND" to get help for a specific command.
 
-1MB-2MB -> KERNEL
+VIRTUAL MEMORY STRUCTURE:
+
+0MB-1MB -> STACK,BIOS
+1MB-2MB -> KERNEL + GDT + IDT + PMM
 3MB-4MB -> KHEAP
-4MB-6MB -> VFS
+4MB-6MB -> RAM FS
 3GB -> KERNEL
