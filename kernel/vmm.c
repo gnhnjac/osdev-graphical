@@ -103,6 +103,7 @@ void vmmngr_map_page (void* phys, void* virt) {
    	//! map in the table (Can also just do *entry |= 3) to enable these bits
    	pd_entry_add_attrib (e, I86_PDE_PRESENT);
    	pd_entry_add_attrib (e, I86_PDE_WRITABLE);
+   	pd_entry_add_attrib (e, I86_PDE_USER);
    	pd_entry_set_frame (e, (void *)table);
    }
 
@@ -114,6 +115,7 @@ void vmmngr_map_page (void* phys, void* virt) {
 
    //! map it in (Can also do (*page |= 3 to enable..)
    pt_entry_set_frame ( page, (void *) phys);
+   pt_entry_add_attrib( page, I86_PTE_USER);
    pt_entry_add_attrib ( page, I86_PTE_PRESENT);
 }
 

@@ -12,11 +12,11 @@ static MOUNT_INFO _MountInfo;
 //! File Allocation Table (FAT)
 uint8_t FAT [SECTOR_SIZE*2];
 
-FILELIST a;
-uint32_t filelist_sz = (char *)(&a+1) - (char*)(&a);
+// FILELIST a;
+// uint32_t filelist_sz = (char *)(&a+1) - (char*)(&a);
 
-FILE b;
-uint32_t file_sz = (char *)(&b+1) - (char*)(&b);
+// FILE b;
+// uint32_t file_sz = (char *)(&b+1) - (char*)(&b);
 
 FILE fat12fsys_open (char *path)
 {
@@ -210,7 +210,7 @@ void fat12fsys_create(FILE kFile, char* FileName, uint32_t flags)
 				break;
 			buf = kmalloc(512);
 			fat12fsys_read (&kFile, buf, 512);
-			memcpy((char *)&tmpkFile,(const char *)&kFile, file_sz);
+			memcpy((char *)&tmpkFile,(const char *)&kFile, sizeof(FILE));
 		}
 
 		//! set directory
@@ -628,7 +628,7 @@ PFILELIST fat12fsys_open_dir (char *path)
 				else
 					file.flags = FS_FILE;
 
-				PFILELIST tmp = (PFILELIST)kmalloc(filelist_sz);
+				PFILELIST tmp = (PFILELIST)kmalloc(sizeof(FILELIST));
 
 				tmp->f = file;
 				tmp->next = 0;

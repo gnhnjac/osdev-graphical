@@ -62,6 +62,37 @@ _pmmngr_get_PDBR:
    mov   eax, cr3
    ret
 
+global _gdt_load
+extern __gdtr
+
+_gdt_load:
+   lgdt [__gdtr]
+   ret
+
+; user/kernel mode procedures
+
+global _enter_usermode
+
+_enter_usermode:
+
+   cli ; clear interrupts while performing the switch
+   mov ax, 0x23 ; user mode data selector + 3 lower bytes is RPL 3
+   mov ds, ax
+   mov es, ax
+   mov fs, ax
+   mov gs, ax
+
+   push 0x23      ; SS, notice it uses same selector as above
+   push esp    ; ESP
+   pushfd         ; EFLAGS
+   push 0x1b      ; CS, user mode code selector is 0x18. With RPL 3 this is 0x1b
+   lea eax, [a]      ; EIP first
+   push eax
+
+   iretd
+a:
+   ret ;  jumps here then immediately returns
+
 ; idt data
 
 global _idt_load

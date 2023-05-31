@@ -11,7 +11,9 @@ uint32_t META_SIZE = (char *)(&a+1) - (char*)(&a);
 dir_record b;
 uint32_t RECORD_SIZE = (char *)(&b+1) - (char*)(&b);
 
-void tmpfsys_init()
+FILESYSTEM _FSysTmp;
+
+void tfsys_init()
 {
 	char *base = (char *)TFSYS_BASE;
 	while ((uint32_t)base < TFSYS_CEILING)
@@ -20,58 +22,18 @@ void tmpfsys_init()
 
 		base += BLOCK_SIZE;
 	}
-	create_base_dir("root");
+	create_base_dir("\\");
 
-}
+	//! initialize filesystem struct
+	strcpy (_FSysTmp.Name, "TMPFSYS");
+	_FSysTmp.Open      = tfsys_open;
+	_FSysTmp.Read      = tfsys_read;
+	_FSysTmp.Close     = tfsys_close;
+	_FSysTmp.OpenDir   = tfsys_open_dir;
+	_FSysTmp.Create    = tfsys_create;
 
-void set_tfsys_screen_stats()
-{
-
-	char *base = (char *)TFSYS_BASE;
-
-	uint32_t blocks = 0;
-	uint32_t files = 0;
-	uint32_t directories = 0;
-
-	while ((uint32_t)base < TFSYS_CEILING)
-	{
-
-		if (((block_metadata *)base)->occupied)
-		{
-
-			blocks++;
-
-			if (((block_metadata *)base)->type == Dir)
-				directories++;
-			else if(((block_metadata *)base)->type == File)
-				files++;
-
-		}
-
-		base += BLOCK_SIZE;
-
-	}
-
-	int cursor_coords = get_cursor();
-	set_cursor_coords(0,VFS_OFF);
-	printf("BLKS=%d, FLS=%d, DIRS=%d   ",blocks,files,directories);
-	set_cursor(cursor_coords);
-
-}
-
-void ls(uint32_t fid)
-{
-	dir_record *cur_record = (dir_record *)((char *)get_faddr_by_id(fid)+META_SIZE);
-	while (cur_record)
-	{
-		if(get_faddr_by_id(cur_record->fid)->type == File)
-			print("F ");
-		else
-			print("D ");
-
-		printf("%s, %dKiB, id=%d\n",cur_record->name,get_fsize(cur_record->fid),cur_record->fid);
-		cur_record = cur_record->next_record;
-	}
+	//! register ourself to volume manager
+	volRegisterFileSystem ( &_FSysTmp, 't'-'a' );
 
 }
 
@@ -196,15 +158,20 @@ void write(uint32_t fid, char *chr, int raw)
 
 }
 
-void cat(uint32_t fid)
+void tfsys_read(PFILE file, unsigned char* Buffer, unsigned int Length )
 {
-	block_metadata *meta = get_faddr_by_id(fid);
+	block_metadata *meta = get_faddr_by_id(file->id);
 	char *ptr = (char *)((char *)meta+META_SIZE);
 	uint32_t read = 0;
-	while(meta && read < meta->data_pointer)
+	while(meta && read < meta->data_pointer && Length > 0)
 	{
-		if(*ptr)
-			printf("%c",*ptr);
+		if (read >= file->position)
+		{
+			sprintf(Buffer, "%c",*ptr);
+			Buffer++;
+			Length--;
+			file->position++;
+		}
 
 		ptr++;
 		read++;
@@ -217,6 +184,9 @@ void cat(uint32_t fid)
 		}
 
 	}
+
+	if (!meta)
+		file->eof = 1;
 
 }
 
@@ -312,8 +282,8 @@ block_metadata *create_block(block_metadata *parent_block, block_type type, char
 
 	metadata->data_pointer = 0;
 
-	memcpy(metadata->name,name,min(9,strlen(name)));
-	metadata->name[min(9,strlen(name))] = '\0';
+	memcpy(metadata->name,name,min(31,strlen(name)));
+	metadata->name[min(31,strlen(name))] = '\0';
 
 	if(type == Dir || type == File)
 		metadata->fid = get_next_fid();
@@ -351,8 +321,6 @@ block_metadata *create_block(block_metadata *parent_block, block_type type, char
 	}
 
 	kfree(metadata);
-
-	set_tfsys_screen_stats();
 
 	return base;
 }
@@ -426,8 +394,8 @@ block_metadata *create_base_dir(char *name)
 
 	metadata->data_pointer = 0;
 
-	memcpy(metadata->name,name,min(9,strlen(name)));
-	metadata->name[min(9,strlen(name))] = '\0';
+	memcpy(metadata->name,name,min(31,strlen(name)));
+	metadata->name[min(31,strlen(name))] = '\0';
 
 	metadata->fid = 0;
 
@@ -453,8 +421,6 @@ block_metadata *create_base_dir(char *name)
 	kfree(metadata);
 	kfree(false_dir);
 	kfree(false_parent);
-
-	set_tfsys_screen_stats();
 
 	return base;
 
@@ -553,8 +519,180 @@ bool free_block(uint32_t bid)
 
 	memset((char *)block,0,BLOCK_SIZE);
 
-	set_tfsys_screen_stats();
-
 	return true;
+
+}
+
+FILE tfsys_open (char *path)
+{
+
+	if (strcmp(path,"\\") || strcmp(path, ""))
+	{
+
+		FILE base_dir;
+		base_dir.id = 0;
+		base_dir.flags = FS_DIRECTORY;
+		base_dir.name[0] = '\\';
+		base_dir.name[1] = 0;
+		return base_dir;
+
+	}
+
+	// path looks like this: \folder\folder\file.txt
+
+	int path_substrings = count_substrings(path, '\\'); // \ is our seperator
+
+	FILE curr_file;
+
+	for (int i = 0; i < path_substrings; i++) // iterate over path
+	{
+
+		char *curr_filename = seperate_and_take(path,'\\',i + 1);
+
+		if (i == 0) // the first parameter is in the root folder
+		{
+			curr_file = tfsys_root_open(curr_filename);
+		}
+		else
+		{
+			curr_file = tfsys_subdir_open(curr_file, curr_filename); // our current file is a subdirectory
+		}
+
+		kfree(curr_filename);
+
+		if (curr_file.flags == FS_INVALID)
+			break; // an error has occured, do not continue
+
+	}
+
+	return curr_file;
+
+
+}
+
+FILE tfsys_root_open (char* fname) {
+	
+	FILE file;
+
+	dir_record *cur_record = (dir_record *)((char *)get_faddr_by_id(0)+META_SIZE);
+
+	while (cur_record)
+	{
+		if(strcmp(cur_record->name,fname))
+		{
+			strcpy(file.name,cur_record->name);
+			file.eof = 0;
+			file.position = 0;
+			file.fileLength = size(cur_record->fid);
+			file.DateCreated = 0;
+			file.TimeCreated = 0;
+			file.flags = (get_faddr_by_id(cur_record->fid)->type == File) ? FS_FILE : FS_DIRECTORY;
+			file.id = cur_record->fid;
+			return file;
+		}
+		cur_record = cur_record->next_record;
+	}
+
+	file.flags = FS_INVALID;
+	return file;
+	
+}
+
+FILE tfsys_subdir_open (FILE dir, char *fname)
+{
+
+	FILE file;
+
+	if (dir.flags != FS_DIRECTORY)
+	{
+		file.flags = FS_INVALID;
+		return file;
+	}
+
+	dir_record *cur_record = (dir_record *)((char *)get_faddr_by_id(dir.id)+META_SIZE);
+
+	while (cur_record)
+	{
+		if(strcmp(cur_record->name,fname))
+		{
+			strcpy(file.name,cur_record->name);
+			file.eof = 0;
+			file.position = 0;
+			file.fileLength = size(cur_record->fid);
+			file.DateCreated = 0;
+			file.TimeCreated = 0;
+			file.flags = (get_faddr_by_id(cur_record->fid)->type == File) ? FS_FILE : FS_DIRECTORY;
+			file.id = cur_record->fid;
+			return file;
+		}
+		cur_record = cur_record->next_record;
+	}
+
+	file.flags = FS_INVALID;
+	return file;
+
+}
+
+PFILELIST tfsys_open_dir (char *path)
+{
+	FILE dir = tfsys_open(path);
+
+	if (dir.flags != FS_DIRECTORY)
+		return 0;
+
+	PFILELIST lst = 0;
+	PFILELIST head = 0;
+
+	dir_record *cur_record = (dir_record *)((char *)get_faddr_by_id(dir.id)+META_SIZE);
+	while (cur_record)
+	{
+		FILE file;
+		strcpy(file.name, cur_record->name);
+		file.eof = 0;
+		file.position = 0;
+		file.fileLength = size(cur_record->fid);
+		file.DateCreated = 0;
+		file.TimeCreated = 0;
+		file.flags = (get_faddr_by_id(cur_record->fid)->type == File) ? FS_FILE : FS_DIRECTORY;
+
+		PFILELIST tmp = (PFILELIST)kmalloc(sizeof(FILELIST));
+
+		tmp->f = file;
+		tmp->next = 0;
+
+		if (lst)
+		{
+			lst->next = tmp;
+			lst = tmp;
+		}
+		else
+		{
+			lst = tmp;
+			head = lst;
+		}
+
+		cur_record = cur_record->next_record;
+	}
+
+	return head;
+
+}
+
+void tfsys_close (PFILE file) {
+
+	if (file)
+		file->flags = FS_INVALID;
+}
+
+void tfsys_create (FILE file, char *fname, uint32_t flags)
+{
+
+	if (file.flags == FS_DIRECTORY)
+	{
+		if (flags == FS_DIRECTORY)
+			mkdir(fname, file.id);
+		else if(flags == FS_FILE)
+			touch(fname, file.id);
+	}
 
 }

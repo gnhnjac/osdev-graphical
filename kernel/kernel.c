@@ -1,4 +1,5 @@
 #include "screen.h"
+#include "gdt.h"
 #include "idt.h"
 #include "irq.h"
 #include "timer.h"
@@ -44,6 +45,10 @@ void kmain(uint32_t _, multiboot_info* bootinfo, uint32_t _kernel_size) {
 
 	kernel_size = _kernel_size;
 
+	gdt_install();
+	idt_install();
+	irq_install();
+
 	//! get memory size in KB (1st mb + 1-16mb memory + 16+ memory)
 	uint32_t mem_size = 1024 + bootinfo->m_memoryLo + bootinfo->m_memoryHi*64; 
 	pmmngr_init(mem_size, (uint32_t *)(0x100000 + kernel_size*512));
@@ -54,8 +59,6 @@ void kmain(uint32_t _, multiboot_info* bootinfo, uint32_t _kernel_size) {
 
 	vmmngr_initialize();
 
-	idt_install();
-	irq_install();
 	timer_install();
 	heap_init();
 
@@ -76,6 +79,9 @@ void kmain(uint32_t _, multiboot_info* bootinfo, uint32_t _kernel_size) {
 
 	// initialize the fat12 file system driver
 	fat12fsys_init ();
+
+	// initialize the temp file system driver
+	tfsys_init();
 
 	shell_main(); // start terminal
 

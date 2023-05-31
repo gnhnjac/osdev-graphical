@@ -1,7 +1,8 @@
 #include <stdbool.h>
 #include <stdint.h>
+#include "vfs.h"
 
-#define sizeof(type) (char *)(&type+1) - (char*)(&type)
+//#define sizeof(type) (char *)(&type+1) - (char*)(&type)
 
 #define TFSYS_BASE 0x400000
 #define TFSYS_CEILING 0x600000
@@ -20,7 +21,7 @@ struct b_metadata
 	uint32_t bid; // block id -> unique to all types
 	uint32_t data_pointer; // pointer to next free space in data part of file starting from the start of the data part.
 	bool occupied;
-	char name[10];
+	char name[32];
 };
 
 
@@ -29,7 +30,7 @@ typedef struct d_record dir_record; // directory record of file/directory/...
 struct d_record
 {
 	uint32_t fid;
-	char name[10];
+	char name[32];
 	bool occupied;
 	dir_record *next_record;
 
@@ -37,9 +38,7 @@ struct d_record
 
 
 //refs
-void tmpfsys_init();
-void set_tfsys_screen_stats();
-void ls(uint32_t fid);
+void tfsys_init();
 void pwd(uint32_t fid);
 void mkdir(char *name, uint32_t parent_fid);
 void touch(char *name, uint32_t parent_fid);
@@ -47,7 +46,7 @@ void concat(char *name, uint32_t fid1, uint32_t fid2, uint32_t pid);
 uint32_t get_fid_by_name(char *name, uint32_t fid);
 void reset_file(uint32_t fid);
 void write(uint32_t fid, char *chr, int raw);
-void cat(uint32_t fid);
+void tfsys_read(PFILE file, unsigned char* Buffer, unsigned int Length );
 char get_nth_char(uint32_t fid, uint32_t n);
 uint32_t size(uint32_t fid);
 uint32_t get_next_fid();
@@ -63,3 +62,9 @@ uint32_t create_dir(uint32_t parent_fid, char *name);
 uint32_t create_file(uint32_t parent_fid, char *name);
 void extend_file(uint32_t fid);
 bool free_block(uint32_t bid);
+FILE tfsys_open (char *path);
+FILE tfsys_root_open (char* fname);
+FILE tfsys_subdir_open (FILE dir, char *fname);
+PFILELIST tfsys_open_dir (char *path);
+void tfsys_close (PFILE file);
+void tfsys_create (FILE file, char *fname, uint32_t flags);
