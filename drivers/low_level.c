@@ -34,3 +34,23 @@ unsigned long inl( unsigned short port ) {
 void outl( unsigned short port , unsigned long data ) {
 	__asm__ ("outl %%eax, %%dx" : :"a" ( data ), "d" ( port ));
 }
+
+void raise_int (uint8_t Interrupt)
+{
+    asm volatile
+    (
+        "movb %0, point+1\n"
+        "point:\n"
+        "int $0\n"
+        : /*output*/ : "r" (Interrupt) /*input*/ : /*clobbered */
+    );
+}
+
+void set_eax(uint32_t val)
+{
+
+	__asm__ ("mov %0, %%eax\n\t"
+                     : /* no output */
+                     : "a" (val));
+
+}

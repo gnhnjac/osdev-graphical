@@ -1,7 +1,7 @@
 #include <stdint.h>
 
 #pragma pack(1)
-struct tss_entry {
+typedef struct {
 	uint32_t prevTss; // prev segment selector
 	uint32_t esp0;
 	uint32_t ss0;
@@ -29,9 +29,9 @@ struct tss_entry {
 	uint32_t ldt;
 	uint16_t trap;
 	uint16_t iomap;
-};
+} tss_entry;
 #pragma pack()
 
 //refs
-// void flush_tss (uint16_t sel);
-// void install_tss (uint32_t idx, uint16_t kernelSS, uint16_t kernelESP);
+void install_tss (uint32_t idx, uint16_t kernelSS, uint16_t kernelESP);
+void tss_set_stack (uint16_t kernelSS, uint16_t kernelESP);

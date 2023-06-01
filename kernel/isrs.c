@@ -126,7 +126,7 @@ void fault_handler(struct regs *r)
             print_at("Reserved", 0, 0, 0);
         else
             print_at(exception_messages[r->int_no], 0, 0, 0);
-        print(" Exception. System Halted!\n");
+        printf(" Exception. System Halted! Error Code: 0b%b\nCode faulted at 0x%U",r->err_code,r->eip);
         for (;;);
     }
 }

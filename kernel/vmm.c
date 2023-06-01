@@ -117,6 +117,7 @@ void vmmngr_map_page (void* phys, void* virt) {
    pt_entry_set_frame ( page, (void *) phys);
    pt_entry_add_attrib( page, I86_PTE_USER);
    pt_entry_add_attrib ( page, I86_PTE_PRESENT);
+   pt_entry_add_attrib ( page, I86_PTE_WRITABLE);
 }
 
 void vmmngr_pdirectory_clear(pdirectory *dir)

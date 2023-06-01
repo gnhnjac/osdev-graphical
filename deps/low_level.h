@@ -1,3 +1,4 @@
+#include <stdint.h>
 //refs
 unsigned char inb( unsigned short port );
 void outb( unsigned short port , unsigned char data );
@@ -5,3 +6,5 @@ unsigned short inw( unsigned short port );
 void outw( unsigned short port , unsigned short data );
 unsigned long inl( unsigned short port );
 void outl( unsigned short port , unsigned long data );
+void raise_int (uint8_t Interrupt);
+void set_eax(uint32_t val);

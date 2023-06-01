@@ -18,6 +18,11 @@
 #include "tmpfsys.h"
 #include "fat12fsys.h"
 #include "vfs.h"
+#include "tss.h"
+
+#include "low_level.h"
+#include "sysapi.h"
+#include "user.h"
 
 uint32_t kernel_size=0;
 
@@ -85,7 +90,32 @@ void kmain(uint32_t _, multiboot_info* bootinfo, uint32_t _kernel_size) {
 	// initialize the temp file system driver
 	tfsys_init();
 
-	shell_main(); // start terminal
+	// initialize the system call api
+	install_syscalls();
 
-	return;
+	//! initialize TSS
+	install_tss (5,0x10,0);
+
+	int stack=0;
+	__asm__ ("push %eax");
+	__asm__ ("mov %%esp,%%eax" : "=esp" ( stack ));
+	__asm__ ("pop %eax");
+
+	tss_set_stack (0x10,stack);
+
+	enter_usermode();
+
+	//printf("hola?");	
+
+	static char testStr[]="\n\rWe are inside of your computer...";
+	set_eax(0);
+	__asm__ ("push %%edx"  : : "d" ( testStr ));
+	raise_int(0x80);
+
+	//! cant do CLI+HLT here, so loop instead
+	while(1) continue;
+
+	//shell_main(); // start terminal
+
+	//return;
 }

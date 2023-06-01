@@ -69,12 +69,21 @@ _gdt_load:
    lgdt [__gdtr]
    ret
 
+global _flush_tss
+
+_flush_tss:
+   cli
+   mov ax, 0x2b ; the tss segment selector (5 (6th entry)*8)|3 (DPL)
+   ltr ax ; load the tss segment descriptor
+   sti
+   ret
+
 ; user/kernel mode procedures
 
 global _enter_usermode
 
 _enter_usermode:
-
+   
    cli ; clear interrupts while performing the switch
    mov ax, 0x23 ; user mode data selector + 3 lower bytes is RPL 3
    mov ds, ax
@@ -85,13 +94,19 @@ _enter_usermode:
    push 0x23      ; SS, notice it uses same selector as above
    push esp    ; ESP
    pushfd         ; EFLAGS
+   pop eax
+   or eax, 0x200  ; enable IF in EFLAGS
+   push eax
    push 0x1b      ; CS, user mode code selector is 0x18. With RPL 3 this is 0x1b
    lea eax, [a]      ; EIP first
    push eax
-
    iretd
 a:
+   
+   add esp, 4
+
    ret ;  jumps here then immediately returns
+
 
 ; idt data
 
@@ -281,7 +296,7 @@ isr_common_stub:
 %assign i 0
 %rep    16
 _irq%+i:
-    cli
+    ;cli
     push byte 0 ; these dont push an error so for stack consistency we push 0
     push byte i ; ith interrupt in our irq table
     jmp irq_common_stub
@@ -313,5 +328,16 @@ irq_common_stub:
     pop es
     pop ds
     popa
-    add esp, 8
+    add esp, 8 ; the pushes we did earlier (2 ints so 8 bytes)
     iret
+
+; syscall stub
+
+global _syscall_stub
+extern _syscall_handler
+
+_syscall_stub:
+   pusha
+   call _syscall_handler
+   popa
+   iret
