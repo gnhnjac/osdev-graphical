@@ -88,7 +88,7 @@ void enable_mouse()
 
 }
 
-void mouse_handler(struct regs *r)
+void mouse_handler()
 {
 
 	#ifdef BOCHS

@@ -105,7 +105,7 @@ void irq_handler(struct regs *r)
 {
 
     /* This is a blank function pointer */
-    void (*handler)(struct regs *r);
+    void (*handler)();
 
     /* Find out if we have a custom handler to run for this
     *  IRQ, and then finally, run it */
@@ -113,7 +113,7 @@ void irq_handler(struct regs *r)
 
     if (handler)
     {
-        handler(r);
+        handler();
     }
 
     /* If the IDT entry that was invoked was greater than 40

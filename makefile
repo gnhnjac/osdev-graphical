@@ -80,5 +80,5 @@ inspect:
 	@WINIMAGE os-image
 
 # Disassemble our kernel - might be useful for debugging .
-kernel.dis: kernel.bin
+kernel.dis: kernel.sys
 	@ndisasm -b 32 $< > $@

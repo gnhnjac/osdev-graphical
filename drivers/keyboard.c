@@ -199,7 +199,7 @@ char kybrd_ctrl_read_status () {
 }
 
 /* Handles the keyboard interrupt */
-void keyboard_handler(struct regs *r)
+void keyboard_handler()
 {
 
     if (!(kybrd_ctrl_read_status()&1))

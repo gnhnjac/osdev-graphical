@@ -1,4 +1,5 @@
-```AKOS OPERATING SYSTEM:
+```
+AKOS OPERATING SYSTEM:
 
 Compiled using windows and gcc.
 
@@ -30,10 +31,12 @@ to view fat12 filesystem run "make inspect", the filesystem builds from the fold
 
 type help in the shell to get a list of commands, type "help COMMAND" to get help for a specific command.
 
-VIRTUAL MEMORY STRUCTURE:
+MEMORY STRUCTURE:
 
 0MB-1MB -> STACK,BIOS
-1MB-2MB -> KERNEL + GDT + IDT + PMM
-3MB-4MB -> KHEAP
-4MB-6MB -> RAM FS
-3GB -> KERNEL```
+1MB-2MB -> REAL KERNEL + GDT + IDT + PMM
+6MB-3GB -> FREE SPACE
+3GB -> VIRTUAL KERNEL
+3GB + 3MB-4MB -> KHEAP
+3GB + 4MB-6MB -> RAM FS
+```

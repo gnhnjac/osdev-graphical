@@ -39,7 +39,7 @@ void enable_alt();
 void disable_alt();
 int check_alt();
 char kybrd_ctrl_read_status ();
-void keyboard_handler(struct regs *r);
+void keyboard_handler();
 static void handle_character(unsigned char scancode);
 void virtual_keyboard_input(unsigned char ascii);
 void keyboard_input(int row, int col, char *buffer, int bf_size);

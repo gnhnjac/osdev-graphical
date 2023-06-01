@@ -4,8 +4,8 @@
 
 //#define sizeof(type) (char *)(&type+1) - (char*)(&type)
 
-#define TFSYS_BASE 0x400000
-#define TFSYS_CEILING 0x600000
+#define TFSYS_BASE 0xC0300000
+#define TFSYS_CEILING 0xC0500000
 #define BLOCK_SIZE 4096
 
 typedef enum{File,SubFile,Dir} block_type; // add symbolic link maybe

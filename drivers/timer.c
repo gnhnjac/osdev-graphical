@@ -25,7 +25,7 @@ unsigned int second_ticks = 0;
 *  increment the 'timer_ticks' variable every time the
 *  timer fires. By default, the timer fires 18.222 times
 *  per second. */
-void timer_handler(struct regs *r)
+void timer_handler()
 {
     /* Increment our 'tick count' */
     timer_ticks++;

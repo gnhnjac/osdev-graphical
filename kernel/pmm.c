@@ -170,6 +170,10 @@ void pmmngr_init_region(uint32_t base, uint32_t size) {
 		size += PMMNGR_BLOCK_SIZE - size % PMMNGR_BLOCK_SIZE;
  
 	int align = base / PMMNGR_BLOCK_SIZE;
+
+	if (align/8 >= pmmngr_get_block_count()/PMMNGR_BLOCKS_PER_BYTE)
+		return; // above the maximum allocated memory.
+	
 	int blocks = size / PMMNGR_BLOCK_SIZE;
  
 	for (; blocks>0; blocks--) {
@@ -186,6 +190,10 @@ void pmmngr_deinit_region(uint32_t base, uint32_t size) {
 		size += PMMNGR_BLOCK_SIZE - size % PMMNGR_BLOCK_SIZE;
 
 	int align = base / PMMNGR_BLOCK_SIZE;
+
+	if (align/8 >= pmmngr_get_block_count()/PMMNGR_BLOCKS_PER_BYTE)
+		return; // above the maximum allocated memory.
+
 	int blocks = size / PMMNGR_BLOCK_SIZE;
  
 	for (; blocks>0; blocks--) {

@@ -5,6 +5,7 @@
 #include "screen.h"
 #include "dma.h"
 #include "memory.h"
+#include "vmm.h"
 volatile bool flpydsk_irq_finished = false;
 
 uint8_t _CurrentDrive = 0;
@@ -412,7 +413,7 @@ static void flpydsk_dma_init(floppy_dir dir) {
       unsigned long l;
     }a, c;
 
-    a.l=(unsigned)&floppy_dmabuf;
+    a.l=(unsigned)vmmngr_virt2phys((void *)&floppy_dmabuf);
     c.l=(unsigned)floppy_dmalen-1;
 
     //Check for buffer issues

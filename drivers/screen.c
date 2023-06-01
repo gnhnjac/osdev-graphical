@@ -522,7 +522,7 @@ void init_screen()
 
 	// Initialize stats
 
-	print_at("CTRL SHIFT ALT CAPS | VFS:", 0, 0, WHITE_ON_BLACK);
+	print_at("CTRL SHIFT ALT CAPS", 0, 0, WHITE_ON_BLACK);
 
 	set_cursor_coords(TOP,0);
 

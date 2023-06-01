@@ -71,7 +71,7 @@ struct gdtr {
 //! 4k grandularity. default: none
 #define I86_GDT_GRAND_4K			0x80			//10000000
 
-#define MAX_DESCRIPTORS 5
+#define MAX_DESCRIPTORS 6
 
 //refs
 // Global Descriptor Table (GDT);

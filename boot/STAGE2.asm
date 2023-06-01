@@ -2,7 +2,8 @@ org 0x3000
 bits 16
 
 ; where the kernel is to be loaded to in protected mode
-%define IMAGE_PMODE_BASE 0x100000
+; mapped to 0x100000 phys
+%define IMAGE_PMODE_BASE 0xC0000000 
 
 ; where the kernel is to be loaded to in real mode
 %define IMAGE_RMODE_BASE 0x10000
@@ -46,6 +47,8 @@ BEGIN_PM:
 	
 	push copy_kernel_msg
 	call print_str_mem32
+
+	call EnablePaging ; enable paging before we copy our kernel to 0xC0000000
 
 COPY_KERNEL_IMG:
 	xor eax, eax
@@ -230,10 +233,11 @@ bits 32
 ; 32 bit pm files
 %include "print_str_mem32.asm"
 %include "switch_to_pm.asm"
+%include "enable_paging.asm"
 
 ; variables
 load_kernel_msg db 'Loading kernel into memory at 0x10000', 0xa, 0xd, 0
-copy_kernel_msg db 'Copying kernel into memory at 0x100000', 0xa, 0xd, 0
+copy_kernel_msg db 'Copying kernel into virtual memory at 0xC0000000', 0xa, 0xd, 0
 pm_msg db 'Successfully switched to 32-bit protected mode!', 0
 BOOT_DRIVE db 0
 IMAGE_NAME db 'KERNEL  SYS'

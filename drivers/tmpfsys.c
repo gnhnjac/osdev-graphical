@@ -5,6 +5,7 @@
 #include <heap.h>
 #include <screen.h>
 #include <keyboard.h>
+#include "vmm.h"
 
 block_metadata a;
 uint32_t META_SIZE = (char *)(&a+1) - (char*)(&a);
@@ -16,12 +17,14 @@ FILESYSTEM _FSysTmp;
 void tfsys_init()
 {
 	char *base = (char *)TFSYS_BASE;
+
 	while ((uint32_t)base < TFSYS_CEILING)
 	{
 		((block_metadata *)base)->occupied = 0;
 
 		base += BLOCK_SIZE;
 	}
+
 	create_base_dir("\\");
 
 	//! initialize filesystem struct
