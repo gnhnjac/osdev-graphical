@@ -334,10 +334,32 @@ irq_common_stub:
 ; syscall stub
 
 global _syscall_stub
-extern _syscall_handler
+extern __syscalls
+%define MAX_SYSCALL 3
+
+eip_reg dd 0
 
 _syscall_stub:
-   pusha
-   call _syscall_handler
-   popa
+   
+   pop DWORD [eip_reg]
+   push DWORD _iret_stub
+
    iret
+
+_iret_stub:
+
+   cmp eax, MAX_SYSCALL
+   jae end
+
+   mov ebx, 4
+   mul ebx
+
+   mov ebx, [__syscalls+eax]
+
+   call ebx
+
+end:
+   
+   push DWORD [eip_reg]
+
+   ret
