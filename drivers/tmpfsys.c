@@ -5,7 +5,6 @@
 #include <heap.h>
 #include <screen.h>
 #include <keyboard.h>
-#include "vmm.h"
 
 block_metadata a;
 uint32_t META_SIZE = (char *)(&a+1) - (char*)(&a);

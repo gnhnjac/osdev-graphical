@@ -1,3 +1,4 @@
+#pragma once
 #include "pde.h"
 #include "pte.h"
 
@@ -40,14 +41,17 @@ typedef struct {
 
 //refs
 //! current directory table (global);
-bool vmmngr_alloc_page (pt_entry* e);
+bool vmmngr_alloc_page (pt_entry* e, uint32_t pte_flags);
 void vmmngr_free_page (pt_entry* e);
 pt_entry* vmmngr_ptable_lookup_entry (ptable* p,virtual_addr addr);
 pd_entry* vmmngr_pdirectory_lookup_entry (pdirectory* p, virtual_addr addr);
 bool vmmngr_switch_pdirectory (pdirectory* dir);
 pdirectory* vmmngr_get_directory ();
+pdirectory* vmmngr_create_pdir ();
 void * vmmngr_virt2phys(void *virt);
-void vmmngr_map_page (void* phys, void* virt);
+void vmmngr_alloc_virt(pdirectory *dir, void *virt, uint32_t pde_flags, uint32_t pte_flags);
+void vmmngr_free_virt(pdirectory *dir, void *virt);
+void vmmngr_map_page (pdirectory *dir, void* phys, void* virt, uint32_t pde_flags, uint32_t pte_flags);
 void vmmngr_pdirectory_clear(pdirectory *dir);
 void vmmngr_ptable_clear(ptable *table);
 void vmmngr_initialize ();

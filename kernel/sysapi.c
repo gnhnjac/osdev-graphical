@@ -1,11 +1,13 @@
 #include "sysapi.h"
 #include "idt.h"
 #include "screen.h"
+#include "process.h"
 
 extern void syscall_stub(void);
 
 void* _syscalls[] = {
-	printf
+	print,
+	terminateProcess
 };
 
 void install_syscalls()

@@ -7,7 +7,7 @@
 pdirectory*	_cur_directory=0;
  
 
-bool vmmngr_alloc_page (pt_entry* e) {
+bool vmmngr_alloc_page (pt_entry* e, uint32_t pte_flags) {
  
 	//! allocate a free physical frame
 	void* p = pmmngr_alloc_block ();
@@ -17,6 +17,7 @@ bool vmmngr_alloc_page (pt_entry* e) {
 	//! map it to the page
 	pt_entry_set_frame (e, (void *)p);
 	pt_entry_add_attrib (e, I86_PTE_PRESENT);
+	pt_entry_add_attrib (e, pte_flags);
  
 	return true;
 }
@@ -61,6 +62,19 @@ pdirectory* vmmngr_get_directory () {
 
 extern void vmmngr_flush_tlb_entry (virtual_addr addr);
 
+pdirectory* vmmngr_create_pdir () {
+   pdirectory* dir = 0;
+
+	/* allocate page directory */
+	dir = (pdirectory*) pmmngr_alloc_block ();
+	if (!dir)
+	   return 0;
+
+	/* clear memory (marks all page tables as not present) */
+	vmmngr_pdirectory_clear(dir);
+	return dir;
+}
+
 void * vmmngr_virt2phys(void *virt)
 {
 	//! get page directory
@@ -83,10 +97,11 @@ void * vmmngr_virt2phys(void *virt)
 
 }
 
-void vmmngr_map_page (void* phys, void* virt) {
+void vmmngr_alloc_virt(pdirectory *dir, void *virt, uint32_t pde_flags, uint32_t pte_flags)
+{
 
-   //! get page directory
-   pdirectory* pageDirectory = vmmngr_get_directory ();
+	//! get page directory
+   pdirectory* pageDirectory = dir;
 
    //! get page table
    pd_entry* e = vmmngr_pdirectory_lookup_entry(pageDirectory,(virtual_addr)virt);
@@ -102,10 +117,67 @@ void vmmngr_map_page (void* phys, void* virt) {
 
    	//! map in the table (Can also just do *entry |= 3) to enable these bits
    	pd_entry_add_attrib (e, I86_PDE_PRESENT);
-   	pd_entry_add_attrib (e, I86_PDE_WRITABLE);
-   	pd_entry_add_attrib (e, I86_PDE_USER);
    	pd_entry_set_frame (e, (void *)table);
    }
+
+   pd_entry_add_attrib(e, pde_flags);
+
+   //! get table
+   ptable* table = (ptable*) pd_entry_pfn(*e);
+
+   //! get page
+   pt_entry* page = vmmngr_ptable_lookup_entry(table,(virtual_addr)virt);
+
+   //! map it in
+   vmmngr_alloc_page(page, pte_flags);
+
+}
+
+void vmmngr_free_virt(pdirectory *dir, void *virt)
+{
+	//! get page directory
+   pdirectory* pageDirectory = dir;
+
+   //! get page table
+   pd_entry* e = vmmngr_pdirectory_lookup_entry(pageDirectory,(virtual_addr)virt);
+
+   if (!pd_entry_is_present(*e))
+		return;
+
+   //! get table
+   ptable* table = (ptable*) pd_entry_pfn(*e);
+
+   //! get page
+   pt_entry* page = vmmngr_ptable_lookup_entry(table,(virtual_addr)virt);
+
+   //! free it
+   vmmngr_free_page(page);
+
+}
+
+void vmmngr_map_page (pdirectory *dir, void* phys, void* virt, uint32_t pde_flags, uint32_t pte_flags) {
+
+   //! get page directory
+   pdirectory* pageDirectory = dir;
+
+   //! get page table
+   pd_entry* e = vmmngr_pdirectory_lookup_entry(pageDirectory,(virtual_addr)virt);
+
+   if (!pd_entry_is_present(*e)) {
+		//! page table not present, allocate it
+   	ptable* table = (ptable*) pmmngr_alloc_block ();
+   	if (!table)
+      	return;
+
+      	//! clear page table
+     	vmmngr_ptable_clear(table);
+
+   	//! map in the table (Can also just do *entry |= 3) to enable these bits
+   	pd_entry_add_attrib (e, I86_PDE_PRESENT);
+   	pd_entry_set_frame (e, (void *)table);
+   }
+
+   pd_entry_add_attrib(e, pde_flags);
 
    //! get table
    ptable* table = (ptable*) pd_entry_pfn(*e);
@@ -115,9 +187,8 @@ void vmmngr_map_page (void* phys, void* virt) {
 
    //! map it in (Can also do (*page |= 3 to enable..)
    pt_entry_set_frame ( page, (void *) phys);
-   pt_entry_add_attrib( page, I86_PTE_USER);
+   pt_entry_add_attrib( page, pte_flags);
    pt_entry_add_attrib ( page, I86_PTE_PRESENT);
-   pt_entry_add_attrib ( page, I86_PTE_WRITABLE);
 }
 
 void vmmngr_pdirectory_clear(pdirectory *dir)
@@ -134,32 +205,31 @@ void vmmngr_ptable_clear(ptable *table)
 
 }
 
-void vmmngr_mmap(uint32_t frame_start, uint32_t virt_start, uint32_t range) // range is in 4kb units
+void vmmngr_mmap(pdirectory *dir, uint32_t frame_start, uint32_t virt_start, uint32_t range, uint32_t pde_flags, uint32_t pte_flags) // range is in 4kb units
 {
 	for (uint32_t i=0, frame=frame_start, virt=virt_start; i<range; i++, frame+=4096, virt+=4096) 
 	{
- 		vmmngr_map_page((void *)frame,(void *)virt);
+ 		vmmngr_map_page(dir, (void *)frame,(void *)virt, pde_flags, pte_flags);
 	}
 }
 
 void vmmngr_initialize () {
 	//! allocate our page directory
-	pdirectory* dir = (pdirectory*) pmmngr_alloc_block ();
+	pdirectory* dir = vmmngr_create_pdir();
 	if (!dir)
 		return;
 
-	vmmngr_pdirectory_clear (dir); // clear it out
-	// store current directory
 	_cur_directory = dir;
 
-	//! identity map 0-16mb->0-16mb
-	vmmngr_mmap(0x0,0x00000000,1024*4);
+	//! identity map 0-4mb->0-4mb
+	vmmngr_mmap(vmmngr_get_directory(), 0x0,0x00000000,1024, I86_PDE_WRITABLE, I86_PTE_WRITABLE);
  
 	//! virtual map 3gb-3gb+16mb->0-16mb
-	vmmngr_mmap(0x100000,K_VIRT_BASE,1024*4);
+	vmmngr_mmap(vmmngr_get_directory(), 0x100000,K_VIRT_BASE,1024*4, I86_PDE_WRITABLE, I86_PTE_WRITABLE);
 
 	// switch to our page directory
 	vmmngr_switch_pdirectory (dir);
+
 	//! enable paging
 	pmmngr_paging_enable (true);
 }

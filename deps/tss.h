@@ -33,5 +33,5 @@ typedef struct {
 #pragma pack()
 
 //refs
-void install_tss (uint32_t idx, uint16_t kernelSS, uint16_t kernelESP);
-void tss_set_stack (uint16_t kernelSS, uint16_t kernelESP);
+void install_tss (uint32_t idx, uint32_t kernelSS, uint32_t kernelESP);
+void tss_set_stack (uint32_t kernelSS, uint32_t kernelESP);
