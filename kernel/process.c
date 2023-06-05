@@ -115,10 +115,7 @@ int createProcess (char* exec) {
 
 void executeProcess (int id) {
 
-
-     __asm__ ("push %ebp\n"
-              "push _end_stub\n");
-     register int stack asm("esp");
+    register int stack asm("esp");
     tss_set_stack(0x10,stack);
 
     int entryPoint = 0;
@@ -134,15 +131,21 @@ void executeProcess (int id) {
     if (!proc->pageDirectory)
                     return;
 
-    /* get esp and eip of main thread */
-    entryPoint = proc->threadList->frame.eip;
-    procStack  = proc->threadList->frame.esp;
-
-    running_process = proc;
-
     /* switch to process address space */
     __asm__ ("cli");
     vmmngr_switch_pdirectory (proc->pageDirectory);
+
+    /* get esp and eip of main thread */
+    entryPoint = proc->threadList->frame.eip;
+    procStack  = proc->threadList->frame.esp;
+    procStack -= 4;
+    uint32_t stubAddr;
+    __asm__ ("push $_end_stub\n"
+             "pop %0": "=m" (stubAddr) );
+
+    *(uint32_t *)procStack = stubAddr;
+
+    running_process = proc;
 
     /* execute process in user mode */
     __asm__ (
@@ -187,6 +190,13 @@ void terminateProcess () {
         vmmngr_free_virt (proc->pageDirectory, (void *)virt);
     }
 
+    register int ebp asm("ebp");
+    uint32_t ret_ebp;
+    uint32_t ret_addr;
+
+    ret_ebp = *(uint32_t *)(*(uint32_t *)ebp);
+    ret_addr = *(uint32_t *)(*(uint32_t *)ebp+4);
+
     while (pThread)
     {
 
@@ -210,9 +220,16 @@ void terminateProcess () {
 
    running_process = 0;
 
-   printf("\nProcess %d terminated.",proc->id);
+   printf("\nProcess %d terminated.\n",proc->id);
    kfree(proc);
-    // very very hacky, what's needed is to add a stub at the end of the program that it will return to it,
-    // allocate that stub in user space and make it call terminate process instead of the process itself calling it
+
+   
+   __asm__ ("mov %0, %%esp" : : "m" (ret_ebp));
+   __asm__ ("push %0" : : "m" (ret_addr));
+   __asm__ ("mov %0, %%ebp" : : "m" (ret_ebp));
+   __asm__ ("ret");
+
+   // very very hacky, what's needed is to add a stub at the end of the program that it will return to it,
+   // allocate that stub in user space and make it call terminate process instead of the process itself calling it
 
 }
