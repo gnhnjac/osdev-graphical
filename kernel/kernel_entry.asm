@@ -338,12 +338,13 @@ extern __syscalls
 %define MAX_SYSCALL 3
 
 esp_reg dd 0
+is_terminate db 0
 
 ; ***process stack and kernel stack is shared when calling int 0x80! thats because of the calling convention that uses the stack.
 _syscall_stub:
       
    cmp eax, 1 ; Terminate process call
-   jz _call_stub ; skip stack setting
+   jz _terminate_stub ; skip stack setting
 
    mov DWORD[esp_reg], esp
 
@@ -352,8 +353,11 @@ _syscall_stub:
    cmp eax, MAX_SYSCALL
    jae end
 
-_call_stub:
+   jmp _call_stub
 
+_terminate_stub:
+   mov BYTE[is_terminate], 1
+_call_stub:
    mov ebx, 4
    mul ebx
 
@@ -362,10 +366,14 @@ _call_stub:
    call ebx
 
 end:
-   cmp eax, 1
-   jz _end_stub
+   cmp BYTE[is_terminate], 1
+   jz _terminate_end_stub
 
    mov esp, DWORD[esp_reg]
 
 _end_stub:
    iret
+_terminate_end_stub:
+   add esp, 0x44
+   pop ebp
+   ret

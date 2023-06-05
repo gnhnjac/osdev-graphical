@@ -11,6 +11,7 @@
 #include "memory.h"
 #include "heap.h"
 #include <stdint.h>
+#include "process.h"
 
 
 
@@ -121,6 +122,10 @@ void handle_command(char *cmd_buff)
 	{
 		handle_paint(cmd_buff);
 	}
+	else if(strcmp(cmd,"exec"))
+	{
+		handle_exec(cmd_buff);
+	}
 	else
 	{
 
@@ -163,6 +168,28 @@ void handle_stats()
 	print_mem_map();
 	printf("\nHEAP:\n");
 	print_heap_stats();
+}
+
+void handle_exec(char *cmd_buff)
+{
+
+	int param_count = count_substrings(cmd_buff, ' '); // including cmd
+
+	if (param_count != 2)
+		return;
+
+	char *param = seperate_and_take(cmd_buff, ' ', 1);
+	strip_from_start(param, ' ');
+	strip_from_end(param, ' ');
+
+	char *new_path = join_path(path,param);
+
+	int pid = createProcess(new_path);
+	executeProcess(pid);
+
+	kfree(new_path);
+	kfree(param);
+
 }
 
 void handle_ls()

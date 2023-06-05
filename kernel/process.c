@@ -5,6 +5,7 @@
 #include "loader.h"
 #include "heap.h"
 #include "tss.h"
+#include "screen.h"
 
 #define PAGE_SIZE 4096
 #define PROC_INVALID_ID -1
@@ -67,7 +68,7 @@ int createProcess (char* exec) {
     mainThread->priority     = 1;
     mainThread->state        = PROCESS_STATE_ACTIVE;
     mainThread->initialStack = 0;
-    mainThread->stackLimit   = (void*) ((uint32_t) mainThread->initialStack + 4096);
+    mainThread->stackLimit   = (void*) ((uint32_t) mainThread->initialStack - 4096);
     mainThread->imageBase    = imageInfo->ImageBase;
     mainThread->imageSize    = imageInfo->ImageSize;
     memset ((char *)&mainThread->frame, 0, sizeof (trapFrame));
@@ -113,50 +114,54 @@ int createProcess (char* exec) {
 }
 
 void executeProcess (int id) {
-        int entryPoint = 0;
-        unsigned int procStack = 0;
 
-        /* get running process */
-        process* proc = getProcessByID(id);
 
-        if (!proc)
+     __asm__ ("push %ebp\n"
+              "push _end_stub\n");
+     register int stack asm("esp");
+    tss_set_stack(0x10,stack);
+
+    int entryPoint = 0;
+    unsigned int procStack = 0;
+
+    /* get running process */
+    process* proc = getProcessByID(id);
+
+    if (!proc)
+        return;
+    if (proc->id==PROC_INVALID_ID)
             return;
-        if (proc->id==PROC_INVALID_ID)
-                return;
-        if (!proc->pageDirectory)
-                        return;
+    if (!proc->pageDirectory)
+                    return;
 
-        /* get esp and eip of main thread */
-        entryPoint = proc->threadList->frame.eip;
-        procStack  = proc->threadList->frame.esp;
+    /* get esp and eip of main thread */
+    entryPoint = proc->threadList->frame.eip;
+    procStack  = proc->threadList->frame.esp;
 
-        running_process = proc;
+    running_process = proc;
 
-        /* switch to process address space */
-        __asm__ ("cli");
-        vmmngr_switch_pdirectory (proc->pageDirectory);
+    /* switch to process address space */
+    __asm__ ("cli");
+    vmmngr_switch_pdirectory (proc->pageDirectory);
 
-        int stack=0;
-        __asm__ ("mov %%esp,%%eax" : "=esp" ( stack ));
+    /* execute process in user mode */
+    __asm__ (
+            "mov     $0x23,%%ax\n"
+            "mov     %%ax, %%ds\n"
+            "mov     %%ax, %%es\n"
+            "mov     %%ax, %%fs\n"
+            "mov     %%ax, %%gs\n"
+            "push   $0x23\n"
+            "push   %0\n" : : "m" (procStack));
 
-        tss_set_stack(0x10,stack);
+    __asm__ (
+            "push    $0x200\n"
+            "push    $0x1b\n"
+            "push   %0\n"
+            "iret\n" : : "m" (entryPoint)
+    );
 
-        /* execute process in user mode */
-        __asm__ (
-                "mov     $0x23,%%ax\n"
-                "mov     %%ax, %%ds\n"
-                "mov     %%ax, %%es\n"
-                "mov     %%ax, %%fs\n"
-                "mov     %%ax, %%gs\n"
-                "push   $0x23\n"
-                "push   %0\n" : : "m" (procStack));
-
-        __asm__ (
-                "push    $0x200\n"
-                "push    $0x1b\n"
-                "push   %0\n"
-                "iret\n" : : "m" (entryPoint)
-        );
+    __asm__("_end_stub:");
 
 }
 
@@ -187,8 +192,9 @@ void terminateProcess () {
 
         // unmap virtual stack
         vmmngr_free_virt (proc->pageDirectory, (void *) pThread->initialStack-PAGE_SIZE); // stack is 4k
-
+        thread *tmp = pThread;
         pThread = pThread->next;
+        kfree(tmp);
 
     }
 
@@ -202,12 +208,11 @@ void terminateProcess () {
             "mov     %ax, %gs\n"
             "sti");
 
-    __asm__ ("add $0x70, %esp"); 
+   running_process = 0;
+
+   printf("\nProcess %d terminated.",proc->id);
+   kfree(proc);
     // very very hacky, what's needed is to add a stub at the end of the program that it will return to it,
     // allocate that stub in user space and make it call terminate process instead of the process itself calling it
-
-    running_process = 0;
-
-    while(1);
 
 }

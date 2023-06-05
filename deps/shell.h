@@ -20,6 +20,7 @@ void shell_main();
 void handle_command(char *cmd_buff);
 char *join_path(char* p, char* ext);
 void handle_stats();
+void handle_exec(char *cmd_buff);
 void handle_ls();
 void handle_cd(char *cmd_buff);
 void handle_mkdir(char *cmd_buff);

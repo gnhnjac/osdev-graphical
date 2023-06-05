@@ -93,27 +93,10 @@ void kmain(uint32_t _, multiboot_info* bootinfo, uint32_t _kernel_size) {
 	// initialize the system call api
 	install_syscalls();
 
-
 	//! initialize TSS
 	install_tss (5,0x10,0);
 
-	// enter_usermode();
-
-	// static char testStr[]="We are inside of your computer...";
-	// set_eax(0);
-	// __asm__ ("push %0"  : : "i" ( testStr ));
-	// __asm__ ("int $0x80");
-
-	// //! cant do CLI+HLT here, so loop instead
-	// while(1) continue;
-
-	int pid = createProcess("a:\\proc.exe");
-
-	executeProcess(pid);
-
-	printf("hello world!");
-
-	//shell_main(); // start terminal
+	shell_main(); // start terminal
 
 	return;
 }
