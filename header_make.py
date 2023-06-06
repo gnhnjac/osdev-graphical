@@ -12,6 +12,9 @@ if len(sys.argv) != 2:
 
 source_file = sys.argv[1];
 
+if ("root" in source_file):
+	sys.exit(0)
+
 source_file_name = path.basename(source_file);
 
 header_file = Path(f'deps/{source_file_name[:-1]}h')

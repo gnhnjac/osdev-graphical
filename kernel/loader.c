@@ -52,6 +52,8 @@ PImageInfo load_executable(pdirectory *pdir, char *path)
 	uint32_t imageBase = peHeader->OptionalHeader.ImageBase;
 	uint32_t imageSize = peHeader->OptionalHeader.SizeOfImage;
 	uint32_t entryPoint = peHeader->OptionalHeader.AddressOfEntryPoint;
+	uint32_t numOfSections = peHeader->FileHeader.NumberOfSections;
+	uint32_t fileAlignment = peHeader->OptionalHeader.FileAlignment;
 
 	PIMAGE_DATA_DIRECTORY dataDirectory = peHeader->OptionalHeader.DataDirectory;
 	PIMAGE_EXPORT_DIRECTORY exportDirectory = (PIMAGE_EXPORT_DIRECTORY) (dataDirectory[IMAGE_DIRECTORY_ENTRY_EXPORT].VirtualAddress + imageBase);
@@ -65,7 +67,30 @@ PImageInfo load_executable(pdirectory *pdir, char *path)
 	for  (uint32_t i = 0; i < fileSize; i+=4096)
 		vmmngr_alloc_virt(pdir, (void *)(imageBase+i), I86_PDE_WRITABLE|I86_PDE_USER, I86_PTE_WRITABLE|I86_PTE_USER);
 
-	volReadFile(&exec,(void *)imageBase+peHeaderRVA+sizeof(IMAGE_NT_HEADERS),exec.fileLength); // load the file into memory.
+	PIMAGE_SECTION_HEADER sectionHeader = (PIMAGE_SECTION_HEADER)kmalloc(numOfSections*IMAGE_SIZEOF_SECTION_HEADER);
+
+	void *tmpSectionHeader = (void *)sectionHeader;
+
+	volReadFile(&exec,(void *)sectionHeader,numOfSections*IMAGE_SIZEOF_SECTION_HEADER); // load the headers into memory.
+
+	uint32_t unalignedSectionBase = sizeof(IMAGE_NT_HEADERS) + peHeaderRVA + numOfSections*IMAGE_SIZEOF_SECTION_HEADER;
+	uint32_t alignmentBytes = fileAlignment - unalignedSectionBase % fileAlignment;
+
+	void *tmpBuff = kmalloc(sizeof(alignmentBytes));
+	volReadFile(&exec,tmpBuff,alignmentBytes); // load the alignment
+	kfree(tmpBuff);
+	// load the sections into memory
+
+	for (int i = 0; i < numOfSections; i++)
+	{
+
+		volReadFile(&exec,(void *)(imageBase+sectionHeader->VirtualAddress),sectionHeader->SizeOfRawData); // load the section into memory.
+
+		sectionHeader++;
+
+	}
+
+	kfree(tmpSectionHeader);
 
 	volCloseFile(&exec);
 

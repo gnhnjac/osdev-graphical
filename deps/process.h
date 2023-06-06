@@ -51,6 +51,10 @@ typedef struct _process {
    process* next;
    int threadCount;
    thread* threadList;
+
+   // temporary variables
+   int prevEBP;
+   int prevEIP;
 };
 
 //refs

@@ -27,7 +27,7 @@ static uint8_t cursor_input_col = 0;
 void print_char(const char character, int row, int col, char attribute_byte) 
 {
 
-	if(character == 27) // don't print escape character
+	if(character == 27 || character == '\r') // don't print escape character
 		return;
 
 	/* Create a byte ( char ) pointer to the start of video memory */

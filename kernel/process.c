@@ -39,7 +39,7 @@ int createProcess (char* exec) {
 
     /* get process virtual address space */
     //addressSpace = vmmngr_createAddressSpace ();
-    pdirectory *addressSpace = vmmngr_create_pdir();
+    pdirectory *addressSpace = vmmngr_get_directory();//vmmngr_create_pdir();
     memcpy((void *)addressSpace, (void *)vmmngr_get_directory(),4096);
     vmmngr_switch_pdirectory(addressSpace);
     PImageInfo imageInfo = load_executable(addressSpace,exec);
@@ -115,9 +115,6 @@ int createProcess (char* exec) {
 
 void executeProcess (int id) {
 
-    register int stack asm("esp");
-    tss_set_stack(0x10,stack);
-
     int entryPoint = 0;
     unsigned int procStack = 0;
 
@@ -138,15 +135,19 @@ void executeProcess (int id) {
     /* get esp and eip of main thread */
     entryPoint = proc->threadList->frame.eip;
     procStack  = proc->threadList->frame.esp;
-    procStack -= 4;
+
     uint32_t stubAddr;
     __asm__ ("push $_end_stub\n"
              "pop %0": "=m" (stubAddr) );
 
-    *(uint32_t *)procStack = stubAddr;
+    proc->prevEIP = stubAddr;
+
+    __asm__ ("mov %%ebp, %0" : : "m" (proc->prevEBP));
 
     running_process = proc;
 
+    register int stack asm("esp");
+    tss_set_stack(0x10,stack);
     /* execute process in user mode */
     __asm__ (
             "mov     $0x23,%%ax\n"
@@ -190,12 +191,8 @@ void terminateProcess () {
         vmmngr_free_virt (proc->pageDirectory, (void *)virt);
     }
 
-    register int ebp asm("ebp");
-    uint32_t ret_ebp;
-    uint32_t ret_addr;
-
-    ret_ebp = *(uint32_t *)(*(uint32_t *)ebp);
-    ret_addr = *(uint32_t *)(*(uint32_t *)ebp+4);
+    uint32_t ret_ebp = proc->prevEBP;
+    uint32_t ret_addr = proc->prevEIP;
 
     while (pThread)
     {
@@ -220,10 +217,9 @@ void terminateProcess () {
 
    running_process = 0;
 
-   printf("\nProcess %d terminated.\n",proc->id);
+   //printf("\nProcess %d terminated.\n",proc->id);
    kfree(proc);
 
-   
    __asm__ ("mov %0, %%esp" : : "m" (ret_ebp));
    __asm__ ("push %0" : : "m" (ret_addr));
    __asm__ ("mov %0, %%ebp" : : "m" (ret_ebp));

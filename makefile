@@ -4,6 +4,9 @@ C_SOURCES = $(wildcard kernel/*.c drivers/*.c utils/*.c)
 HEADERS = $(wildcard deps/*.h)
 ASM_FILES = $(wildcard boot/routines/*.asm)
 
+ROOT_C_SOURCES = $(wildcard root/*.c)
+ROOT_C_EXE = ${ROOT_C_SOURCES:.c=.exe}
+
 # TODO : Make sources dep on all header files.
 
 # Create a list of object files to build , simple by replacing
@@ -15,7 +18,7 @@ emu = QEMU
 DEPS := $(OBJ:.o=.d)
 
 # Default make target .
-all: pre-build os-image
+all: ${ROOT_C_EXE} ${ROOT_C_SOURCES} pre-build os-image
 
 # Run bochs
 run: all
@@ -53,6 +56,10 @@ kernel.sys: kernel/kernel_entry.o ${OBJ}
 # Generic rule for building ’somefile.o’ from ’somefile.c’
 %.o: %.c
 	@gcc -m32 -ffreestanding -MMD -c $< -I ./deps -o $@ -D $(emu)
+
+# Rule for building root c files
+%.exe: %.c
+	@gcc -m32 -nostdlib $< -o $@
 
 # Build our kernel entry object file.
 #$< is the first dependancy and $@ is the target file

@@ -96,7 +96,7 @@ bool ToDosFileName(char *filename, char DosFileName[11 + 1])
 	if (Filename)
 		memcpy(DosFileName,Filename,strlen(Filename));
 	if (Ext)
-		memcpy(DosFileName+11-strlen(Ext),Ext,strlen(Ext));
+		memcpy(DosFileName+8,Ext,strlen(Ext));
 	if (strcmp(filename,"."))
 		DosFileName[0] = '.';
 
