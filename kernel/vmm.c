@@ -128,8 +128,9 @@ void vmmngr_alloc_virt(pdirectory *dir, void *virt, uint32_t pde_flags, uint32_t
    //! get page
    pt_entry* page = vmmngr_ptable_lookup_entry(table,(virtual_addr)virt);
 
-   //! map it in
-   vmmngr_alloc_page(page, pte_flags);
+   //! map it in if it is not present
+   if (!pt_entry_is_present(*page))
+   	vmmngr_alloc_page(page, pte_flags);
 
 }
 
@@ -150,13 +151,14 @@ void vmmngr_free_virt(pdirectory *dir, void *virt)
    //! get page
    pt_entry* page = vmmngr_ptable_lookup_entry(table,(virtual_addr)virt);
 
-   //! free it
-   vmmngr_free_page(page);
+   //! free it if it is present
+   if (pt_entry_is_present(*page))
+   	vmmngr_free_page(page);
 
 }
 
 void vmmngr_map_page (pdirectory *dir, void* phys, void* virt, uint32_t pde_flags, uint32_t pte_flags) {
-
+	
    //! get page directory
    pdirectory* pageDirectory = dir;
 

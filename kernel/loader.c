@@ -2,6 +2,7 @@
 #include "image.h"
 #include "vfs.h"
 #include "heap.h"
+#include "memory.h"
 
 // loads executable into virtual memory and returns entry point address
 PImageInfo load_executable(pdirectory *pdir, char *path)
@@ -60,13 +61,6 @@ PImageInfo load_executable(pdirectory *pdir, char *path)
 
 	kfree(peHeader);
 
-	uint32_t fileSize = imageSize;
-	if (fileSize % 4096 != 0)
-		fileSize += 4096 - fileSize % 4096;
-
-	for  (uint32_t i = 0; i < fileSize; i+=4096)
-		vmmngr_alloc_virt(pdir, (void *)(imageBase+i), I86_PDE_WRITABLE|I86_PDE_USER, I86_PTE_WRITABLE|I86_PTE_USER);
-
 	PIMAGE_SECTION_HEADER sectionHeader = (PIMAGE_SECTION_HEADER)kmalloc(numOfSections*IMAGE_SIZEOF_SECTION_HEADER);
 
 	void *tmpSectionHeader = (void *)sectionHeader;
@@ -79,13 +73,42 @@ PImageInfo load_executable(pdirectory *pdir, char *path)
 	void *tmpBuff = kmalloc(sizeof(alignmentBytes));
 	volReadFile(&exec,tmpBuff,alignmentBytes); // load the alignment
 	kfree(tmpBuff);
-	// load the sections into memory
+
+	// load the sections into memory and allocate virtual memory for them
 
 	for (int i = 0; i < numOfSections; i++)
 	{
+		uint32_t sectionPageBase = imageBase+sectionHeader->VirtualAddress;
+		if (sectionPageBase % 4096 != 0)
+			sectionPageBase -= 4096 - sectionPageBase % 4096;
 
-		volReadFile(&exec,(void *)(imageBase+sectionHeader->VirtualAddress),sectionHeader->SizeOfRawData); // load the section into memory.
+		uint32_t sectionPageTop = imageBase+sectionHeader->VirtualAddress+sectionHeader->SizeOfRawData;
+		if (IMAGE_SCN_CNT_UNINITIALIZED_DATA&sectionHeader->Characteristics) // if section is bss then virtual size is used
+			sectionPageTop += sectionHeader->Misc.VirtualSize;
+		if (sectionPageTop % 4096 != 0)
+			sectionPageTop += 4096 - sectionPageTop % 4096;
 
+		uint32_t pdeFlags = I86_PDE_USER;
+		uint32_t pteFlags = I86_PTE_USER;
+
+		if (IMAGE_SCN_MEM_WRITE&sectionHeader->Characteristics) // if section is writable add the writable flag to the page
+		{
+			pdeFlags |= I86_PDE_WRITABLE;
+			pteFlags |= I86_PTE_WRITABLE;
+		}
+
+		for  (uint32_t virt = sectionPageBase; virt < sectionPageTop; virt+=4096)
+			vmmngr_alloc_virt(pdir, (void *)virt, pdeFlags, pteFlags);
+
+		if (!(IMAGE_SCN_CNT_UNINITIALIZED_DATA&sectionHeader->Characteristics)) // if section doesn't contain uninitialized data
+		{
+			volReadFile(&exec,(void *)(imageBase+sectionHeader->VirtualAddress),sectionHeader->SizeOfRawData); // load the section into memory.
+		}
+		else
+		{
+			// zero out the bss section
+			memset((char *)(imageBase+sectionHeader->VirtualAddress),0,sectionHeader->Misc.VirtualSize);
+		}
 		sectionHeader++;
 
 	}
