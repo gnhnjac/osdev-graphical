@@ -14,7 +14,9 @@ void _start()
 	for (int i = 0; i < 10; i++)
 	{
 
-		char *tmp = bss+i;
+		char *tmp = "a";
+
+		*tmp += bss[i];
 
 		__asm__("mov $0, %eax");
 		__asm__("mov %0, %%ebx" : : "m" (tmp));

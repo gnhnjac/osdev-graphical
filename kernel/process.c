@@ -14,6 +14,38 @@ static process *processList = 0;
 
 static process *running_process = 0;
 
+void removeProcessFromList(int id)
+{
+
+    process *tmp = processList;
+    process *prev = 0;
+
+    while (tmp)
+    {
+
+        if (tmp->id == id)
+        {
+            if (prev)
+                prev->next = tmp->next;
+            else
+                processList = 0;
+            return;
+        }
+
+        prev = tmp;
+        tmp = tmp->next;
+
+    }
+
+}
+
+process  *getRunningProcess()
+{
+
+    return running_process;
+
+}
+
 process *getProcessByID(int id)
 {
 
@@ -100,7 +132,6 @@ int createProcess (char* exec) {
     }
     else
     {
-
         process *tmp = processList;
         while (tmp->next != 0)
             tmp = tmp->next;
@@ -170,6 +201,7 @@ void executeProcess (int id) {
 }
 
 void terminateProcess () {
+
     process *proc = running_process;
     if (!proc)
             return;
@@ -217,7 +249,9 @@ void terminateProcess () {
 
    running_process = 0;
 
-   //printf("\nProcess %d terminated.\n",proc->id);
+   printf("\nProcess %d terminated.\n",proc->id);
+
+   removeProcessFromList(proc->id);
    kfree(proc);
 
    __asm__ ("mov %0, %%esp" : : "m" (ret_ebp));

@@ -1,6 +1,7 @@
 #include "screen.h"
 #include "idt.h"
 #include "isrs.h"
+#include "process.h"
 
 /* These are function prototypes for all of the exception
 *  handlers: The first 32 entries in the IDT are reserved
@@ -123,10 +124,14 @@ void fault_handler(struct regs *r)
         *  infinite loop */
         //clear_screen();
         if (r->int_no > 18)
-            print_at("Reserved", 0, 0, 0);
+            print("Reserved");
         else
-            print_at(exception_messages[r->int_no], 0, 0, 0);
-        printf(" Exception. System Halted! Error Code: 0b%b\nCode faulted at 0x%U",r->err_code,r->eip);
-        for (;;);
+            print(exception_messages[r->int_no]);
+        printf(" Exception. Error Code: 0b%b\nCode faulted at 0x%U\n",r->err_code,r->eip);
+
+        if (getRunningProcess())
+            terminateProcess();
+        else
+            for (;;);
     }
 }

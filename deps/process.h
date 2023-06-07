@@ -58,6 +58,8 @@ typedef struct _process {
 };
 
 //refs
+void removeProcessFromList(int id);
+process  *getRunningProcess();
 process *getProcessByID(int id);
 int createProcess (char* exec);
 void executeProcess (int id);

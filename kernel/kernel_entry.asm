@@ -344,8 +344,10 @@ _syscall_stub:
    jae end
 
    push ebx
+   push edx
    mov ebx, 4
    mul ebx
+   pop edx
    pop ebx
 
    mov eax, [__syscalls+eax]
