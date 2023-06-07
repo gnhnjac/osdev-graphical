@@ -18,7 +18,7 @@ emu = QEMU
 DEPS := $(OBJ:.o=.d)
 
 # Default make target .
-all: ${ROOT_C_EXE} ${ROOT_C_SOURCES} pre-build os-image
+all: pre-build os-image
 
 # Run bochs
 run: all
@@ -35,7 +35,7 @@ pre-build:
 # @python check_size_validity.py
 # This is the actual disk image that the computer loads,
 # which is the combination of our compiled bootsector and kernel
-os-image: boot/bootldr.sys boot/stage2.sys kernel.sys makefile
+os-image: boot/bootldr.sys boot/stage2.sys kernel.sys ${ROOT_C_EXE}
 	@dd if=/dev/zero of=floppy.img bs=512 count=2880
 	@dd if=boot/bootldr.sys of=floppy.img bs=512 count=1
 	@copy /B /N /Y boot\stage2.sys root\STAGE2.SYS

@@ -108,6 +108,20 @@ char *exception_messages[] =
 
 };
 
+char *page_fault_exceptions[] =
+{
+
+    "Supervisory process tried to read a non-present page entry",
+    "Supervisory process tried to read a page and caused a protection fault",
+    "Supervisory process tried to write to a non-present page entry",
+    "Supervisory process tried to write a page and caused a protection fault",
+    "User process tried to read a non-present page entry",
+    "User process tried to read a page and caused a protection fault",
+    "User process tried to write to a non-present page entry",
+    "User process tried to write a page and caused a protection fault"
+
+};
+
 /* All of our Exception handling Interrupt Service Routines will
 *  point to this function. This will tell us what exception has
 *  happened! Right now, we simply halt the system by hitting an
@@ -128,6 +142,9 @@ void fault_handler(struct regs *r)
         else
             print(exception_messages[r->int_no]);
         printf(" Exception. Error Code: 0b%b\nCode faulted at 0x%U\n",r->err_code,r->eip);
+
+        if (r->int_no == 14)
+            print(page_fault_exceptions[r->err_code]);
 
         if (getRunningProcess())
             terminateProcess();

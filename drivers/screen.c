@@ -265,9 +265,7 @@ void print_at(const char *msg, int row, int col, int attr_byte)
 
 void print(const char *msg) 
 {
-
 	print_at(msg, -1, -1, 0);
-
 }
 
 void print_color(const char *msg, int attr_byte)

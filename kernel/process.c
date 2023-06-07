@@ -28,7 +28,7 @@ void removeProcessFromList(int id)
             if (prev)
                 prev->next = tmp->next;
             else
-                processList = 0;
+                processList = tmp->next;
             return;
         }
 
@@ -65,6 +65,27 @@ process *getProcessByID(int id)
 
 }
 
+int getFreeID()
+{
+
+    int id = 1;
+
+    process *tmp = processList;
+
+    while (tmp)
+    {
+
+        if (tmp->id == id)
+            id++;
+
+        tmp = tmp->next;
+
+    }
+
+    return id;
+
+}
+
 int createProcess (char* exec) {
     
     pdirectory *prevDir = vmmngr_get_directory();
@@ -85,7 +106,7 @@ int createProcess (char* exec) {
 
     process *proc = (process *)kmalloc(sizeof(process));
 
-    proc->id            = 1;
+    proc->id            = getFreeID();
     proc->pageDirectory = addressSpace;
     proc->priority      = 1;
     proc->state         = PROCESS_STATE_ACTIVE;
