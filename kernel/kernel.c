@@ -23,6 +23,7 @@
 #include "sysapi.h"
 #include "user.h"
 #include "process.h"
+#include "scheduler.h"
 
 uint32_t kernel_size=0;
 
@@ -71,7 +72,7 @@ void kmain(uint32_t _, multiboot_info* bootinfo, uint32_t _kernel_size) {
 	timer_install();
 	heap_init();
 
-	// display_logo();
+	//display_logo();
 	//install_nic();
 	init_screen();
 	ps2_init();
@@ -96,7 +97,9 @@ void kmain(uint32_t _, multiboot_info* bootinfo, uint32_t _kernel_size) {
 	//! initialize TSS
 	install_tss (5,0x10,0);
 
-	shell_main(); // start terminal
+	scheduler_initialize();
+
+	execute_idle();
 
 	return;
 }

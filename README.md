@@ -16,12 +16,16 @@ WinImage
 CURRENTLY SUPPORTS:
 
 Boot from virtualfloppy drive with fat12 fs minidriver
-PS/2 drivers (pit,keyboard,mouse)
+PS/2 drivers (keyboard,mouse)
+pit timer
 Shell gui
 VMM and PMM (and kheap memory allocation)
 IDT,ISRS,IRQS
 3.5 inch floppy driver
 Virtual file system with volume manager, fat12 filesystem and RAM file system
+Loading PE executable into disk
+Running single process PE executable in usermode
+int 0x80 maskable syscalls
 
 BUILD with make in the root.
 

@@ -6,6 +6,8 @@
 #include "heap.h"
 #include "tss.h"
 #include "screen.h"
+#include "scheduler.h"
+#include "pmm.h"
 
 #define PAGE_SIZE 4096
 #define PROC_INVALID_ID -1
@@ -91,14 +93,17 @@ int createProcess (char* exec) {
     pdirectory *prevDir = vmmngr_get_directory();
 
     /* get process virtual address space */
-    //addressSpace = vmmngr_createAddressSpace ();
-    pdirectory *addressSpace = vmmngr_get_directory();//vmmngr_create_pdir();
-    memcpy((void *)addressSpace, (void *)vmmngr_get_directory(),4096);
+    pdirectory *addressSpace = create_address_space(); // *** REMEMBER TO FREE IT ONCE THE PROCESS TERMINATES
+
+    disable_scheduling();
     vmmngr_switch_pdirectory(addressSpace);
     PImageInfo imageInfo = load_executable(addressSpace,exec);
+    vmmngr_switch_pdirectory(prevDir);
+    enable_scheduling();
+
     if (!imageInfo)
     {
-        vmmngr_switch_pdirectory(prevDir);
+        pmmngr_free_block(addressSpace);
         return 0;
     }
 
@@ -110,24 +115,9 @@ int createProcess (char* exec) {
     proc->pageDirectory = addressSpace;
     proc->priority      = 1;
     proc->state         = PROCESS_STATE_ACTIVE;
-    proc->threadCount   = 1;
     proc->next = 0;
-
-    /* create thread descriptor */
-    thread *mainThread       = (thread *)kmalloc(sizeof(thread));
-    proc->threadList = mainThread;
-    mainThread->kernelStack  = 0;
-    mainThread->parent       = proc;
-    mainThread->priority     = 1;
-    mainThread->state        = PROCESS_STATE_ACTIVE;
-    mainThread->initialStack = 0;
-    mainThread->stackLimit   = (void*) ((uint32_t) mainThread->initialStack - 4096);
-    mainThread->imageBase    = imageInfo->ImageBase;
-    mainThread->imageSize    = imageInfo->ImageSize;
-    memset ((char *)&mainThread->frame, 0, sizeof (trapFrame));
-    mainThread->frame.eip    = imageInfo->EntryPointRVA + imageInfo->ImageBase;
-    mainThread->frame.flags  = 0x200;
-    mainThread->next = 0;
+    proc->imageBase = imageInfo->ImageBase;
+    proc->imageSize = imageInfo->ImageSize;
 
     /* Create userspace stack (4k size) */
     void* stack = (void*) (imageInfo->ImageBase + imageInfo->ImageSize + PAGE_SIZE);
@@ -140,12 +130,25 @@ int createProcess (char* exec) {
     I86_PDE_WRITABLE|I86_PDE_USER,
 	I86_PTE_WRITABLE|I86_PTE_USER);
 
-    /* final initialization */
+    /* create thread descriptor */
+    thread *mainThread       = (thread *)kmalloc(sizeof(thread));
+    thread_create(mainThread,(void *)(imageInfo->EntryPointRVA + imageInfo->ImageBase),stack, false);
+    mainThread->parent = proc;
     mainThread->initialStack = stack;
-    mainThread->frame.esp    = (uint32_t)mainThread->initialStack;
-    mainThread->frame.ebp    = mainThread->frame.esp;
 
     kfree(imageInfo);
+
+    insert_process(proc);
+
+    queue_insert(*mainThread);
+
+    insert_thread_to_proc(proc,queue_get_last());
+
+    return proc->id;
+}
+
+void insert_process(process *proc)
+{
 
     if (processList == 0)
     {
@@ -160,64 +163,22 @@ int createProcess (char* exec) {
 
     }
 
-    vmmngr_switch_pdirectory(prevDir);
-
-    return proc->id;
 }
 
-void executeProcess (int id) {
+void insert_thread_to_proc(process *proc, thread *t)
+{
 
-    int entryPoint = 0;
-    unsigned int procStack = 0;
+    thread *tmp = proc->threadList;
 
-    /* get running process */
-    process* proc = getProcessByID(id);
+    if (tmp)
+    {
+        while (tmp->next)
+            tmp = tmp->next;
 
-    if (!proc)
-        return;
-    if (proc->id==PROC_INVALID_ID)
-            return;
-    if (!proc->pageDirectory)
-                    return;
-
-    /* switch to process address space */
-    __asm__ ("cli");
-    vmmngr_switch_pdirectory (proc->pageDirectory);
-
-    /* get esp and eip of main thread */
-    entryPoint = proc->threadList->frame.eip;
-    procStack  = proc->threadList->frame.esp;
-
-    uint32_t stubAddr;
-    __asm__ ("push $_end_stub\n"
-             "pop %0": "=m" (stubAddr) );
-
-    proc->prevEIP = stubAddr;
-
-    __asm__ ("mov %%ebp, %0" : : "m" (proc->prevEBP));
-
-    running_process = proc;
-
-    register int stack asm("esp");
-    tss_set_stack(0x10,stack);
-    /* execute process in user mode */
-    __asm__ (
-            "mov     $0x23,%%ax\n"
-            "mov     %%ax, %%ds\n"
-            "mov     %%ax, %%es\n"
-            "mov     %%ax, %%fs\n"
-            "mov     %%ax, %%gs\n"
-            "push   $0x23\n"
-            "push   %0\n" : : "m" (procStack));
-
-    __asm__ (
-            "push    $0x200\n"
-            "push    $0x1b\n"
-            "push   %0\n"
-            "iret\n" : : "m" (entryPoint)
-    );
-
-    __asm__("_end_stub:");
+        tmp->next = t;
+    }
+    else
+        proc->threadList = t;
 
 }
 
@@ -232,55 +193,88 @@ void terminateProcess () {
     /* release threads */
     thread* pThread = proc->threadList;
 
-    // main thread
-    uint32_t fileSize = pThread->imageSize;
+
+    uint32_t fileSize = proc->imageSize;
     if (fileSize % 4096 != 0)
         fileSize += 4096 - fileSize % 4096;
 
     /* unmap and release image memory */
-    for (uint32_t virt = pThread->imageBase; virt < pThread->imageBase+fileSize; virt+=4096) {
+    for (uint32_t virt = proc->imageBase; virt < proc->imageBase+fileSize; virt+=4096) {
 
         /* unmap and release page */
         vmmngr_free_virt (proc->pageDirectory, (void *)virt);
     }
-
-    uint32_t ret_ebp = proc->prevEBP;
-    uint32_t ret_addr = proc->prevEIP;
 
     while (pThread)
     {
 
         // unmap virtual stack
         vmmngr_free_virt (proc->pageDirectory, (void *) pThread->initialStack-PAGE_SIZE); // stack is 4k
+        remove_by_tid(pThread->tid); // remove process from process list
         thread *tmp = pThread;
         pThread = pThread->next;
         kfree(tmp);
 
     }
 
-    // restore data segment selectors
-   __asm__ (
-            "cli\n"
-            "mov     $0x10,%ax\n"
-            "mov     %ax, %ds\n"
-            "mov     %ax, %es\n"
-            "mov     %ax, %fs\n"
-            "mov     %ax, %gs\n"
-            "sti");
-
    running_process = 0;
 
    printf("\nProcess %d terminated.\n",proc->id);
 
    removeProcessFromList(proc->id);
-   kfree(proc);
 
-   __asm__ ("mov %0, %%esp" : : "m" (ret_ebp));
-   __asm__ ("push %0" : : "m" (ret_addr));
-   __asm__ ("mov %0, %%ebp" : : "m" (ret_ebp));
-   __asm__ ("ret");
+   __asm__("sti");
 
-   // very very hacky, what's needed is to add a stub at the end of the program that it will return to it,
-   // allocate that stub in user space and make it call terminate process instead of the process itself calling it
+   schedule(); // force task switch.
+
+}
+
+/* clones kernel space into new address space. */
+void clone_kernel_space(pdirectory* out) {
+
+    /* get current process directory. */
+    pdirectory* proc = vmmngr_get_directory();
+
+    /* copy kernel page tables into this new page directory.
+    Recall that KERNEL SPACE is 0xc0000000, which starts at
+    entry 768. */
+    memcpy((char *)&out->m_entries[768], (char *)&proc->m_entries[768], 256 * sizeof (pd_entry));
+}
+
+/* create new address space. */
+pdirectory* create_address_space (void) {
+
+    pdirectory* space =  vmmngr_create_pdir();
+
+    /* clone kernel space. */
+    clone_kernel_space(space);
+    return space;
+
+}
+
+void print_processes()
+{
+
+    process *tmp = processList;
+
+    while (tmp)
+    {
+
+        printf("name: %s, pid: %d\n",tmp->name, tmp->id);
+
+        thread *tmp_thread = tmp->threadList;
+
+        while (tmp_thread)
+        {
+
+            printf("tid: %d, state: %b\n",tmp_thread->tid, tmp_thread->state);
+
+            tmp_thread = tmp_thread->next;
+
+        }
+
+        tmp = tmp->next;
+
+    }
 
 }

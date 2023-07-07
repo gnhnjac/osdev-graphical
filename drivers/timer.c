@@ -56,7 +56,7 @@ void wait_milliseconds(int milliseconds)
 
     timer_ticks = 0;
 
-    while (timer_ticks*10 < milliseconds);
+    while (timer_ticks*(1000/PHASE) < milliseconds);
 
 }
 

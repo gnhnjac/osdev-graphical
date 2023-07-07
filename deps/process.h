@@ -1,3 +1,4 @@
+#pragma once
 #include <stdint.h>
 #include "vmm.h"
 
@@ -7,40 +8,44 @@
 #define PROC_INVALID_ID -1
 
 typedef struct _trapFrame {
-   uint32_t esp;
-   uint32_t ebp;
-   uint32_t eip;
+   /* pushed by isr. */
+   uint32_t gs;
+   uint32_t fs;
+   uint32_t es;
+   uint32_t ds;
+   /* pushed by pushf. */
    uint32_t edi;
    uint32_t esi;
-   uint32_t eax;
+   uint32_t ebp;
+   uint32_t esp; // skipped in pop but need to include it as null int
    uint32_t ebx;
-   uint32_t ecx;
    uint32_t edx;
+   uint32_t ecx;
+   uint32_t eax;
+   /* pushed by cpu. */
+   uint32_t eip;
+   uint32_t cs;
    uint32_t flags;
-   /*
-      note: we can add more registers to this.
-      For a complete trap frame, you should add:
-        -Debug registers
-        -Segment registers
-        -Error condition [if any]
-        -v86 mode segment registers [if used]
-   */
+   /* used only when coming from/to user mode. */
+// uint32_t user_stack;
+// uint32_t user_ss;
 }trapFrame;
 
 typedef struct _process process;
 typedef struct _thread thread;
 
 typedef struct _thread {
+   uint32_t    ESP;
+   uint32_t    SS;
+   uint32_t    kernelESP;
+   uint32_t    kernelSS;
    process*  parent;
+   uint32_t    priority;
+   int         state;
+   uint32_t     sleepTimeDelta;
    void*     initialStack;
-   void*     stackLimit;
-   void*     kernelStack;
-   uint32_t  priority;
-   int       state;
-   trapFrame frame;
-   uint32_t  imageBase;
-   uint32_t  imageSize;
    thread *next;
+   int tid;
 };
 
 typedef struct _process {
@@ -48,13 +53,11 @@ typedef struct _process {
    int            priority;
    pdirectory*    pageDirectory;
    int            state;
+   uint32_t  imageBase;
+   uint32_t  imageSize;
    process* next;
-   int threadCount;
    thread* threadList;
-
-   // temporary variables
-   int prevEBP;
-   int prevEIP;
+   char *name;
 };
 
 //refs
@@ -63,5 +66,9 @@ process  *getRunningProcess();
 process *getProcessByID(int id);
 int getFreeID();
 int createProcess (char* exec);
-void executeProcess (int id);
+void insert_process(process *proc);
+void insert_thread_to_proc(process *proc, thread *t);
 void terminateProcess ();
+void clone_kernel_space(pdirectory* out);
+pdirectory* create_address_space (void);
+void print_processes();

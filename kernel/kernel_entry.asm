@@ -308,28 +308,29 @@ extern _irq_handler
 ; This is a stub that we have created for IRQ based ISRs. This calls
 ; '_irq_handler' in our C code. We need to create this in an 'irq.c'
 irq_common_stub:
-    pusha
-    push ds
-    push es
-    push fs
-    push gs
-    mov ax, 0x10
-    mov ds, ax
-    mov es, ax
-    mov fs, ax
-    mov gs, ax
-    mov eax, esp
-    push eax
-    mov eax, _irq_handler
-    call eax
-    pop eax
-    pop gs
-    pop fs
-    pop es
-    pop ds
-    popa
-    add esp, 8 ; the pushes we did earlier (2 ints so 8 bytes)
-    iret
+   pusha
+   push ds
+   push es
+   push fs
+   push gs
+   mov ax, 0x10
+   mov ds, ax
+   mov es, ax
+   mov fs, ax
+   mov gs, ax
+   mov eax, esp
+   push eax
+   mov eax, _irq_handler
+   call eax
+   pop eax
+   pop gs
+   pop fs
+   pop es
+   pop ds
+   popa
+   add esp, 8 ; the pushes we did earlier (2 ints so 8 bytes)
+
+   iret
 
 ; syscall stub
 
@@ -363,3 +364,75 @@ _syscall_stub:
 end:
 
    iret
+
+; scheduler stub
+global _scheduler_isr
+extern _scheduler_tick
+extern _tss_set_stack
+extern __currentTask
+gen db 0
+_scheduler_isr:
+
+   ;
+   ; clear interrupts and save context.
+   ;
+   cli
+   pushad
+
+   ;
+   ; if no current task, just return.
+   ;
+   mov eax, [__currentTask]
+   cmp eax, 0
+   jz  interrupt_return
+   ;
+   ; save selectors.
+   ;
+   push ds
+   push es
+   push fs
+   push gs
+   ;
+   ; switch to kernel segments.
+   ;
+   mov ax, 0x10
+   mov ds, ax
+   mov es, ax
+   mov fs, ax
+   mov gs, ax
+   ;
+   ; save esp.
+   ;
+   mov eax, [__currentTask]
+   mov [eax], esp
+
+   ;
+   ; call scheduler.
+   ;
+   call _scheduler_tick
+
+   ;
+   ; restore esp.
+   ;
+   mov eax, [__currentTask]
+   mov esp, [eax]
+
+   ;
+   ; Call tss_set_stack (kernelSS, kernelESP).
+   ; This code will be needed later for user tasks.
+   ;
+   push dword [eax+8]
+   push dword [eax+12]
+   call _tss_set_stack
+   add esp, 8
+   ;
+   ; send EOI and restore context.
+   ;
+   pop gs
+   pop fs
+   pop es
+   pop ds
+
+interrupt_return:
+   popa
+   jmp _irq0

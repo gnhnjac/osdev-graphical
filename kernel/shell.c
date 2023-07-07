@@ -12,7 +12,7 @@
 #include "heap.h"
 #include <stdint.h>
 #include "process.h"
-
+#include "scheduler.h"
 
 
 
@@ -126,6 +126,10 @@ void handle_command(char *cmd_buff)
 	{
 		handle_exec(cmd_buff);
 	}
+	else if(strcmp(cmd, "ps"))
+	{
+		print_processes();
+	}
 	else
 	{
 
@@ -182,7 +186,6 @@ void handle_exec(char *cmd_buff)
 	char *new_path = join_path(path,param);
 
 	int pid = createProcess(new_path);
-	executeProcess(pid);
 
 	kfree(new_path);
 	kfree(param);
