@@ -14,6 +14,7 @@ typedef struct _queueEntry{
 } queueEntry;
 
 //refs
+process *get_running_process();
 void disable_scheduling();
 void enable_scheduling();
 void schedule();
@@ -26,6 +27,8 @@ bool queue_insert(thread t);
 queueEntry *queue_remove();
 thread *queue_get();
 thread *queue_get_last();
+void queue_delete_last();
+thread get_thread_by_tid(int tid);
 void remove_by_tid(int tid);
 int get_free_tid();
 void scheduler_dispatch ();

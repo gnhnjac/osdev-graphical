@@ -14,6 +14,15 @@ thread*  _currentTask = 0;
 
 process *kernel_proc;
 
+process *get_running_process()
+{
+
+        if (_currentTask)
+                return _currentTask->parent;
+        return 0;
+
+}
+
 void disable_scheduling()
 {
         _currentTask = 0;
@@ -77,6 +86,12 @@ void clear_queue() {
 
 /* insert thread. */
 bool queue_insert(thread t) {
+
+        bool scheduling_enabled = (_readyQueue == 0);
+
+        if (scheduling_enabled)
+                disable_scheduling();
+
         queueEntry *tmp = _readyQueue;
 
         queueEntry *new = (queueEntry *)kmalloc(sizeof(queueEntry));
@@ -93,6 +108,10 @@ bool queue_insert(thread t) {
         {
                 _readyQueue = new;
         }
+
+        if (scheduling_enabled)
+                enable_scheduling();
+
 }
 
 /* remove thread. */
@@ -129,8 +148,59 @@ thread *queue_get_last() {
                 return 0;
 }
 
+void queue_delete_last()
+{
+
+        queueEntry *tmp = _readyQueue;
+        if (!tmp)
+                return;
+
+        if (!tmp->next)
+        {
+                kfree(tmp);
+                _readyQueue = 0;
+        }
+        while(tmp->next->next)
+                tmp = tmp->next;
+
+        kfree(tmp->next);
+        tmp->next = 0
+
+}
+
+thread get_thread_by_tid(int tid)
+{
+
+        disable_scheduling();
+
+        thread t;
+        t.tid = -1;
+
+        queueEntry *tmp = _readyQueue;
+
+        while (tmp)
+        {
+                if (tmp->thread.tid == tid)
+                {       
+                        t = tmp->thread;
+                        enable_scheduling();
+                        return t;
+                }
+
+                tmp = tmp->next;
+
+        }
+
+        enable_scheduling();
+
+        return t;
+
+}
+
 void remove_by_tid(int tid)
 {
+
+        disable_scheduling();
 
         queueEntry *tmp = _readyQueue;
         queueEntry *prev = 0;
@@ -140,14 +210,9 @@ void remove_by_tid(int tid)
 
                 if (tmp->thread.tid == tid)
                 {
-                        if (prev)
-                                prev->next = tmp->next;
-                        else
-                                _readyQueue = tmp->next;
+                        tmp->thread.state = THREAD_TERMINATE;
 
-                        if (_currentTask->tid == tid)
-                                _currentTask->state = THREAD_TERMINATE;
-
+                        enable_scheduling();
                         return;
                 }
 
@@ -155,6 +220,8 @@ void remove_by_tid(int tid)
                 tmp = tmp->next;
 
         }
+
+        enable_scheduling();
 
 }
 
@@ -168,8 +235,8 @@ int get_free_tid()
         while (tmp)
         {
 
-                if (tmp->thread.tid == id)
-                    id++;
+                if (tmp->thread.tid >= id)
+                    id=tmp->thread.tid+1;
 
                 tmp = tmp->next;
 
@@ -182,15 +249,27 @@ int get_free_tid()
 /* schedule next task. */
 void scheduler_dispatch () {
 
-        /* We do Round Robin here, just remove and insert.
-        Note _currentTask pointer always points to
-        _currentThreadLocal. So just update _currentThreadLocal. */
+        /* We do Round Robin here, just remove and insert.*/
         do
         {       
                 queueEntry *tmp = queue_remove();
                 queue_insert(tmp->thread);
                 kfree(tmp);
                 _currentTask = queue_get();
+
+                if (_currentTask->state & THREAD_TERMINATE)
+                {
+
+                        if (_currentTask->kernelESP != 0)
+                                vmmngr_free_virt(_currentTask->parent->pageDirectory, (void *)(_currentTask->kernelESP-PAGE_SIZE));
+                        if (_currentTask->isMain)
+                        {
+                                pmmngr_free_block(_currentTask->parent->pageDirectory);
+                                kfree(_currentTask->parent);
+                        }
+                        queue_delete_last();
+
+                }
 
                 /* adjust time delta. */
                 if (_currentTask->sleepTimeDelta > 0)
@@ -205,7 +284,7 @@ void scheduler_dispatch () {
 
                 }
 
-        } while (_currentTask->state & THREAD_BLOCK_SLEEP);
+        } while (_currentTask->state & THREAD_BLOCK_SLEEP || _currentTask->state & THREAD_TERMINATE);
 }
 
 void scheduler_tick(void)
@@ -219,14 +298,6 @@ void scheduler_tick(void)
         // switch to it's address space if it's parent is different than the old parent
         if (prev_task.parent != _currentTask->parent || vmmngr_get_directory() != _currentTask->parent->pageDirectory)
                 vmmngr_switch_pdirectory(_currentTask->parent->pageDirectory);
-
-        if (prev_task.state == THREAD_TERMINATE)
-        {
-                if (prev_task.kernelESP != 0)
-                        vmmngr_free_virt(prev_task.parent->pageDirectory, (void *)(prev_task.kernelESP-PAGE_SIZE));
-                pmmngr_free_block(prev_task.parent->pageDirectory);
-                kfree(prev_task.parent);
-        }
 }
 
 extern void scheduler_isr(void);
@@ -250,12 +321,18 @@ void scheduler_initialize(void) {
 
         /* create idle thread and add it. */
         thread_create(&_idleThread, idle_task, create_kernel_stack(), true);
-
         _idleThread.parent = kernel_proc;
-
+        _idleThread.isMain = true;
         queue_insert(_idleThread);
+        insert_thread_to_proc(kernel_proc,&_idleThread);
 
-        insert_thread_to_proc(kernel_proc,queue_get_last());
+        /* create shell thread and add it. */
+        thread *shellThread = (thread *)kmalloc(sizeof(thread));
+        thread_create(shellThread, shell_main, create_kernel_stack(), true);
+        shellThread->parent = kernel_proc;
+        shellThread->isMain = false;
+        queue_insert(*shellThread);
+        insert_thread_to_proc(kernel_proc,shellThread);
 
         insert_process(kernel_proc);
 
@@ -266,6 +343,8 @@ void scheduler_initialize(void) {
 
 void print_threads()
 {
+
+        disable_scheduling();
 
         queueEntry *tmp = _readyQueue;
 
@@ -278,6 +357,8 @@ void print_threads()
 
         }
 
+        enable_scheduling();
+
 }
 
 /* idle task. */
@@ -286,15 +367,6 @@ void idle_task() {
   enable_scheduling();
 
   /* setup other things since this is the first task called */
-
-  /* create shell thread and add it. */
-  thread shellThread;
-  thread_create(&shellThread, shell_main, create_kernel_stack(), true);
-  shellThread.parent = kernel_proc;
-
-  queue_insert(shellThread);
-
-  insert_thread_to_proc(kernel_proc,queue_get_last());
 
   // thread test1;
   // thread_create(&test1, test_thread, create_kernel_stack(), true);
@@ -382,68 +454,81 @@ void* create_kernel_stack() {
 /* creates thread. */
 void  thread_create (thread *t, void *entry, void *esp, bool is_kernel) {
 
-	trapFrame* frame;
-
 	/* kernel and user selectors. */
 #define USER_DATA   0x23
 #define USER_CODE   0x1b
 #define KERNEL_DATA 0x10
 #define KERNEL_CODE 8
 
-	/* adjust stack. We are about to push data on it. */
-	esp -= sizeof (trapFrame);
-
-	/* initialize task frame. */
-	frame = ((trapFrame*) esp);
-	frame->flags = 0x202;
-	frame->eip   = (uint32_t)entry;
-	frame->ebp   = 0;
-	frame->esp   = 0;
-	frame->edi   = 0;
-	frame->esi   = 0;
-	frame->edx   = 0;
-	frame->ecx   = 0;
-	frame->ebx   = 0;
-	frame->eax   = 0;
 
 	/* set up segment selectors. */
         if (is_kernel)
         {
+
+                /* adjust stack. We are about to push data on it. */
+                esp -= sizeof (trapFrame);
+
+                /* initialize task frame. */
+                trapFrame*frame = ((trapFrame*) esp);
+                frame->flags = 0x202;
+                frame->eip   = (uint32_t)entry;
+                frame->ebp   = 0;
+                frame->esp   = 0;
+                frame->edi   = 0;
+                frame->esi   = 0;
+                frame->edx   = 0;
+                frame->ecx   = 0;
+                frame->ebx   = 0;
+                frame->eax   = 0;
+
         	frame->cs    = KERNEL_CODE;
         	frame->ds    = KERNEL_DATA;
         	frame->es    = KERNEL_DATA;
         	frame->fs    = KERNEL_DATA;
         	frame->gs    = KERNEL_DATA;
-        	t->SS         = KERNEL_DATA;
+        	t->SS        = KERNEL_DATA;
                 t->kernelESP = 0;
                 t->kernelSS = 0;
+
+                /* set stack. */
+                t->ESP = (uint32_t)esp;
         }
         else
         {
+
+                void *kernel_esp = create_kernel_stack();
+                t->kernelESP = (uint32_t)kernel_esp;
+                t->kernelSS = KERNEL_DATA;
+
+                /* adjust stack. We are about to push data on it. */
+                kernel_esp -= sizeof (userTrapFrame);
+
+                /* initialize task frame. */
+                userTrapFrame* frame = (userTrapFrame*) kernel_esp;
+                frame->flags = 0x202;
+                frame->eip   = (uint32_t)entry;
+                frame->ebp   = 0;
+                frame->esp   = 0;
+                frame->edi   = 0;
+                frame->esi   = 0;
+                frame->edx   = 0;
+                frame->ecx   = 0;
+                frame->ebx   = 0;
+                frame->eax   = 0;
+
                 frame->cs    = USER_CODE;
                 frame->ds    = USER_DATA;
                 frame->es    = USER_DATA;
                 frame->fs    = USER_DATA;
                 frame->gs    = USER_DATA;
-                t->SS         = USER_DATA;
-                t->kernelESP = (uint32_t)create_kernel_stack();
-                t->kernelSS = KERNEL_DATA;
+                t->SS        = USER_DATA;
+                frame->user_stack = (uint32_t)esp;
+                frame->user_ss = USER_DATA;
+
+                /* set stack. */
+                t->ESP = (uint32_t)kernel_esp;
         }
 
-
-        static int cntr = 0;
-
-        cntr++;
-
-        if (cntr == 3)
-        {
-                printf("%U",esp);
-                while(1);
-        }
-
- 
-	/* set stack. */
-	t->ESP = (uint32_t)esp;
 
 	t->parent   = 0;
 	t->priority = 0;

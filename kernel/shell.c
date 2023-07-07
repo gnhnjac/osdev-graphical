@@ -130,6 +130,10 @@ void handle_command(char *cmd_buff)
 	{
 		print_processes();
 	}
+	else if(strcmp(cmd, "pt"))
+	{
+		print_threads();
+	}
 	else
 	{
 

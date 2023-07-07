@@ -70,7 +70,7 @@ PImageInfo load_executable(pdirectory *pdir, char *path)
 	uint32_t unalignedSectionBase = sizeof(IMAGE_NT_HEADERS) + peHeaderRVA + numOfSections*IMAGE_SIZEOF_SECTION_HEADER;
 	uint32_t alignmentBytes = fileAlignment - unalignedSectionBase % fileAlignment;
 
-	void *tmpBuff = kmalloc(sizeof(alignmentBytes));
+	void *tmpBuff = kmalloc(alignmentBytes);
 	volReadFile(&exec,tmpBuff,alignmentBytes); // load the alignment
 	kfree(tmpBuff);
 
@@ -78,6 +78,7 @@ PImageInfo load_executable(pdirectory *pdir, char *path)
 
 	for (int i = 0; i < numOfSections; i++)
 	{
+
 		uint32_t sectionPageBase = imageBase+sectionHeader->VirtualAddress;
 		if (sectionPageBase % 4096 != 0)
 			sectionPageBase -= 4096 - sectionPageBase % 4096;

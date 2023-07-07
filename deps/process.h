@@ -26,10 +26,33 @@ typedef struct _trapFrame {
    uint32_t eip;
    uint32_t cs;
    uint32_t flags;
-   /* used only when coming from/to user mode. */
-// uint32_t user_stack;
-// uint32_t user_ss;
 }trapFrame;
+
+typedef struct _userTrapFrame
+{
+
+   /* pushed by isr. */
+   uint32_t gs;
+   uint32_t fs;
+   uint32_t es;
+   uint32_t ds;
+   /* pushed by pushf. */
+   uint32_t edi;
+   uint32_t esi;
+   uint32_t ebp;
+   uint32_t esp; // skipped in pop but need to include it as null int
+   uint32_t ebx;
+   uint32_t edx;
+   uint32_t ecx;
+   uint32_t eax;
+   /* pushed by cpu. */
+   uint32_t eip;
+   uint32_t cs;
+   uint32_t flags;
+   uint32_t user_stack;
+   uint32_t user_ss;
+
+}userTrapFrame;
 
 typedef struct _process process;
 typedef struct _thread thread;
@@ -46,6 +69,7 @@ typedef struct _thread {
    void*     initialStack;
    thread *next;
    int tid;
+   bool isMain;
 };
 
 typedef struct _process {
@@ -62,7 +86,6 @@ typedef struct _process {
 
 //refs
 void removeProcessFromList(int id);
-process  *getRunningProcess();
 process *getProcessByID(int id);
 int getFreeID();
 int createProcess (char* exec);

@@ -136,6 +136,7 @@ void vmmngr_alloc_virt(pdirectory *dir, void *virt, uint32_t pde_flags, uint32_t
 
 void vmmngr_free_virt(pdirectory *dir, void *virt)
 {
+
 	//! get page directory
    pdirectory* pageDirectory = dir;
 

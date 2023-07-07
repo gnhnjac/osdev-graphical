@@ -14,8 +14,6 @@
 
 static process *processList = 0;
 
-static process *running_process = 0;
-
 void removeProcessFromList(int id)
 {
 
@@ -38,13 +36,6 @@ void removeProcessFromList(int id)
         tmp = tmp->next;
 
     }
-
-}
-
-process  *getRunningProcess()
-{
-
-    return running_process;
 
 }
 
@@ -79,6 +70,8 @@ int getFreeID()
 
         if (tmp->id == id)
             id++;
+        else
+            return id;
 
         tmp = tmp->next;
 
@@ -89,7 +82,7 @@ int getFreeID()
 }
 
 int createProcess (char* exec) {
-    
+
     pdirectory *prevDir = vmmngr_get_directory();
 
     /* get process virtual address space */
@@ -118,6 +111,7 @@ int createProcess (char* exec) {
     proc->next = 0;
     proc->imageBase = imageInfo->ImageBase;
     proc->imageSize = imageInfo->ImageSize;
+    proc->name = 0;
 
     /* Create userspace stack (4k size) */
     void* stack = (void*) (imageInfo->ImageBase + imageInfo->ImageSize + PAGE_SIZE);
@@ -133,12 +127,12 @@ int createProcess (char* exec) {
     /* create thread descriptor */
     thread *mainThread       = (thread *)kmalloc(sizeof(thread));
     thread_create(mainThread,(void *)(imageInfo->EntryPointRVA + imageInfo->ImageBase),stack, false);
-
     vmmngr_switch_pdirectory(prevDir);
     enable_scheduling();
 
     mainThread->parent = proc;
     mainThread->initialStack = stack;
+    mainThread->isMain = true;
 
     kfree(imageInfo);
 
@@ -146,9 +140,7 @@ int createProcess (char* exec) {
 
     queue_insert(*mainThread);
 
-    kfree(mainThread);
-
-    insert_thread_to_proc(proc,queue_get_last());
+    insert_thread_to_proc(proc,mainThread);
 
     return proc->id;
 }
@@ -163,7 +155,7 @@ void insert_process(process *proc)
     else
     {
         process *tmp = processList;
-        while (tmp->next != 0)
+        while (tmp->next)
             tmp = tmp->next;
         tmp->next = proc;
 
@@ -190,7 +182,7 @@ void insert_thread_to_proc(process *proc, thread *t)
 
 void terminateProcess () {
 
-    process *proc = running_process;
+    process *proc = get_running_process();
     if (!proc)
             return;
     if (proc->id==PROC_INVALID_ID)
@@ -198,7 +190,6 @@ void terminateProcess () {
 
     /* release threads */
     thread* pThread = proc->threadList;
-
 
     uint32_t fileSize = proc->imageSize;
     if (fileSize % 4096 != 0)
@@ -218,11 +209,10 @@ void terminateProcess () {
         vmmngr_free_virt (proc->pageDirectory, (void *) pThread->initialStack-PAGE_SIZE); // stack is 4k
         thread *tmp = pThread;
         pThread = pThread->next;
-        remove_by_tid(tmp->tid); // remove process from process list
+        remove_by_tid(tmp->tid); // remove thread from thread list
+        kfree(tmp);
 
     }
-
-   running_process = 0;
 
    printf("\nProcess %d terminated.\n",proc->id);
 
@@ -268,14 +258,19 @@ void print_processes()
     while (tmp)
     {
 
-        printf("name: %s, pid: %d\n",tmp->name, tmp->id);
+        char *name = tmp->name;
+        if (!name)
+            name = "NAN";
+        printf("name: %s, pid: %d\n",name, tmp->id);
 
         thread *tmp_thread = tmp->threadList;
 
         while (tmp_thread)
         {
 
-            printf("tid: %d, state: %b\n",tmp_thread->tid, tmp_thread->state);
+            thread t = get_thread_by_tid(tmp_thread->tid);
+
+            printf("tid: %d, state: %b\n",t.tid, t.state);
 
             tmp_thread = tmp_thread->next;
 

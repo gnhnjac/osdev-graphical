@@ -245,7 +245,7 @@ void* pmmngr_alloc_blocks(int seq_len) {
 
 
 void pmmngr_free_block(void* p) {
- 
+ 	
 	uint32_t addr = (uint32_t)p;
 	int frame = addr / PMMNGR_BLOCK_SIZE;
  
