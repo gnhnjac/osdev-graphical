@@ -23,7 +23,7 @@ void thread_sleep(uint32_t ms);
 void thread_wake();
 void clear_queue();
 bool queue_insert(thread t);
-thread *queue_remove();
+queueEntry *queue_remove();
 thread *queue_get();
 thread *queue_get_last();
 void remove_by_tid(int tid);

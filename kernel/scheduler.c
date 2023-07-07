@@ -16,15 +16,12 @@ process *kernel_proc;
 
 void disable_scheduling()
 {
-        __asm__("cli");
         _currentTask = 0;
-        __asm__("sti");
 }
 
 void enable_scheduling()
 {
         _currentTask = queue_get();
-        __asm__("sti");
 }
 
 /* schedule new task to run. */
@@ -99,17 +96,13 @@ bool queue_insert(thread t) {
 }
 
 /* remove thread. */
-thread *queue_remove() {
-        thread *t;
+queueEntry *queue_remove() {
+        queueEntry *t;
         if (_readyQueue)
         {
-                t = &_readyQueue->thread;
-
-                queueEntry *tmp = _readyQueue;
+                t = _readyQueue;
 
                 _readyQueue = _readyQueue->next;
-
-                kfree(tmp);
 
         }
         return t;
@@ -119,6 +112,7 @@ thread *queue_remove() {
 thread *queue_get() {
         if (_readyQueue)
                 return &_readyQueue->thread;
+        return 0;
 }
 
 /* get bot of queue. */
@@ -192,9 +186,11 @@ void scheduler_dispatch () {
         Note _currentTask pointer always points to
         _currentThreadLocal. So just update _currentThreadLocal. */
         do
-        {
-                _currentTask = queue_remove();
-                queue_insert(*_currentTask);
+        {       
+                queueEntry *tmp = queue_remove();
+                queue_insert(tmp->thread);
+                kfree(tmp);
+                _currentTask = queue_get();
 
                 /* adjust time delta. */
                 if (_currentTask->sleepTimeDelta > 0)
@@ -433,11 +429,22 @@ void  thread_create (thread *t, void *entry, void *esp, bool is_kernel) {
                 t->kernelESP = (uint32_t)create_kernel_stack();
                 t->kernelSS = KERNEL_DATA;
         }
+
+
+        static int cntr = 0;
+
+        cntr++;
+
+        if (cntr == 3)
+        {
+                printf("%U",esp);
+                while(1);
+        }
+
  
 	/* set stack. */
 	t->ESP = (uint32_t)esp;
 
-	/* ignore other fields. */
 	t->parent   = 0;
 	t->priority = 0;
 	t->state    = THREAD_RUN;

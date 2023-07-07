@@ -98,12 +98,12 @@ int createProcess (char* exec) {
     disable_scheduling();
     vmmngr_switch_pdirectory(addressSpace);
     PImageInfo imageInfo = load_executable(addressSpace,exec);
-    vmmngr_switch_pdirectory(prevDir);
-    enable_scheduling();
 
     if (!imageInfo)
     {
         pmmngr_free_block(addressSpace);
+        vmmngr_switch_pdirectory(prevDir);
+        enable_scheduling();
         return 0;
     }
 
@@ -133,6 +133,10 @@ int createProcess (char* exec) {
     /* create thread descriptor */
     thread *mainThread       = (thread *)kmalloc(sizeof(thread));
     thread_create(mainThread,(void *)(imageInfo->EntryPointRVA + imageInfo->ImageBase),stack, false);
+
+    vmmngr_switch_pdirectory(prevDir);
+    enable_scheduling();
+
     mainThread->parent = proc;
     mainThread->initialStack = stack;
 
@@ -141,6 +145,8 @@ int createProcess (char* exec) {
     insert_process(proc);
 
     queue_insert(*mainThread);
+
+    kfree(mainThread);
 
     insert_thread_to_proc(proc,queue_get_last());
 
@@ -210,10 +216,9 @@ void terminateProcess () {
 
         // unmap virtual stack
         vmmngr_free_virt (proc->pageDirectory, (void *) pThread->initialStack-PAGE_SIZE); // stack is 4k
-        remove_by_tid(pThread->tid); // remove process from process list
         thread *tmp = pThread;
         pThread = pThread->next;
-        kfree(tmp);
+        remove_by_tid(tmp->tid); // remove process from process list
 
     }
 
@@ -239,10 +244,13 @@ void clone_kernel_space(pdirectory* out) {
     Recall that KERNEL SPACE is 0xc0000000, which starts at
     entry 768. */
     memcpy((char *)&out->m_entries[768], (char *)&proc->m_entries[768], 256 * sizeof (pd_entry));
+    
+    // also copy first 4mb
+    memcpy((char *)&out->m_entries[0], (char *)&proc->m_entries[0], 1 * sizeof (pd_entry));
 }
 
 /* create new address space. */
-pdirectory* create_address_space (void) {
+pdirectory* create_address_space () {
 
     pdirectory* space =  vmmngr_create_pdir();
 
