@@ -24,7 +24,7 @@ IDT,ISRS,IRQS
 3.5 inch floppy driver
 Virtual file system with volume manager, fat12 filesystem and RAM file system
 Loading PE executable into disk
-Running single process PE executable in usermode
+Running multiprocess PE executable in usermode (no multiple threads per process support yet) + kernel process
 int 0x80 maskable syscalls
 
 BUILD with make in the root.

@@ -112,6 +112,7 @@ int createProcess (char* exec) {
     proc->imageBase = imageInfo->ImageBase;
     proc->imageSize = imageInfo->ImageSize;
     proc->name = 0;
+    proc->threadList = 0;
 
     /* Create userspace stack (4k size) */
     void* stack = (void*) (imageInfo->ImageBase + imageInfo->ImageSize + PAGE_SIZE);
@@ -183,6 +184,7 @@ void insert_thread_to_proc(process *proc, thread *t)
 void terminateProcess () {
 
     process *proc = get_running_process();
+
     if (!proc)
             return;
     if (proc->id==PROC_INVALID_ID)

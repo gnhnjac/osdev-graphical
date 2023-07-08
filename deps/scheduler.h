@@ -28,6 +28,7 @@ queueEntry *queue_remove();
 thread *queue_get();
 thread *queue_get_last();
 void queue_delete_last();
+void queue_delete_first();
 thread get_thread_by_tid(int tid);
 void remove_by_tid(int tid);
 int get_free_tid();

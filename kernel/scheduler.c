@@ -87,7 +87,7 @@ void clear_queue() {
 /* insert thread. */
 bool queue_insert(thread t) {
 
-        bool scheduling_enabled = (_readyQueue == 0);
+        bool scheduling_enabled = (_currentTask == 0);
 
         if (scheduling_enabled)
                 disable_scheduling();
@@ -164,7 +164,21 @@ void queue_delete_last()
                 tmp = tmp->next;
 
         kfree(tmp->next);
-        tmp->next = 0
+        tmp->next = 0;
+
+}
+
+void queue_delete_first()
+{
+
+        if (_readyQueue)
+        {
+
+                queueEntry *tmp = _readyQueue;
+                _readyQueue = _readyQueue->next;
+                kfree(tmp);
+
+        }
 
 }
 
@@ -249,6 +263,8 @@ int get_free_tid()
 /* schedule next task. */
 void scheduler_dispatch () {
 
+        bool is_terminate;
+
         /* We do Round Robin here, just remove and insert.*/
         do
         {       
@@ -256,6 +272,8 @@ void scheduler_dispatch () {
                 queue_insert(tmp->thread);
                 kfree(tmp);
                 _currentTask = queue_get();
+
+                is_terminate = false;
 
                 if (_currentTask->state & THREAD_TERMINATE)
                 {
@@ -267,7 +285,9 @@ void scheduler_dispatch () {
                                 pmmngr_free_block(_currentTask->parent->pageDirectory);
                                 kfree(_currentTask->parent);
                         }
-                        queue_delete_last();
+                        queue_delete_first();
+                        is_terminate = true;
+                        continue;
 
                 }
 
@@ -284,7 +304,7 @@ void scheduler_dispatch () {
 
                 }
 
-        } while (_currentTask->state & THREAD_BLOCK_SLEEP || _currentTask->state & THREAD_TERMINATE);
+        } while (_currentTask->state & THREAD_BLOCK_SLEEP || is_terminate);
 }
 
 void scheduler_tick(void)

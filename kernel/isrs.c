@@ -1,6 +1,7 @@
 #include "screen.h"
 #include "idt.h"
 #include "isrs.h"
+#include "scheduler.h"
 #include "process.h"
 
 /* These are function prototypes for all of the exception
@@ -146,7 +147,7 @@ void fault_handler(struct regs *r)
         if (r->int_no == 14)
             print(page_fault_exceptions[r->err_code]);
 
-        if (getRunningProcess())
+        if (get_running_process())
             terminateProcess();
         else
             for (;;);
