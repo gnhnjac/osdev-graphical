@@ -87,6 +87,7 @@ int createProcess (char* exec) {
 
     /* get process virtual address space */
     pdirectory *addressSpace = create_address_space(); // *** REMEMBER TO FREE IT ONCE THE PROCESS TERMINATES
+    clone_kernel_stacks(addressSpace);
 
     disable_scheduling();
     vmmngr_switch_pdirectory(addressSpace);
@@ -123,7 +124,7 @@ int createProcess (char* exec) {
     /* map user process stack space */
     vmmngr_alloc_virt (addressSpace, stack - PAGE_SIZE, // stack grows downwards
     I86_PDE_WRITABLE|I86_PDE_USER,
-	I86_PTE_WRITABLE|I86_PTE_USER);
+    I86_PTE_WRITABLE|I86_PTE_USER);
 
     /* create thread descriptor */
     thread *mainThread       = (thread *)kmalloc(sizeof(thread));
@@ -235,10 +236,27 @@ void clone_kernel_space(pdirectory* out) {
     /* copy kernel page tables into this new page directory.
     Recall that KERNEL SPACE is 0xc0000000, which starts at
     entry 768. */
-    memcpy((char *)&out->m_entries[768], (char *)&proc->m_entries[768], 256 * sizeof (pd_entry));
+    memcpy((char *)&out->m_entries[768], (char *)&proc->m_entries[768], 4 * sizeof (pd_entry));
     
     // also copy first 4mb
     memcpy((char *)&out->m_entries[0], (char *)&proc->m_entries[0], 1 * sizeof (pd_entry));
+}
+
+void clone_kernel_stacks(pdirectory *out)
+{
+
+    /* get current process directory. */
+    pdirectory* proc = vmmngr_get_directory();
+
+    memcpy((char *)&out->m_entries[896], (char *)&proc->m_entries[896], 128 * sizeof (pd_entry));
+
+}
+
+void clear_kernel_stacks(pdirectory *out)
+{
+
+    memset((char *)&out->m_entries[896], 0, 128 * sizeof (pd_entry));
+
 }
 
 /* create new address space. */
@@ -272,7 +290,14 @@ void print_processes()
 
             thread t = get_thread_by_tid(tmp_thread->tid);
 
-            printf("tid: %d, state: %b\n",t.tid, t.state);
+            printf("tid: %d, state: ",t.tid);
+
+            if (t.state & THREAD_BLOCK_SLEEP)
+                    printf("SLEEPING\n");
+            else if(t.state & THREAD_TERMINATE)
+                    printf("TERMINATE\n");
+            else if (t.state & THREAD_RUN)
+                    printf("RUNNING\n");
 
             tmp_thread = tmp_thread->next;
 

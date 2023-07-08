@@ -46,6 +46,7 @@ void vmmngr_free_page (pt_entry* e);
 pt_entry* vmmngr_ptable_lookup_entry (ptable* p,virtual_addr addr);
 pd_entry* vmmngr_pdirectory_lookup_entry (pdirectory* p, virtual_addr addr);
 bool vmmngr_switch_pdirectory (pdirectory* dir);
+void vmmngr_set_pdirectory_ptr(pdirectory *dir);
 pdirectory* vmmngr_get_directory ();
 pdirectory* vmmngr_create_pdir ();
 void * vmmngr_virt2phys(void *virt);

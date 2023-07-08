@@ -369,6 +369,7 @@ end:
 global _scheduler_isr
 extern _scheduler_tick
 extern _tss_set_stack
+extern _vmmngr_set_pdirectory_ptr
 extern __currentTask
 gen db 0
 _scheduler_isr:
@@ -417,10 +418,21 @@ _scheduler_isr:
    mov eax, [__currentTask]
    mov esp, [eax]
 
+   ; restore page directory
+   mov ebx, [eax+16] ; the parent process pointer
+   mov ecx, [ebx] ; page directory is right at the start of the process struct
+   mov cr3, ecx
+
+   ; officially restore page directory now that the stack can be used
+   push ecx
+   call _vmmngr_set_pdirectory_ptr
+   add esp, 4
+
    ;
    ; Call tss_set_stack (kernelSS, kernelESP).
    ; This code will be needed later for user tasks.
    ;
+   mov eax, [__currentTask]
    push dword [eax+8]
    push dword [eax+12]
    call _tss_set_stack
@@ -435,4 +447,5 @@ _scheduler_isr:
 
 interrupt_return:
    popa
+
    jmp _irq0

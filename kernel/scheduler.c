@@ -280,13 +280,14 @@ void scheduler_dispatch () {
 
                         if (_currentTask->kernelESP != 0)
                                 vmmngr_free_virt(_currentTask->parent->pageDirectory, (void *)(_currentTask->kernelESP-PAGE_SIZE));
-                        if (_currentTask->isMain)
+                        if (_currentTask->isMain) // bad because main might execute before others thus the prev line will throw an error
                         {
                                 pmmngr_free_block(_currentTask->parent->pageDirectory);
                                 kfree(_currentTask->parent);
                         }
                         queue_delete_first();
                         is_terminate = true;
+                        printf("terminatedd");
                         continue;
 
                 }
@@ -310,14 +311,14 @@ void scheduler_dispatch () {
 void scheduler_tick(void)
 {
 
-        thread prev_task = *_currentTask;
+        //thread prev_task = *_currentTask;
 
         // dispatch the next thread
         scheduler_dispatch();
 
         // switch to it's address space if it's parent is different than the old parent
-        if (prev_task.parent != _currentTask->parent || vmmngr_get_directory() != _currentTask->parent->pageDirectory)
-                vmmngr_switch_pdirectory(_currentTask->parent->pageDirectory);
+        // if (prev_task.parent != _currentTask->parent || vmmngr_get_directory() != _currentTask->parent->pageDirectory)
+        //         vmmngr_switch_pdirectory(_currentTask->parent->pageDirectory);
 }
 
 extern void scheduler_isr(void);
@@ -371,8 +372,14 @@ void print_threads()
         while (tmp)
         {
 
-                printf("tid: %d, state: %b\n",tmp->thread.tid, tmp->thread.state);
+                printf("tid: %d, state: ",tmp->thread.tid);
 
+                if (tmp->thread.state & THREAD_BLOCK_SLEEP)
+                        printf("SLEEPING\n");
+                else if(tmp->thread.state & THREAD_TERMINATE)
+                        printf("TERMINATE\n");
+                else if (tmp->thread.state & THREAD_RUN)
+                        printf("RUNNING\n");
                 tmp = tmp->next;
 
         }
@@ -388,6 +395,19 @@ void idle_task() {
 
   /* setup other things since this is the first task called */
 
+  for (int i = 0; i < 49; i++)
+  {
+
+        thread *t = (thread *)kmalloc(sizeof(thread));
+        thread_create(t, color_thread, create_kernel_stack(), true);
+        t->parent = kernel_proc;
+        t->isMain = false;
+        queue_insert(*t);
+        insert_thread_to_proc(kernel_proc,t);
+        thread_sleep(100);
+
+  }
+
   // thread test1;
   // thread_create(&test1, test_thread, create_kernel_stack(), true);
   // queue_insert(test1);
@@ -397,6 +417,31 @@ void idle_task() {
   // queue_insert(test2);
 
   while(1) __asm__ ("pause");
+}
+
+int off = 20;
+void color_thread()
+{
+
+        disable_scheduling();
+
+        int own_off = off;
+        off++;
+
+        enable_scheduling();
+
+        int cycler = 0;
+        while(1)
+        {
+                disable_scheduling();
+                int cursor_coords = get_cursor();
+                print_at(" ", 0, own_off, (cycler << 4)|(1<<15));
+                set_cursor(cursor_coords);
+                cycler = (cycler + 1) % 8;
+                enable_scheduling();
+                thread_sleep(100);
+        }
+
 }
 
 void test_thread()
@@ -471,17 +516,37 @@ void* create_kernel_stack() {
         return ret;
 }
 
+/* create a new kernel space stack for user mode process. */
+// NOTE **THIS ONLY WORKS FOR SINGLE THREADED PROCESSES SINCE IT'S ALLOCATED STATICALLY
+void *create_user_kernel_stack()
+{
+
+/* we are reserving this area for 4k kernel stacks. */
+#define USER_KERNEL_STACK_ALLOC_BASE 0x80000000
+
+        uint32_t loc = USER_KERNEL_STACK_ALLOC_BASE;
+
+        vmmngr_alloc_virt(vmmngr_get_directory(), (void *)loc, I86_PDE_WRITABLE, I86_PTE_WRITABLE);
+
+        /* we are returning top of stack. */
+        void *ret = (void*) (loc + PAGE_SIZE);
+
+        /* and return top of stack. */
+        return ret;
+
+}
+
 /* creates thread. */
 void  thread_create (thread *t, void *entry, void *esp, bool is_kernel) {
 
-	/* kernel and user selectors. */
+        /* kernel and user selectors. */
 #define USER_DATA   0x23
 #define USER_CODE   0x1b
 #define KERNEL_DATA 0x10
 #define KERNEL_CODE 8
 
 
-	/* set up segment selectors. */
+        /* set up segment selectors. */
         if (is_kernel)
         {
 
@@ -501,12 +566,12 @@ void  thread_create (thread *t, void *entry, void *esp, bool is_kernel) {
                 frame->ebx   = 0;
                 frame->eax   = 0;
 
-        	frame->cs    = KERNEL_CODE;
-        	frame->ds    = KERNEL_DATA;
-        	frame->es    = KERNEL_DATA;
-        	frame->fs    = KERNEL_DATA;
-        	frame->gs    = KERNEL_DATA;
-        	t->SS        = KERNEL_DATA;
+                frame->cs    = KERNEL_CODE;
+                frame->ds    = KERNEL_DATA;
+                frame->es    = KERNEL_DATA;
+                frame->fs    = KERNEL_DATA;
+                frame->gs    = KERNEL_DATA;
+                t->SS        = KERNEL_DATA;
                 t->kernelESP = 0;
                 t->kernelSS = 0;
 
@@ -516,7 +581,7 @@ void  thread_create (thread *t, void *entry, void *esp, bool is_kernel) {
         else
         {
 
-                void *kernel_esp = create_kernel_stack();
+                void *kernel_esp = create_user_kernel_stack();
                 t->kernelESP = (uint32_t)kernel_esp;
                 t->kernelSS = KERNEL_DATA;
 
@@ -550,10 +615,10 @@ void  thread_create (thread *t, void *entry, void *esp, bool is_kernel) {
         }
 
 
-	t->parent   = 0;
-	t->priority = 0;
-	t->state    = THREAD_RUN;
-	t->sleepTimeDelta = 0;
+        t->parent   = 0;
+        t->priority = 0;
+        t->state    = THREAD_RUN;
+        t->sleepTimeDelta = 0;
         t->tid = get_free_tid();
         t->next = 0;
 }

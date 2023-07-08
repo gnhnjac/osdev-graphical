@@ -55,6 +55,13 @@ bool vmmngr_switch_pdirectory (pdirectory* dir) {
 	return true;
 }
 
+void vmmngr_set_pdirectory_ptr(pdirectory *dir)
+{
+ 
+	_cur_directory = dir;
+
+}
+
 pdirectory* vmmngr_get_directory () {
  
 	return _cur_directory;
