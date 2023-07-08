@@ -4,7 +4,7 @@ C_SOURCES = $(wildcard kernel/*.c drivers/*.c utils/*.c)
 HEADERS = $(wildcard deps/*.h)
 ASM_FILES = $(wildcard boot/routines/*.asm)
 
-ROOT_C_SOURCES = $(wildcard root/*.c)
+ROOT_C_SOURCES = $(wildcard root/c_execs/*.c)
 ROOT_C_EXE = ${ROOT_C_SOURCES:.c=.exe}
 
 # TODO : Make sources dep on all header files.
