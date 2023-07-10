@@ -151,10 +151,10 @@ void pmmngr_init_memory_regions(uint32_t mem_regions_addr)
 			break;
 
 		//! display entry
-		printf("region %d: start: 0x%x%x length (bytes): 0x%x%x type: %d (%s)\n", i, 
-		region[i].startHi, region[i].startLo,
-		region[i].sizeHi,region[i].sizeLo,
-		region[i].type, strMemoryTypes[region[i].type-1]);
+		//printf("region %d: start: 0x%x%x length (bytes): 0x%x%x type: %d (%s)\n", i, 
+		//region[i].startHi, region[i].startLo,
+		//region[i].sizeHi,region[i].sizeLo,
+		//region[i].type, strMemoryTypes[region[i].type-1]);
 
 		//! if region is avilable memory, initialize the region for use
 		if (region[i].type==1)

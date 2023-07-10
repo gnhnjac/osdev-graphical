@@ -26,6 +26,11 @@ mov	es, ax
 mov	di, 0x3000 + 512*5 ; 3 reserved sectors for the memory map
 call BiosGetMemoryMap
 
+; set video mode to 640x480 16 colors
+mov ah, 0
+mov al, 0x13
+int 0x10
+
 ; switch to 32 bit protected mode
 call switch_to_pm
 
@@ -45,8 +50,8 @@ load_kernel: ; note that dx is changed here!
 bits 32
 BEGIN_PM:
 	
-	push copy_kernel_msg
-	call print_str_mem32
+	;push copy_kernel_msg
+	;call print_str_mem32
 
 	call EnablePaging ; enable paging before we copy our kernel to 0xC0000000
 
@@ -63,8 +68,8 @@ COPY_KERNEL_IMG:
  	mov	ecx, eax
  	rep	movsd  
 
-	push pm_msg
-	call print_str_mem32
+	;push pm_msg
+	;call print_str_mem32
 
 	mov	eax, 0x2BADB002	 ; multiboot specs say eax should be this
 	mov	ebx, 0
@@ -75,7 +80,7 @@ COPY_KERNEL_IMG:
 	push dword boot_info
 	call IMAGE_PMODE_BASE ;Execute Kernel
 
-	add	esp, 4
+	add	esp, 8
  
     cli
 	hlt

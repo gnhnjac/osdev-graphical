@@ -24,6 +24,7 @@
 #include "user.h"
 #include "process.h"
 #include "scheduler.h"
+#include "graphics.h"
 
 uint32_t kernel_size=0;
 
@@ -69,15 +70,8 @@ void kmain(uint32_t _, multiboot_info* bootinfo, uint32_t _kernel_size) {
 
 	vmmngr_initialize();
 
-	timer_install();
+	
 	heap_init();
-
-	//display_logo();
-	//install_nic();
-	init_screen();
-	ps2_init();
-	keyboard_install();
-	mouse_install();
 
 	//! set drive 0 as current drive
 	flpydsk_set_working_drive (0);
@@ -90,6 +84,20 @@ void kmain(uint32_t _, multiboot_info* bootinfo, uint32_t _kernel_size) {
 
 	// initialize the temp file system driver
 	tfsys_init();
+
+	init_psf1_8x16();
+	if (!load_psf1_8x16("a:\\font.psf"))
+		return;
+	
+	init_screen();
+
+	//display_logo();
+	//install_nic();
+	//init_screen();
+	ps2_init();
+	timer_install();
+	keyboard_install();
+	mouse_install();
 
 	// initialize the system call api
 	install_syscalls();

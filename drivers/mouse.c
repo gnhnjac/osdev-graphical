@@ -5,21 +5,41 @@
 #include "mouse.h"
 #include "std.h"
 #include "keyboard.h"
+#include "graphics.h"
 #include <stdint.h>
 #include <stdbool.h>
 
-static uint8_t PREVX = 40;
-static uint8_t PREVY = 12;
-static int8_t MOUSEX = 40;
-static int8_t MOUSEY = 12;
+static int16_t PREVX = 0;
+static int16_t PREVY = 0;
+static int16_t MOUSEX = 0;
+static int16_t MOUSEY = 0;
 static uint8_t color_attr = 3;
-static int interval = 0;
 static bool mouse_enabled = true;
 static bool mouse_installed = false;
 
-static placeholder mouset_buffer = {' ',0x0f};
-static placeholder mouseb_buffer = {' ',0x0f};
-static placeholder mouser_buffer = {' ',0x0f};
+// 18x10 cursor bitmap
+uint8_t mouse_bitmap[18][10] = {
+{ 1,0,0,0,0,0,0,0,0,0, },
+{ 1,1,0,0,0,0,0,0,0,0, },
+{ 1,2,1,0,0,0,0,0,0,0, },
+{ 1,2,2,1,0,0,0,0,0,0, },
+{ 1,2,2,2,1,0,0,0,0,0, },
+{ 1,2,2,2,2,1,0,0,0,0, },
+{ 1,2,2,2,2,2,1,0,0,0, },
+{ 1,2,2,2,2,2,2,1,0,0, },
+{ 1,2,2,2,2,2,2,2,1,0, },
+{ 1,2,2,2,2,2,1,1,1,1, },
+{ 1,2,2,1,2,2,1,0,0,0, },
+{ 1,2,1,1,2,2,1,0,0,0, },
+{ 1,1,0,0,1,2,1,0,0,0, },
+{ 1,0,0,0,0,1,2,1,0,0, },
+{ 0,0,0,0,0,1,2,1,0,0, },
+{ 0,0,0,0,0,0,1,2,1,0, },
+{ 0,0,0,0,0,0,1,2,1,0, },
+{ 0,0,0,0,0,0,0,1,0,0, }
+};
+
+uint8_t mouse_placeholder_buffer[18][10];
 
 void mouse_wait(uint8_t type)
 {
@@ -50,25 +70,74 @@ void disable_mouse()
 	if (!mouse_installed)
 		return;
 	mouse_enabled = false;
-	int prev_cursor = get_cursor();
-	print_char(mouset_buffer.ascii,MOUSEY,MOUSEX,mouset_buffer.attr);
-	if (MOUSEY < 24)
-		print_char(mouseb_buffer.ascii,MOUSEY+1,MOUSEX,mouseb_buffer.attr);
-	if (MOUSEX < 79)
-		print_char(mouser_buffer.ascii,MOUSEY,MOUSEX+1,mouser_buffer.attr);
-	set_cursor(prev_cursor);
+
+	for (int i = 0; i < 18; i++)
+	{
+
+		for (int j = 0; j < 10; j++)
+		{
+
+			if (mouse_bitmap[i][j])
+				set_pixel(MOUSEX+j,MOUSEY+i,mouse_placeholder_buffer[i][j]);
+
+		}
+
+	}
 
 }
 
 void save_to_mouse_buffer()
 {
-	char *video_memory = (char *)VIDEO_ADDRESS;
-	mouset_buffer.ascii = *(video_memory + (MOUSEY*80 + MOUSEX)*2);
-	mouset_buffer.attr = *(video_memory + (MOUSEY*80 + MOUSEX)*2 + 1);
-	mouseb_buffer.ascii = *(video_memory + (MOUSEY*80 + MOUSEX + 80)*2);
-	mouseb_buffer.attr = *(video_memory + (MOUSEY*80 + MOUSEX + 80)*2 + 1);
-	mouser_buffer.ascii = *(video_memory + (MOUSEY*80 + MOUSEX + 1)*2);
-	mouser_buffer.attr = *(video_memory + (MOUSEY*80 + MOUSEX + 1)*2 + 1);
+	for (int i = 0; i < 18; i++)
+	{
+
+		for (int j = 0; j < 10; j++)
+		{
+
+			if (mouse_bitmap[i][j])
+				mouse_placeholder_buffer[i][j] = get_pixel(MOUSEX+j,MOUSEY+i);
+
+		}
+
+	}
+
+}
+
+void print_mouse()
+{
+
+	for (int i = 0; i < 18; i++)
+	{
+
+		for (int j = 0; j < 10; j++)
+		{
+
+			if (mouse_bitmap[i][j] == 1)
+				set_pixel(MOUSEX+j,MOUSEY+i,0xf);
+			else if(mouse_bitmap[i][j] == 2)
+				set_pixel(MOUSEX+j,MOUSEY+i,0);
+
+		}
+
+	}
+
+}
+
+void clear_mouse()
+{
+
+	for (int i = 0; i < 18; i++)
+	{
+
+		for (int j = 0; j < 10; j++)
+		{
+
+			if (mouse_bitmap[i][j])
+				set_pixel(PREVX+j,PREVY+i,mouse_placeholder_buffer[i][j]);
+
+		}
+
+	}
 
 }
 
@@ -78,13 +147,7 @@ void enable_mouse()
 		return;
 	mouse_enabled = true;
 	save_to_mouse_buffer();
-	int prev_cursor = get_cursor();
-	print_char(0,MOUSEY,MOUSEX,0x40);
-	if (MOUSEY < 24)
-		print_char(0,MOUSEY+1,MOUSEX,0x40);
-	if (MOUSEX < 79)
-		print_char(0,MOUSEY,MOUSEX+1,0x40);
-	set_cursor(prev_cursor);
+	print_mouse();
 
 }
 
@@ -112,84 +175,60 @@ void mouse_handler()
 	if (!mouse_enabled || !mouse_installed)
 		return;
 
-	if (interval % 5 == 0)
-	{
+	int8_t rel_x = xmov - ((flags << 4) & 0x100); // produce 2s complement only if the neg bit is set
+	int8_t rel_y = ymov - ((flags << 3) & 0x100); // produce 2s complement only if the neg bit is set
+	// handle mouse mvmt
 
-		int8_t rel_x = xmov - ((flags << 4) & 0x100); // produce 2s complement only if the neg bit is set
-		int8_t rel_y = ymov - ((flags << 3) & 0x100); // produce 2s complement only if the neg bit is set
-		// handle mouse mvmt
+	MOUSEX += rel_x;
 
-		MOUSEX += rel_x;
+	if (MOUSEX < 0)
+		MOUSEX = 0;
+	else if (MOUSEX >= PIXEL_WIDTH)
+		MOUSEX = (uint16_t)PIXEL_WIDTH-1;
 
-		if (MOUSEX < 0)
-			MOUSEX = 0;
-		else if (MOUSEX > 79)
-			MOUSEX = 79;
+	MOUSEY -= rel_y;
 
-		MOUSEY -= rel_y;
+	if (MOUSEY < 0)
+		MOUSEY = 0;
+	else if (MOUSEY >= PIXEL_HEIGHT)
+		MOUSEY = (uint16_t)PIXEL_HEIGHT-1;
 
-		if (MOUSEY < 2)
-			MOUSEY = 2;
-		else if (MOUSEY > 24)
-			MOUSEY = 24;
-		int prev_cursor = get_cursor();
-		print_char(mouset_buffer.ascii,PREVY,PREVX,mouset_buffer.attr);
-		if (PREVY < 24)
-			print_char(mouseb_buffer.ascii,PREVY+1,PREVX,mouseb_buffer.attr);
-		if (PREVX < 79)
-			print_char(mouser_buffer.ascii,PREVY,PREVX+1,mouser_buffer.attr);
+	clear_mouse();
 
-		PREVX = MOUSEX;
-		PREVY = MOUSEY;
+	PREVX = MOUSEX;
+	PREVY = MOUSEY;
 
-		save_to_mouse_buffer();
-		
-		print_char(0,MOUSEY,MOUSEX,0x40);
-		if (MOUSEY < 24)
-			print_char(0,MOUSEY+1,MOUSEX,0x40);
-		if (MOUSEX < 79)
-			print_char(0,MOUSEY,MOUSEX+1,0x40);
-		set_cursor(prev_cursor);
-
-	}
+	save_to_mouse_buffer();
 	
-	interval++;
+	print_mouse();
 
 	// handle scrolling
 	int8_t scroll = zmov & 0xF;
 	if (scroll == VERTICAL_SCROLL_UP)
 	{
-		scroll_down();
+		//scroll_down();
 	}
 	else if (scroll == VERTICAL_SCROLL_DOWN)
 	{
-		scroll_up();
+		//scroll_up();
 	}
 
 	int left_click = flags & 1;
 	int right_click = flags & 2;
 
-	if (left_click)
-	{
-		if (MOUSEX == 79) // if on scroll bar
-		{
-			disable_mouse();
-			set_scroll_pos_mouse(MOUSEY);
-			enable_mouse();
-		}
-		else
-		{
-			set_cursor_coords(MOUSEY, MOUSEX);
-		}
-	}
-	if (right_click)
-	{
-		int prev_cursor = get_cursor();
-		print_char(0,MOUSEY-1,MOUSEX-1,color_attr << 4);
-		set_cursor(prev_cursor);
-		color_attr += 1;
-		color_attr = color_attr % 8;
-	}
+	// if (left_click)
+	// {
+	// 	if (MOUSEX == 79) // if on scroll bar
+	// 	{
+	// 		disable_mouse();
+	// 		set_scroll_pos_mouse(MOUSEY);
+	// 		enable_mouse();
+	// 	}
+	// 	else
+	// 	{
+	// 		set_cursor_coords(MOUSEY, MOUSEX);
+	// 	}
+	// }
 
 }
 
@@ -228,7 +267,11 @@ void set_mouse_rate(int rate)
 
 void mouse_install()
 {
-
+	MOUSEX = 0;
+	MOUSEY = 0;
+	PREVX = 0;
+	PREVY = 0;
+	save_to_mouse_buffer();
 
 	__asm__ __volatile__ ("cli");
 
@@ -267,16 +310,6 @@ void mouse_install()
 	irq_install_handler(12, mouse_handler);
 
 	__asm__ __volatile__ ("sti");
-
-	// save strings at future mouse init position
-	char *video_memory = (char *)VIDEO_ADDRESS;
-
-	mouset_buffer.ascii = *(video_memory + (MOUSEY*80 + MOUSEX)*2);
-	mouset_buffer.attr = *(video_memory + (MOUSEY*80 + MOUSEX)*2 + 1);
-	mouseb_buffer.ascii = *(video_memory + (MOUSEY*80 + MOUSEX + 80)*2);
-	mouseb_buffer.attr = *(video_memory + (MOUSEY*80 + MOUSEX + 80)*2 + 1);
-	mouser_buffer.ascii = *(video_memory + (MOUSEY*80 + MOUSEX + 1)*2);
-	mouser_buffer.attr = *(video_memory + (MOUSEY*80 + MOUSEX + 1)*2 + 1);
 
 	mouse_installed = true;
 }

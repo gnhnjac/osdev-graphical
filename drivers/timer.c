@@ -99,7 +99,7 @@ void update_time()
         int_to_str_padding(current_sec,second_str,10,2);
 
         int cursor_coords = get_cursor();
-        set_cursor_coords(0,TIME_OFF);
+        set_cursor_coords(TIME_OFF,0);
         printf("%s:%s:%s",hour_str,min_str,second_str);
         set_cursor(cursor_coords);
     }

@@ -1,8 +1,14 @@
 #include <stdint.h>
 
-#define VIDEO_ADDRESS 0xb8000
-#define MAX_ROWS 25
-#define MAX_COLS 80
+#define VIDEO_ADDRESS 0xa0000
+#define MAX_ROWS 11
+#define MAX_COLS 40
+
+#define PIXEL_WIDTH 320
+#define PIXEL_HEIGHT 200
+
+#define CHAR_WIDTH 8
+#define CHAR_HEIGHT 16
 
 // Default color scheme
 #define WHITE_ON_BLACK 0x0f
@@ -16,27 +22,28 @@
 #define BUFFER_BOT_ROWS 100
 
 // top bar constants
-#define TOP 2
+#define TOP 1
 #define VIEWPORT_ROWS (MAX_ROWS-TOP)
 #define CTRL_OFF 0
 #define SHIFT_OFF 5
 #define ALT_OFF 11
 #define CAPS_OFF 15
-#define TIME_OFF 79-9
+#define TIME_OFF 30
+
+#define RIGHT 38
+
 //refs
-void print_char(const char character, int row, int col, char attribute_byte);
-void blink_screen();
-void unblink_screen();
+void print_char(const char character, int row, int col, char color);
 int get_screen_offset(int row, int col);
+int get_screen_x(int col);
+int get_screen_y(int row);
 int get_cursor_row();
 int get_cursor_col();
 int get_cursor();
 void set_cursor(int offset);
 void set_cursor_input_coords(uint8_t row, uint8_t col);
 void attach_cursor_to_input();
-void enable_cursor(uint8_t cursor_start, uint8_t cursor_end);
-void disable_cursor();
-void set_cursor_coords(int row, int col);
+void set_cursor_coords(int col, int row);
 void set_cursor_row(int row);
 void putchar(char c);
 void print_at(const char *msg, int row, int col, int attr_byte);
