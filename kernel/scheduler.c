@@ -7,6 +7,7 @@
 #include "shell.h"
 #include "timer.h"
 #include "screen.h"
+#include "graphics.h"
 
 queueEntry  *_readyQueue;
 thread   _idleThread;
@@ -395,18 +396,18 @@ void idle_task() {
 
   /* setup other things since this is the first task called */
 
-  for (int i = 0; i < 49; i++)
-  {
+  // for (int i = 0; i < 4; i++)
+  // {
 
-        thread *t = (thread *)kmalloc(sizeof(thread));
-        thread_create(t, color_thread, create_kernel_stack(), true);
-        t->parent = kernel_proc;
-        t->isMain = false;
-        queue_insert(*t);
-        insert_thread_to_proc(kernel_proc,t);
-        thread_sleep(100);
+  //       thread *t = (thread *)kmalloc(sizeof(thread));
+  //       thread_create(t, color_thread, create_kernel_stack(), true);
+  //       t->parent = kernel_proc;
+  //       t->isMain = false;
+  //       queue_insert(*t);
+  //       insert_thread_to_proc(kernel_proc,t);
+  //       thread_sleep(100);
 
-  }
+  // }
 
   // thread test1;
   // thread_create(&test1, test_thread, create_kernel_stack(), true);
@@ -419,7 +420,8 @@ void idle_task() {
   while(1) __asm__ ("pause");
 }
 
-int off = 20;
+int off = 0;
+char akos[] = {'a','k','o','s'};
 void color_thread()
 {
 
@@ -433,12 +435,11 @@ void color_thread()
         int cycler = 0;
         while(1)
         {
-                disable_scheduling();
-                int cursor_coords = get_cursor();
-                print_at(" ", 0, own_off, (cycler << 4)|(1<<15));
-                set_cursor(cursor_coords);
-                cycler = (cycler + 1) % 8;
-                enable_scheduling();
+                display_psf1_8x16_char_bg(akos[own_off], get_screen_x(own_off), 0, 0xf, cycler);
+                if (cycler)
+                        cycler = 0;
+                else
+                        cycler = 0xF;
                 thread_sleep(100);
         }
 

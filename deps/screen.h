@@ -48,6 +48,7 @@ void attach_cursor_to_input();
 void set_cursor_coords(int col, int row);
 void set_cursor_row(int row);
 void putchar(char c);
+void putchar_at(char c, int row, int col, int attr_byte);
 void print_at(const char *msg, int row, int col, int attr_byte);
 void print(const char *msg);
 void print_color(const char *msg, int attr_byte);
