@@ -28,7 +28,7 @@ call BiosGetMemoryMap
 
 ; set video mode to 640x480 16 colors
 mov ah, 0
-mov al, 0x13
+mov al, 0x12;0x13
 int 0x10
 
 ; switch to 32 bit protected mode

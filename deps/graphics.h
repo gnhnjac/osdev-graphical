@@ -31,12 +31,17 @@ typedef struct {
 
 #pragma pack()
 
+#define MEMORY_PLANE_WRITE_ENABLE 0x02
+#define READ_MAP_SELECT 0x04
+
 //refs
 static uint8_t reverse(uint8_t b);
 void init_psf1_8x16();
 int load_psf1_8x16(char *path);
 void display_psf1_8x16_char(char c, int x, int y, int fgcolor);
 void display_psf1_8x16_char_bg(char c, int x, int y, int bgcolor, int fgcolor);
+void fill_rect_linear(int x, int y, int width, int height, uint8_t color);
 void fill_rect(int x, int y, int width, int height, uint8_t color);
 void set_pixel (int x, int y, uint8_t color);
+uint8_t is_planar_bit_activated(int x, int y, uint8_t plane);
 uint8_t get_pixel (int x, int y);

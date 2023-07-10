@@ -1,14 +1,16 @@
 #include <stdint.h>
 
 #define VIDEO_ADDRESS 0xa0000
-#define MAX_ROWS 11
-#define MAX_COLS 40
+#define MAX_ROWS 30
+#define MAX_COLS 80
 
-#define PIXEL_WIDTH 320
-#define PIXEL_HEIGHT 200
+#define PIXEL_WIDTH 640
+#define PIXEL_HEIGHT 480
 
 #define CHAR_WIDTH 8
 #define CHAR_HEIGHT 16
+
+#define PIXELS_PER_BYTE 8
 
 // Default color scheme
 #define WHITE_ON_BLACK 0x0f

@@ -85,6 +85,27 @@ void kmain(uint32_t _, multiboot_info* bootinfo, uint32_t _kernel_size) {
 	// initialize the temp file system driver
 	tfsys_init();
 
+
+	set_pixel(0,0,0xD);
+
+	fill_rect(50,50,50,50,get_pixel(0,0));
+
+	//fill_rect(630,440,50,50,0xF);
+
+	// for (int i = 0; i < 100; i++)
+	// {
+
+	// 	for (int j = 0; j < 100; j++)
+	// 	{
+
+	// 		set_pixel(i,j,0xF);
+
+	// 	}
+
+	// }
+
+	return;
+
 	init_psf1_8x16();
 	if (!load_psf1_8x16("a:\\font.psf"))
 		return;

@@ -2,6 +2,8 @@
 #include "graphics.h"
 #include "screen.h"
 #include "heap.h"
+#include "low_level.h"
+#include "math.h"
 
 uint32_t mask_table[256][2];
 uint8_t *font_buff;
@@ -128,7 +130,7 @@ void display_psf1_8x16_char_bg(char c, int x, int y, int bgcolor, int fgcolor)
 
 }
 
-void fill_rect(int x, int y, int width, int height, uint8_t color)
+void fill_rect_linear(int x, int y, int width, int height, uint8_t color)
 {
 
 	uint8_t *vram = (uint8_t *)VIDEO_ADDRESS + y * PIXEL_WIDTH + x;
@@ -149,15 +151,61 @@ void fill_rect(int x, int y, int width, int height, uint8_t color)
 
 }
 
+void fill_rect(int x, int y, int width, int height, uint8_t color)
+{
+
+	if (x >= PIXEL_WIDTH || y >= PIXEL_HEIGHT)
+		return;
+
+	if (x + width >= PIXEL_WIDTH)
+		width = PIXEL_WIDTH - x;
+	if (y + height >= PIXEL_HEIGHT)
+		height = PIXEL_HEIGHT - y;
+
+	outb(0x3C4, MEMORY_PLANE_WRITE_ENABLE);
+	outb(0x3C5, color);
+
+	uint8_t *vram = (uint8_t *)VIDEO_ADDRESS + y*PIXEL_WIDTH/PIXELS_PER_BYTE;
+	for (int i = 0; i < height; i++)
+	{
+
+		for (int j = 0; j < width; j++)
+		{
+
+			vram[(x+j)/PIXELS_PER_BYTE] |= (0x80>>((x+j)%PIXELS_PER_BYTE));
+
+		}
+
+		vram += PIXEL_WIDTH/PIXELS_PER_BYTE;
+
+	}
+	
+}
+
 void set_pixel (int x, int y, uint8_t color)
 {
 
 	if (x >= PIXEL_WIDTH || y >= PIXEL_HEIGHT)
 		return;
 
-	uint8_t *vram = (uint8_t *)VIDEO_ADDRESS + y * PIXEL_WIDTH + x;
+	outb(0x3C4, MEMORY_PLANE_WRITE_ENABLE);
+	outb(0x3C5, color);
 
-	*vram = color;
+	uint8_t *vram = (uint8_t *)VIDEO_ADDRESS + (y * PIXEL_WIDTH + x)/PIXELS_PER_BYTE;
+
+	*vram |= 0x80>>(x%PIXELS_PER_BYTE);
+
+}
+
+uint8_t is_planar_bit_activated(int x, int y, uint8_t plane)
+{
+
+	outb(0x3CE, READ_MAP_SELECT);
+	outb(0x3CF, plane);
+
+	uint8_t byte = *(uint8_t *)((uint8_t *)VIDEO_ADDRESS + (y * PIXEL_WIDTH + x)/PIXELS_PER_BYTE);
+	byte &= 0x80>>(x%PIXELS_PER_BYTE);
+	return byte & 0x80>>(x%PIXELS_PER_BYTE);
 
 }
 
@@ -167,6 +215,17 @@ uint8_t get_pixel (int x, int y)
 	if (x >= PIXEL_WIDTH || y >= PIXEL_HEIGHT)
 		return 0;
 
-	return *(uint8_t *)((uint32_t)VIDEO_ADDRESS + y * PIXEL_WIDTH + x);
+	uint8_t color = 0;
+
+	if (is_planar_bit_activated(x,y,0))
+		color |= 1;
+	if (is_planar_bit_activated(x,y,1))
+		color |= 2;
+	if (is_planar_bit_activated(x,y,2))
+		color |= 4;
+	if (is_planar_bit_activated(x,y,3))
+		color |= 8;
+
+	return color;
 
 }
