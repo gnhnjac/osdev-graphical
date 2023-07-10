@@ -70,7 +70,7 @@ int load_psf1_8x16(char *path)
 
 }
 
-void display_psf1_8x16_char(char c, int x, int y, int fgcolor)
+void display_psf1_8x16_char_linear(char c, int x, int y, int fgcolor)
 {
 
 	uint32_t *dest32;
@@ -96,7 +96,7 @@ void display_psf1_8x16_char(char c, int x, int y, int fgcolor)
 
 }
 
-void display_psf1_8x16_char_bg(char c, int x, int y, int bgcolor, int fgcolor)
+void display_psf1_8x16_char_bg_linear(char c, int x, int y, int bgcolor, int fgcolor)
 {
 
 	uint32_t *dest32;
@@ -127,6 +127,35 @@ void display_psf1_8x16_char_bg(char c, int x, int y, int bgcolor, int fgcolor)
 		src++;
 		dest += PIXEL_WIDTH;
 	}
+
+}
+
+void display_psf1_8x16_char(char c, int x, int y, uint8_t fgcolor)
+{
+
+	uint8_t *dest;
+	unsigned char *src;
+	int row;
+ 	
+	outb(0x3C4, MEMORY_PLANE_WRITE_ENABLE);
+	outb(0x3C5, color);
+ 	
+	src = font_buff + c * 16;
+	dest = (uint8_t *)(VIDEO_ADDRESS + (y * PIXEL_WIDTH + x)/PIXELS_PER_BYTE);
+	for(row = 0; row < 16; row++) {
+		if(*src != 0) {
+			*dst = *src;
+		}
+		src++;
+		dest += PIXEL_WIDTH/PIXELS_PER_BYTE;
+	}
+
+}
+
+void display_psf1_8x16_char_bg(char c, int x, int y, int bgcolor, int fgcolor)
+{
+
+	return;
 
 }
 
