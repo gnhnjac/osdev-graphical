@@ -179,14 +179,14 @@ void mouse_handler()
 	int8_t rel_y = ymov - ((flags << 3) & 0x100); // produce 2s complement only if the neg bit is set
 	// handle mouse mvmt
 
-	MOUSEX += rel_x;
+	MOUSEX += rel_x*2;
 
 	if (MOUSEX < 0)
 		MOUSEX = 0;
 	else if (MOUSEX >= PIXEL_WIDTH)
 		MOUSEX = (uint16_t)PIXEL_WIDTH-1;
 
-	MOUSEY -= rel_y;
+	MOUSEY -= rel_y*2;
 
 	if (MOUSEY < 0)
 		MOUSEY = 0;

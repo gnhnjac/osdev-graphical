@@ -30,7 +30,6 @@ static uint32_t cursor_offset_y = 0;
 /* Print a char on the screen at col, row, or at cursor position */
 void print_char(const char character, int row, int col, char color) 
 {
-
 	if(character == 27 || character == '\r') // don't print escape character
 		return;
 

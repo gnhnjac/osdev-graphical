@@ -88,10 +88,6 @@ void kmain(uint32_t _, multiboot_info* bootinfo, uint32_t _kernel_size) {
 	init_psf1_8x16();
 	if (!load_psf1_8x16("a:\\font.psf"))
 		return;
-
-	display_psf1_8x16_char('a',0,0,0xf);
-
-	return;
 	
 	init_screen();
 

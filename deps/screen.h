@@ -30,9 +30,9 @@
 #define SHIFT_OFF 5
 #define ALT_OFF 11
 #define CAPS_OFF 15
-#define TIME_OFF 30
+#define TIME_OFF 70
 
-#define RIGHT 38
+#define RIGHT 78
 
 //refs
 void print_char(const char character, int row, int col, char color);
