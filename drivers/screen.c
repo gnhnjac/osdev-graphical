@@ -106,6 +106,7 @@ void print_char(const char character, int row, int col, char color)
 	if (character == '\n') {
 		offset_x = 0;
 		offset_y += 1;
+		fill_rect(get_screen_x(cursor_offset_x),get_screen_y(cursor_offset_y)+12,8,4,0);
 	// Otherwise , write the character and its attribute byte to
 	// video memory at our calculated offset .
 	} else {

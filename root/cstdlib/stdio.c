@@ -1,13 +1,6 @@
-#include <stdlib.h>
-
-void print(char *str)
-{
-
-	__asm__("mov $0, %eax");
-	__asm__("mov %0, %%ebx" : : "m" (str));
-	__asm__("int $0x80");
-
-}
+#include <stdarg.h>
+#include "stdlib.h"
+#include "syscalls.h"
 
 void printf(const char *fmt, ...)
 {

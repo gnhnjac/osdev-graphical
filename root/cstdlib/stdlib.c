@@ -1,3 +1,20 @@
+unsigned int strlen(const char *str)
+{
+
+	if (!str)
+		return 0;
+
+	int len = 0;
+	while (*str++)
+	{
+
+		len++;
+	}
+
+	return len;
+	
+}
+
 unsigned int atoi(const char *str)
 {
 
@@ -44,7 +61,7 @@ void itoa(int n, char *buf, int base)
 		buf[0] = '-';
 	}
 
-	uint32_t i = neg;
+	unsigned int i = neg;
 	i = 0;
 	do
 	{	
@@ -64,7 +81,7 @@ void uitoa(unsigned int n, char *buffer, int base)
 {
 	char digits[] = {'0','1','2','3','4','5','6','7','8','9','A','B','C','D','E','F'};
 
-	uint32_t u_n = (uint32_t)n; 
+	unsigned int u_n = (unsigned int)n; 
 	int temp_n = u_n;
 	int n_of_digits = 0;
 	do
@@ -75,7 +92,7 @@ void uitoa(unsigned int n, char *buffer, int base)
 
 	} while (temp_n);
 
-	uint32_t i = 0;
+	unsigned int i = 0;
 	do
 	{	
 

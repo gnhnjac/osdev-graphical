@@ -4,8 +4,10 @@ C_SOURCES = $(wildcard kernel/*.c drivers/*.c utils/*.c)
 HEADERS = $(wildcard deps/*.h)
 ASM_FILES = $(wildcard boot/routines/*.asm)
 
-ROOT_C_SOURCES = $(wildcard root/c_execs/*.c)
+ROOT_C_SOURCES = $(wildcard root/script/*.c)
 ROOT_C_EXE = ${ROOT_C_SOURCES:.c=.exe}
+
+ROOT_C_LIB = $(wildcard root/cstdlib/*.c)
 
 # TODO : Make sources dep on all header files.
 
@@ -58,8 +60,9 @@ kernel.sys: kernel/kernel_entry.o ${OBJ}
 	@gcc -m32 -ffreestanding -MMD -c $< -I ./deps -o $@ -D $(emu)
 
 # Rule for building root c files
-%.exe: %.c
-	@gcc -m32 -nostdlib $< -o $@
+%.exe: %.c ${ROOT_C_LIB}
+	gcc -m32 -nostdlib -I ./root/cstdlib $^ -o $@
+
 
 # Build our kernel entry object file.
 #$< is the first dependancy and $@ is the target file
