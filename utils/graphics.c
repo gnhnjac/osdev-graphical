@@ -142,16 +142,21 @@ void display_psf1_8x16_char(char c, int x, int y, uint8_t fgcolor)
 	uint8_t mask_upper = (1<<(x % 8)-1);
 
 	outb(0x3C4, MEMORY_PLANE_WRITE_ENABLE);
+	outb(0x3CE,0x8);
 	for(int row = 0; row < 16; row++) {
 
 		uint8_t mask_lower = reverse((*src)<<(x%8));
 		uint8_t mask_upper = reverse((*src)>>(8-x%8));
 
 		outb(0x3C5, 0xF);
+		outb(0x3CF,mask_lower);
 		dest[0] &= ~mask_lower;
+		outb(0x3CF,mask_upper);
 		dest[1] &= ~mask_upper;
 		outb(0x3C5, fgcolor);
+		outb(0x3CF,mask_lower);
 		dest[0] |= mask_lower;
+		outb(0x3CF,mask_upper);
 		dest[1] |= mask_upper;
 
 		src++;
@@ -216,11 +221,13 @@ void fill_rect(int x, int y, int width, int height, uint8_t color)
 
 	uint8_t *vram = (uint8_t *)VIDEO_ADDRESS + y*PIXEL_WIDTH/PIXELS_PER_BYTE;
 	outb(0x3C4, MEMORY_PLANE_WRITE_ENABLE);
+	outb(0x3CE,0x8);
 	for (int i = 0; i < height; i++)
 	{
 
 		for (int j = 0; j < width; j++)
 		{
+			outb(0x3CF,(0x80>>((x+j)%PIXELS_PER_BYTE)));
 			outb(0x3C5, 0xF);
 			vram[(x+j)/PIXELS_PER_BYTE] &= ~(0x80>>((x+j)%PIXELS_PER_BYTE));
 			outb(0x3C5, color);
@@ -271,6 +278,9 @@ void set_pixel (int x, int y, uint8_t color)
 		return;
 
 	outb(0x3C4, MEMORY_PLANE_WRITE_ENABLE);
+	outb(0x3CE,0x8);
+	outb(0x3CF,(0x80>>(x%PIXELS_PER_BYTE)));
+
 	outb(0x3C5, 0xF);
 
 	uint8_t *vram = (uint8_t *)VIDEO_ADDRESS + (y * PIXEL_WIDTH + x)/PIXELS_PER_BYTE;

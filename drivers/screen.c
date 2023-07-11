@@ -385,7 +385,11 @@ int handle_scrolling(int offset_y)
 	uint32_t scroll_diff_size = SCROLL_ROWS*char_line_size;
 	uint8_t *vram = (uint8_t *)VIDEO_ADDRESS + char_line_size;
 
+	uint8_t prev_mask = 0;
+
 	outb(0x3C4, MEMORY_PLANE_WRITE_ENABLE);
+	outb(0x3C5, 0xF);
+
 	outb(0x3CE, READ_MAP_SELECT);
 	for (int i = TOP+SCROLL_ROWS; i < MAX_ROWS; i++)
 	{
@@ -403,7 +407,6 @@ int handle_scrolling(int offset_y)
 
 				if (k%PIXELS_PER_BYTE == 0)
 				{
-					uint8_t pre_color = 0;
 					outb(0x3CF, 0);
 					if ((*(uint8_t *)(tmp+off+scroll_diff_size)))
 						goto not_totally_black;
@@ -418,7 +421,12 @@ int handle_scrolling(int offset_y)
 						goto not_totally_black;
 
 					k += PIXELS_PER_BYTE-1;
-					outb(0x3C5, 0xF);
+
+					if (prev_mask != 0xF)
+					{
+						outb(0x3C5, 0xF);
+						prev_mask = 0xF;
+					}
 
 					tmp[off] = 0;
 
@@ -428,9 +436,16 @@ int handle_scrolling(int offset_y)
 
 				not_totally_black:
 
-				outb(0x3C5, 0xF);
+				if (prev_mask != 0xF)
+				{
+					outb(0x3C5, 0xF);
+					prev_mask = 0xF;
+				}
 
 				tmp[off] &= ~mask;
+
+				if (!((*(uint8_t *)(tmp+off+scroll_diff_size)) & mask))
+					continue;
 
 				uint8_t color = 0;
 
@@ -447,7 +462,11 @@ int handle_scrolling(int offset_y)
 				if ((*(uint8_t *)(tmp+off+scroll_diff_size)) & mask)
 					color |= 8;
 
-				outb(0x3C5, color);
+				if (prev_mask != color)
+				{
+					outb(0x3C5, color);
+					prev_mask = color;
+				}
 
 				tmp[off] |= mask;
 

@@ -403,18 +403,18 @@ void idle_task() {
 
   /* setup other things since this is the first task called */
 
-  // for (int i = 0; i < 4; i++)
-  // {
+  for (int i = 0; i < 4; i++)
+  {
 
-  //       thread *t = (thread *)kmalloc(sizeof(thread));
-  //       thread_create(t, color_thread, create_kernel_stack(), true);
-  //       t->parent = kernel_proc;
-  //       t->isMain = false;
-  //       queue_insert(*t);
-  //       insert_thread_to_proc(kernel_proc,t);
-  //       thread_sleep(100);
+        thread *t = (thread *)kmalloc(sizeof(thread));
+        thread_create(t, color_thread, create_kernel_stack(), true);
+        t->parent = kernel_proc;
+        t->isMain = false;
+        queue_insert(*t);
+        insert_thread_to_proc(kernel_proc,t);
+        thread_sleep(100);
 
-  // }
+  }
 
   // thread test1;
   // thread_create(&test1, test_thread, create_kernel_stack(), true);
@@ -428,7 +428,7 @@ void idle_task() {
 }
 
 int off = 0;
-char akos[] = {'a','k','o','s'};
+char akos[] = {'a','k','o','s',''};
 void color_thread()
 {
 
@@ -442,11 +442,8 @@ void color_thread()
         int cycler = 0;
         while(1)
         {
-                display_psf1_8x16_char_bg(akos[own_off], get_screen_x(own_off), 0, 0xf, cycler);
-                if (cycler)
-                        cycler = 0;
-                else
-                        cycler = 0xF;
+                display_psf1_8x16_char_bg(akos[own_off], get_screen_x(own_off),0, 0xf, cycler);
+                cycler = (cycler + 1) % 15;
                 thread_sleep(100);
         }
 
