@@ -100,7 +100,11 @@ void handle_command(char *cmd_buff)
 	}
 	else if(strcmp(cmd,"cls"))
 	{
+		disable_mouse();
 		clear_viewport();
+		set_cursor_input_row(TOP);
+		set_cursor_row(TOP);
+		enable_mouse();
 	}
 	else if(strcmp(cmd,"rm"))
 	{

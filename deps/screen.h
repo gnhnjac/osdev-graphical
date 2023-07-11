@@ -43,6 +43,7 @@ int get_cursor_col();
 int get_cursor();
 void set_cursor(int offset);
 void set_cursor_input_coords(uint8_t row, uint8_t col);
+void set_cursor_input_row(uint8_t row);
 void attach_cursor_to_input();
 void set_cursor_coords(int col, int row);
 void set_cursor_row(int row);

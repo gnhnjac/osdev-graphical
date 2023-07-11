@@ -193,6 +193,13 @@ void set_cursor_input_coords(uint8_t row, uint8_t col)
 
 }
 
+void set_cursor_input_row(uint8_t row)
+{
+
+	cursor_input_row = row;
+
+}
+
 void attach_cursor_to_input()
 {
 
@@ -390,7 +397,6 @@ int handle_scrolling(int offset_y)
 	outb(0x3C4, MEMORY_PLANE_WRITE_ENABLE);
 	outb(0x3C5, 0xF);
 
-	outb(0x3CE, READ_MAP_SELECT);
 	for (int i = TOP+SCROLL_ROWS; i < MAX_ROWS; i++)
 	{
 
@@ -407,6 +413,7 @@ int handle_scrolling(int offset_y)
 
 				if (k%PIXELS_PER_BYTE == 0)
 				{
+					outb(0x3CE, READ_MAP_SELECT);
 					outb(0x3CF, 0);
 					if ((*(uint8_t *)(tmp+off+scroll_diff_size)))
 						goto not_totally_black;
@@ -427,7 +434,8 @@ int handle_scrolling(int offset_y)
 						outb(0x3C5, 0xF);
 						prev_mask = 0xF;
 					}
-
+					outb(0x3CE,0x8);
+					outb(0x3CF,0xFF);
 					tmp[off] = 0;
 
 					continue;
@@ -441,14 +449,14 @@ int handle_scrolling(int offset_y)
 					outb(0x3C5, 0xF);
 					prev_mask = 0xF;
 				}
+				outb(0x3CE,0x8);
+				outb(0x3CF,mask);
 
 				tmp[off] &= ~mask;
 
-				if (!((*(uint8_t *)(tmp+off+scroll_diff_size)) & mask))
-					continue;
-
 				uint8_t color = 0;
 
+				outb(0x3CE, READ_MAP_SELECT);
 				outb(0x3CF, 0);
 				if ((*(uint8_t *)(tmp+off+scroll_diff_size)) & mask)
 					color |= 1;

@@ -403,7 +403,7 @@ void idle_task() {
 
   /* setup other things since this is the first task called */
 
-  for (int i = 0; i < 5; i++)
+  for (int i = 0; i < 4; i++)
   {
 
         thread *t = (thread *)kmalloc(sizeof(thread));
@@ -428,7 +428,7 @@ void idle_task() {
 }
 
 int off = 0;
-char akos[] = {'a','k','o','s','©'};
+char akos[] = {'a','k','o','s'};
 void color_thread()
 {
 
