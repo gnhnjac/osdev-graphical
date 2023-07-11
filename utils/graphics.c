@@ -141,16 +141,15 @@ void display_psf1_8x16_char(char c, int x, int y, uint8_t fgcolor)
 	uint8_t mask_lower = ~(1<<(x % 8)-1);
 	uint8_t mask_upper = (1<<(x % 8)-1);
 
+	outb(0x3C4, MEMORY_PLANE_WRITE_ENABLE);
 	for(int row = 0; row < 16; row++) {
 
 		uint8_t mask_lower = reverse((*src)<<(x%8));
 		uint8_t mask_upper = reverse((*src)>>(8-x%8));
 
-		outb(0x3C4, MEMORY_PLANE_WRITE_ENABLE);
 		outb(0x3C5, 0xF);
 		dest[0] &= ~mask_lower;
 		dest[1] &= ~mask_upper;
-		outb(0x3C4, MEMORY_PLANE_WRITE_ENABLE);
 		outb(0x3C5, fgcolor);
 		dest[0] |= mask_lower;
 		dest[1] |= mask_upper;
@@ -216,15 +215,14 @@ void fill_rect(int x, int y, int width, int height, uint8_t color)
 		height = PIXEL_HEIGHT - y;
 
 	uint8_t *vram = (uint8_t *)VIDEO_ADDRESS + y*PIXEL_WIDTH/PIXELS_PER_BYTE;
+	outb(0x3C4, MEMORY_PLANE_WRITE_ENABLE);
 	for (int i = 0; i < height; i++)
 	{
 
 		for (int j = 0; j < width; j++)
 		{
-			outb(0x3C4, MEMORY_PLANE_WRITE_ENABLE);
 			outb(0x3C5, 0xF);
 			vram[(x+j)/PIXELS_PER_BYTE] &= ~(0x80>>((x+j)%PIXELS_PER_BYTE));
-			outb(0x3C4, MEMORY_PLANE_WRITE_ENABLE);
 			outb(0x3C5, color);
 			vram[(x+j)/PIXELS_PER_BYTE] |= (0x80>>((x+j)%PIXELS_PER_BYTE));
 
@@ -234,6 +232,36 @@ void fill_rect(int x, int y, int width, int height, uint8_t color)
 
 	}
 	
+}
+
+void outline_circle(int mx, int my, int rad, uint8_t color)
+{
+
+	float increment = 1/(float)rad;
+	float b = -2*my;
+	float c_const = mx*mx+my*my-rad*rad;
+
+	for(float x = mx-rad; x < mx+rad; x+=increment)
+	{
+
+		float c = x*x-2*mx*x+c_const;
+
+		float sqrt = root(b*b-4*c);
+
+		if (!sqrt)
+			continue;
+
+		float y1 = (-b+sqrt)/2;
+		float y2 = (-b-sqrt)/2;
+
+		set_pixel(x,y1,color);
+		set_pixel(x,y2,color);
+
+	}
+
+	set_pixel(mx-rad,my,color);
+	set_pixel(mx+rad,my,color);
+
 }
 
 void set_pixel (int x, int y, uint8_t color)
@@ -249,7 +277,6 @@ void set_pixel (int x, int y, uint8_t color)
 
 	*vram &= ~(0x80>>(x%PIXELS_PER_BYTE));
 
-	outb(0x3C4, MEMORY_PLANE_WRITE_ENABLE);
 	outb(0x3C5, color);
 
 	*vram |= 0x80>>(x%PIXELS_PER_BYTE);
@@ -263,8 +290,16 @@ uint8_t is_planar_bit_activated(int x, int y, uint8_t plane)
 	outb(0x3CF, plane);
 
 	uint8_t byte = *(uint8_t *)((uint8_t *)VIDEO_ADDRESS + (y * PIXEL_WIDTH + x)/PIXELS_PER_BYTE);
-	byte &= 0x80>>(x%PIXELS_PER_BYTE);
-	return byte & 0x80>>(x%PIXELS_PER_BYTE);
+	return byte & (0x80>>(x%PIXELS_PER_BYTE));
+
+}
+
+uint8_t is_planar_bit_activated_offset(uint8_t *byteoff, uint8_t bitmask, uint8_t plane)
+{
+	outb(0x3CE, READ_MAP_SELECT);
+	outb(0x3CF, plane);
+
+	return (*byteoff) & bitmask;
 
 }
 

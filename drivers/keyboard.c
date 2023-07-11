@@ -17,20 +17,17 @@ static char *input_buffer;
 static char *char_buffer;
 static unsigned int buffer_index = 0;
 static unsigned int buffer_limit = 0;
-static unsigned int orig_scroll_index = 0;
 
 void enable_shift()
 {
 
   kstatus |= 0b00000100;
-  switch_top_bar_value(SHIFT_OFF,5);
 }
 
 void disable_shift()
 {
 
   kstatus &= ~0b00000100;
-  switch_top_bar_value(SHIFT_OFF,5);
 
 }
 
@@ -45,7 +42,6 @@ void enable_ctrl()
 {
 
   kstatus |= 0b00000001;
-  switch_top_bar_value(CTRL_OFF,4);
 
 }
 
@@ -53,7 +49,6 @@ void disable_ctrl()
 {
 
   kstatus &= ~0b00000001;
-  switch_top_bar_value(CTRL_OFF,4);
 
 }
 
@@ -68,7 +63,6 @@ void enable_caps()
 {
 
   kstatus |= 0b00001000;
-  switch_top_bar_value(CAPS_OFF,4);
 
 }
 
@@ -76,7 +70,6 @@ void disable_caps()
 {
 
   kstatus &= ~0b00001000;
-  switch_top_bar_value(CAPS_OFF,4);
 
 }
 
@@ -91,7 +84,6 @@ void enable_alt()
 {
 
   kstatus |= 0b00000010;
-  switch_top_bar_value(ALT_OFF,3);
 
 }
 
@@ -99,7 +91,6 @@ void disable_alt()
 {
 
   kstatus &= ~0b00000010;
-  switch_top_bar_value(ALT_OFF,3);
 
 }
 
@@ -273,21 +264,7 @@ void keyboard_handler()
         {
           return;
         }
-        else if (scancode == DOWN_ARROW_PRESS)
-        {
-
-          scroll_down();
-          return;
-
-        }
-        else if (scancode == UP_ARROW_PRESS)
-        {
-
-          scroll_up();
-          return;
-
-        }
-
+        
         handle_character(scancode);
     }
 }
@@ -377,8 +354,6 @@ void keyboard_input(int row, int col, char *buffer, int bf_size)
   buffer_limit = bf_size;
   input_buffer = buffer;
 
-  orig_scroll_index = get_scroll_index() + get_cursor_row() - TOP;
-
 }
 
 bool is_taking_input()
@@ -398,7 +373,6 @@ bool is_taking_char()
 // returns -1 if reached limit (start/end) and must be supplied with \n, zero if continuing and 1 if finished successfully.
 static int keyboard_input_character(char character)
 {
-  fit_to_scroll(orig_scroll_index);
   attach_cursor_to_input();
 
   if (character == '\b') // handle backspace
@@ -458,13 +432,10 @@ void getchar(int row, int col, char *buffer)
 
   char_buffer = buffer;
 
-  orig_scroll_index = get_scroll_index() + get_cursor_row() - TOP;
-
 }
 
 static void keyboard_get_character(char character)
 {
-  fit_to_scroll(orig_scroll_index);
   attach_cursor_to_input();
   taking_char = false;
   *char_buffer = character;

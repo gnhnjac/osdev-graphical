@@ -288,7 +288,6 @@ void scheduler_dispatch () {
                         }
                         queue_delete_first();
                         is_terminate = true;
-                        printf("terminatedd");
                         continue;
 
                 }
@@ -355,6 +354,14 @@ void scheduler_initialize(void) {
         shellThread->isMain = false;
         queue_insert(*shellThread);
         insert_thread_to_proc(kernel_proc,shellThread);
+
+        /* create cursor thread and add it. */
+        thread *cursorThread = (thread *)kmalloc(sizeof(thread));
+        thread_create(cursorThread, cursor_thread, create_kernel_stack(), true);
+        cursorThread->parent = kernel_proc;
+        cursorThread->isMain = false;
+        queue_insert(*cursorThread);
+        insert_thread_to_proc(kernel_proc,cursorThread);
 
         insert_process(kernel_proc);
 

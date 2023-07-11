@@ -26,18 +26,17 @@
 // top bar constants
 #define TOP 1
 #define VIEWPORT_ROWS (MAX_ROWS-TOP)
-#define CTRL_OFF 0
-#define SHIFT_OFF 5
-#define ALT_OFF 11
-#define CAPS_OFF 15
 #define TIME_OFF 70
 
-#define RIGHT 78
+#define SCROLL_ROWS 10
 
 //refs
+void cursor_thread();
 void print_char(const char character, int row, int col, char color);
 int get_screen_offset(int row, int col);
 int get_screen_x(int col);
+int get_logical_row(int y);
+int get_logical_col(int x);
 int get_screen_y(int row);
 int get_cursor_row();
 int get_cursor_col();
@@ -55,21 +54,10 @@ void print_color(const char *msg, int attr_byte);
 int printf(const char *fmt, ...);
 void clear_viewport();
 void clear_screen();
-int handle_scrolling(int cursor_offset);
+int handle_scrolling(int offset_y);
 void display_logo();
 void clear_line(char *line);
 void init_screen();
 int is_screen_initialized();
-void switch_top_bar_value(int offset, int len);
 void push_to_buffer(char *buffer, char *line, int buffer_rows);
 void pop_from_buffer(char *buffer,char *dst_buffer, int buffer_rows);
-void scroll_up();
-void scroll_down();
-void draw_scroll_bar();
-void hide_scroll_bar();
-void set_scroll_pos_mouse(int pos_index);
-void set_scroll_pos(int target_scroll_index);
-void fit_to_scroll(int target_scroll_index);
-int get_scroll_index();
-void enable_scrolling();
-void disable_scrolling();

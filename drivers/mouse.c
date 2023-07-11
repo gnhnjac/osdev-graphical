@@ -216,19 +216,17 @@ void mouse_handler()
 	int left_click = flags & 1;
 	int right_click = flags & 2;
 
-	// if (left_click)
-	// {
-	// 	if (MOUSEX == 79) // if on scroll bar
-	// 	{
-	// 		disable_mouse();
-	// 		set_scroll_pos_mouse(MOUSEY);
-	// 		enable_mouse();
-	// 	}
-	// 	else
-	// 	{
-	// 		set_cursor_coords(MOUSEY, MOUSEX);
-	// 	}
-	// }
+	if (left_click)
+	{	
+		for(int i = 0; i < 20; i+=2)
+		{
+			outline_circle(MOUSEX,MOUSEY,i,0xf);
+			outline_circle(MOUSEX,MOUSEY,i,0);
+		}
+		fill_rect(get_screen_x(get_cursor_col()),get_screen_y(get_cursor_row())+12,8,4,0);
+		set_cursor_coords(get_logical_col(MOUSEX), get_logical_row(MOUSEY));
+		
+	}
 
 }
 

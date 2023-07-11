@@ -296,7 +296,7 @@ isr_common_stub:
 %assign i 0
 %rep    16
 _irq%+i:
-    ;cli
+    cli
     push byte 0 ; these dont push an error so for stack consistency we push 0
     push byte i ; ith interrupt in our irq table
     jmp irq_common_stub
