@@ -84,6 +84,7 @@ clean:
 	@del /s /q *.dis
 	@del /s /q *.img
 	@del /s /q *.d
+	@del /s /q *.exe
 	@del os-image
 
 inspect:
