@@ -5,6 +5,12 @@ extern _kmain
 call _kmain ; invoke main () in our C kernel
 jmp $ ; Hang forever when we return from the kernel
 
+global _read_eip
+
+_read_eip:
+   pop eax
+   jmp eax
+
 ; vmm and pmm data
 
 global _vmmngr_flush_tlb_entry

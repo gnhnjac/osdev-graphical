@@ -21,7 +21,7 @@ int fork()
 
 	unsigned int ret = 0;
 
-	__asm__("mov %%eax, %0" : : "m" (ret));
+	__asm__("mov %%eax, %0" : "=m" (ret));
 
 	return ret;
 

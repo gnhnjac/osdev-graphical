@@ -88,7 +88,7 @@ void clear_queue() {
 /* insert thread. */
 bool queue_insert(thread t) {
 
-        bool scheduling_enabled = (_currentTask == 0);
+        bool scheduling_enabled = (_currentTask != 0);
 
         if (scheduling_enabled)
                 disable_scheduling();
@@ -118,7 +118,7 @@ bool queue_insert(thread t) {
 /* insert thread by priority. */
 bool queue_insert_prioritized(thread t) {
 
-        bool scheduling_enabled = (_currentTask == 0);
+        bool scheduling_enabled = (_currentTask != 0);
 
         if (scheduling_enabled)
                 disable_scheduling();
@@ -666,14 +666,138 @@ void  thread_create (thread *t, void *entry, void *esp, bool is_kernel) {
         t->next = 0;
 }
 
-void fork()
+extern uint32_t read_eip();
+
+int fork()
 {
 
 
-        // reg task returns something else to distinguish
+        disable_scheduling();
 
-        // make forked task goto here (start eip is here) also the stack frame needs to be adjusted to fit the creating thread's one
+        thread *parent_task = queue_get();
 
-        return 0;
+        /* create thread descriptor */
+        thread *th = (thread *)kmalloc(sizeof(thread));
+
+        /* Create userspace stack (4k size) */
+        void* stack = parent_task->initialStack;
+
+        pdirectory *addressSpace = vmmngr_get_directory();
+
+        while(vmmngr_check_virt_present(addressSpace,stack))
+                stack += PAGE_SIZE;
+
+        /* map user process stack space */
+        vmmngr_alloc_virt (addressSpace, stack,
+        I86_PDE_WRITABLE|I86_PDE_USER,
+        I86_PTE_WRITABLE|I86_PTE_USER);
+
+        uint32_t stack_diff = stack-parent_task->initialStack+PAGE_SIZE;
+
+        uint32_t *tmp_user_parent_stack = (uint32_t *)(parent_task->initialStack-PAGE_SIZE);
+        uint32_t *tmp_user_child_stack = (uint32_t *)stack;
+
+        uint32_t i = 0;
+        while(i < PAGE_SIZE/4)
+        {
+                tmp_user_child_stack[i] = tmp_user_parent_stack[i];
+
+                i += 1;
+
+        }
+
+        void *kernel_esp = create_user_kernel_stack();
+
+        uint32_t kernel_stack_diff = ((uint32_t)kernel_esp)-parent_task->kernelESP;
+
+        th->kernelESP = (uint32_t)kernel_esp;
+        th->kernelSS = KERNEL_DATA;
+
+        uint32_t *parent_kernel_esp;
+        __asm__("mov %%esp, %0" : "=m" (parent_kernel_esp));
+
+        kernel_esp -= (parent_task->kernelESP-(uint32_t)parent_kernel_esp);
+        uint32_t *kernel_esp_ptr = (uint32_t *)kernel_esp;
+
+        while(parent_kernel_esp < (uint32_t *)(parent_task->kernelESP-4*5))
+        {
+
+                *kernel_esp_ptr = *parent_kernel_esp;
+
+                kernel_esp_ptr+=1;
+                parent_kernel_esp+=1;
+
+        }
+
+        uint32_t parent_user_eip = parent_kernel_esp[0];
+        uint32_t parent_user_code_segment = parent_kernel_esp[1];
+        uint32_t parent_user_flags = parent_kernel_esp[2];
+        uint32_t parent_user_stack_pointer = parent_kernel_esp[3];
+        uint32_t parent_user_stack_segment = parent_kernel_esp[4];
+
+        kernel_esp_ptr[0] = parent_user_eip;
+        kernel_esp_ptr[1] = parent_user_code_segment;
+        kernel_esp_ptr[2] = parent_user_flags;
+        kernel_esp_ptr[3] = parent_user_stack_pointer+stack_diff;
+        kernel_esp_ptr[4] = parent_user_stack_segment;
+
+        /* adjust stack. We are about to push data on it. */
+        kernel_esp -= sizeof (trapFrame);
+
+        /* initialize task frame. */
+        trapFrame* frame = (trapFrame*) kernel_esp;
+        frame->flags = 0x202;
+
+        uint32_t *parent_kernel_ebp;
+        __asm__("mov %%ebp, %0" : "=m" (parent_kernel_ebp));
+
+        uint32_t *child_kernel_ebp = ((uint32_t)parent_kernel_ebp)+kernel_stack_diff;
+        *child_kernel_ebp += stack_diff;
+        uint32_t *child_kernel_fork_ret_ebp = (uint32_t *)*child_kernel_ebp;
+        *child_kernel_fork_ret_ebp += stack_diff;
+        frame->ebp   = (uint32_t)child_kernel_ebp;
+        
+        frame->esp   = 0;
+        frame->edi   = 0;
+        frame->esi   = 0;
+        frame->edx   = 0;
+        frame->ecx   = 0;
+        frame->ebx   = 0;
+        frame->eax   = 0;
+
+        frame->cs    = KERNEL_CODE;
+        frame->ds    = USER_DATA;
+        frame->es    = USER_DATA;
+        frame->fs    = USER_DATA;
+        frame->gs    = USER_DATA;
+        th->SS        = USER_DATA;
+
+        /* set stack. */
+        th->ESP = (uint32_t)kernel_esp;
+        
+        th->state    = THREAD_RUN;
+        th->sleepTimeDelta = 0;
+        uint32_t child_tid = get_free_tid();
+        th->tid = child_tid;
+        th->next = 0;
+        th->parent = parent_task->parent;
+        th->initialStack = stack+PAGE_SIZE;
+        th->isMain = false;
+        th->priority = parent_task->priority;
+
+        insert_thread_to_proc(parent_task->parent,th);
+        queue_insert_prioritized(*th);
+
+        frame->eip = read_eip();
+
+        if (_currentTask) // if were parent this should never apply because we disabled scheduling
+        {
+                return 0;
+        }
+        else
+        {
+                enable_scheduling();
+                return child_tid;
+        }
 
 }
