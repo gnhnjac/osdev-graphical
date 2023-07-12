@@ -94,6 +94,7 @@ void insert_thread_to_proc(process *proc, thread *t);
 void terminateProcess ();
 void clone_kernel_space(pdirectory* out);
 void clone_kernel_stacks(pdirectory *out);
+void clear_kernel_space(pdirectory *out);
 void clear_kernel_stacks(pdirectory *out);
 pdirectory* create_address_space ();
 void print_processes();

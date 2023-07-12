@@ -82,6 +82,21 @@ pdirectory* vmmngr_create_pdir () {
 	return dir;
 }
 
+void vmmngr_free_pdir(pdirectory *pdir)
+{
+
+	for (int i = 0; i < 1024; i++)
+	{
+
+		if (pd_entry_is_present(pdir->m_entries[i]))
+			pmmngr_free_block(pd_entry_pfn(pdir->m_entries[i]));
+
+	}
+
+	pmmngr_free_block(pdir);
+
+}
+
 void * vmmngr_virt2phys(void *virt)
 {
 	//! get page directory

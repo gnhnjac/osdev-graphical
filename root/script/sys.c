@@ -21,7 +21,7 @@ void _start()
 	else
 	{
 
-		printf("hello from main thread!\n");
+		printf("hello from main thread! created new thread with tid %d",tid);
 
 	}
 

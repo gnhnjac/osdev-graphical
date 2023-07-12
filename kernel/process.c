@@ -251,6 +251,16 @@ void clone_kernel_stacks(pdirectory *out)
 
 }
 
+void clear_kernel_space(pdirectory *out)
+{
+
+    memset((char *)&out->m_entries[768], 0, 4 * sizeof (pd_entry));
+    
+    // also clear first 4mb
+    memset((char *)&out->m_entries[0], 0, 1 * sizeof (pd_entry));
+
+}
+
 void clear_kernel_stacks(pdirectory *out)
 {
 

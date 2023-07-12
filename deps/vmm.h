@@ -49,6 +49,7 @@ bool vmmngr_switch_pdirectory (pdirectory* dir);
 void vmmngr_set_pdirectory_ptr(pdirectory *dir);
 pdirectory* vmmngr_get_directory ();
 pdirectory* vmmngr_create_pdir ();
+void vmmngr_free_pdir(pdirectory *pdir);
 void * vmmngr_virt2phys(void *virt);
 void vmmngr_alloc_virt(pdirectory *dir, void *virt, uint32_t pde_flags, uint32_t pte_flags);
 bool vmmngr_check_virt_present(pdirectory *dir, void *virt);

@@ -314,7 +314,9 @@ void scheduler_dispatch () {
                                 vmmngr_free_virt(_currentTask->parent->pageDirectory, (void *)(_currentTask->kernelESP-PAGE_SIZE));
                         if (_currentTask->isMain) // bad because main might execute before others thus the prev line will throw an error
                         {
-                                pmmngr_free_block(_currentTask->parent->pageDirectory);
+                                clear_kernel_space(_currentTask->parent->pageDirectory);
+                                clear_kernel_stacks(_currentTask->parent->pageDirectory);
+                                vmmngr_free_pdir(_currentTask->parent->pageDirectory);
                                 kfree(_currentTask->parent);
                         }
                         queue_delete_first();
