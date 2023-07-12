@@ -14,14 +14,13 @@ void _start()
 	if (tid)
 	{
 
-		printf("hello from fork thread!\n");
-		while(1);
-
+		printf("hello from main thread! created new thread with tid %d",tid);
 	}
 	else
 	{
 
-		printf("hello from main thread! created new thread with tid %d",tid);
+		printf("hello from fork thread!");
+			while(1);
 
 	}
 

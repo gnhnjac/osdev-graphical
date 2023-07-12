@@ -750,13 +750,18 @@ int fork()
         trapFrame* frame = (trapFrame*) kernel_esp;
         frame->flags = 0x202;
 
-        uint32_t *parent_kernel_ebp;
+        uint32_t parent_kernel_ebp;
         __asm__("mov %%ebp, %0" : "=m" (parent_kernel_ebp));
 
-        uint32_t *child_kernel_ebp = ((uint32_t)parent_kernel_ebp)+kernel_stack_diff;
-        *child_kernel_ebp += stack_diff;
-        uint32_t *child_kernel_fork_ret_ebp = (uint32_t *)*child_kernel_ebp;
-        *child_kernel_fork_ret_ebp += stack_diff;
+        uint32_t *child_kernel_ebp = (uint32_t *)(parent_kernel_ebp+kernel_stack_diff);
+        uint32_t *child_kernel_ebp_tmp = child_kernel_ebp;
+        while (*child_kernel_ebp_tmp)
+        {
+
+                *child_kernel_ebp_tmp += stack_diff;
+                child_kernel_ebp_tmp = (uint32_t *)*child_kernel_ebp_tmp;
+
+        }
         frame->ebp   = (uint32_t)child_kernel_ebp;
         
         frame->esp   = 0;
