@@ -13,14 +13,18 @@ void _start()
 
 	if (tid)
 	{
-
-		printf("hello from main thread! created new thread with tid %d",tid);
+		//printf("hello from main thread! created new thread with tid %d",tid);
+		fork();
+		fork();
+		fork();
+		print("sup\n");
+		while(1) __asm__("pause");
 	}
 	else
 	{
 
-		printf("hello from fork thread!");
-			while(1);
+		printf("hello from first fork thread!\n");
+		while(1) __asm__("pause");
 
 	}
 

@@ -19,6 +19,7 @@ typedef struct _queueEntry{
 
 //refs
 process *get_running_process();
+thread *get_current_task();
 void disable_scheduling();
 void enable_scheduling();
 void schedule();
@@ -27,8 +28,8 @@ void thread_remove_state(thread* t, uint32_t flags);
 void thread_sleep(uint32_t ms);
 void thread_wake();
 void clear_queue();
-bool queue_insert(thread t);
-bool queue_insert_prioritized(thread t);
+void queue_insert(thread t);
+void queue_insert_prioritized(thread t);
 queueEntry *queue_remove();
 thread *queue_get();
 thread *queue_get_last();

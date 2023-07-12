@@ -67,7 +67,6 @@ int getFreeID()
 
     while (tmp)
     {
-
         if (tmp->id >= id)
                 id=tmp->id+1;
 

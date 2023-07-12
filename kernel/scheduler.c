@@ -23,6 +23,12 @@ process *get_running_process()
         return 0;
 
 }
+thread *get_current_task()
+{
+
+        return _currentTask;
+
+}
 
 void disable_scheduling()
 {
@@ -86,7 +92,7 @@ void clear_queue() {
 }
 
 /* insert thread. */
-bool queue_insert(thread t) {
+void queue_insert(thread t) {
 
         bool scheduling_enabled = (_currentTask != 0);
 
@@ -116,7 +122,7 @@ bool queue_insert(thread t) {
 }
 
 /* insert thread by priority. */
-bool queue_insert_prioritized(thread t) {
+void queue_insert_prioritized(thread t) {
 
         bool scheduling_enabled = (_currentTask != 0);
 
@@ -372,6 +378,7 @@ void scheduler_initialize(void) {
         kernel_proc->threadList = 0;
         kernel_proc->name = (char *)kmalloc(6 + 1);
         strcpy(kernel_proc->name,"kernel");
+        insert_process(kernel_proc);
 
         /* create idle thread and add it. */
         thread_create(&_idleThread, idle_task, create_kernel_stack(), true);
@@ -381,25 +388,25 @@ void scheduler_initialize(void) {
         queue_insert(_idleThread);
         insert_thread_to_proc(kernel_proc,&_idleThread);
 
+        createProcess("a:\\script\\sys.exe");
+
         /* create shell thread and add it. */
-        thread *shellThread = (thread *)kmalloc(sizeof(thread));
-        thread_create(shellThread, shell_main, create_kernel_stack(), true);
-        shellThread->parent = kernel_proc;
-        shellThread->isMain = false;
-        shellThread->priority = PRIORITY_HIGH;
-        queue_insert(*shellThread);
-        insert_thread_to_proc(kernel_proc,shellThread);
+        // thread *shellThread = (thread *)kmalloc(sizeof(thread));
+        // thread_create(shellThread, shell_main, create_kernel_stack(), true);
+        // shellThread->parent = kernel_proc;
+        // shellThread->isMain = false;
+        // shellThread->priority = PRIORITY_HIGH;
+        // queue_insert(*shellThread);
+        // insert_thread_to_proc(kernel_proc,shellThread);
 
-        /* create cursor thread and add it. */
-        thread *cursorThread = (thread *)kmalloc(sizeof(thread));
-        thread_create(cursorThread, cursor_thread, create_kernel_stack(), true);
-        cursorThread->parent = kernel_proc;
-        cursorThread->isMain = false;
-        cursorThread->priority = PRIORITY_MID;
-        queue_insert(*cursorThread);
-        insert_thread_to_proc(kernel_proc,cursorThread);
-
-        insert_process(kernel_proc);
+        // /* create cursor thread and add it. */
+        // thread *cursorThread = (thread *)kmalloc(sizeof(thread));
+        // thread_create(cursorThread, cursor_thread, create_kernel_stack(), true);
+        // cursorThread->parent = kernel_proc;
+        // cursorThread->isMain = false;
+        // cursorThread->priority = PRIORITY_MID;
+        // queue_insert(*cursorThread);
+        // insert_thread_to_proc(kernel_proc,cursorThread);
 
         /* register isr */
         idt_set_gate(32, (void *)scheduler_isr, 0x8E|0x60);
@@ -439,19 +446,19 @@ void idle_task() {
 
   /* setup other things since this is the first task called */
 
-  for (int i = 0; i < 4; i++)
-  {
+  // for (int i = 0; i < 4; i++)
+  // {
 
-        thread *t = (thread *)kmalloc(sizeof(thread));
-        thread_create(t, color_thread, create_kernel_stack(), true);
-        t->parent = kernel_proc;
-        t->isMain = false;
-        t->priority = PRIORITY_LOW;
-        queue_insert(*t);
-        insert_thread_to_proc(kernel_proc,t);
-        thread_sleep(100);
+  //       thread *t = (thread *)kmalloc(sizeof(thread));
+  //       thread_create(t, color_thread, create_kernel_stack(), true);
+  //       t->parent = kernel_proc;
+  //       t->isMain = false;
+  //       t->priority = PRIORITY_LOW;
+  //       queue_insert(*t);
+  //       insert_thread_to_proc(kernel_proc,t);
+  //       thread_sleep(100);
 
-  }
+  // }
 
   // thread test1;
   // thread_create(&test1, test_thread, create_kernel_stack(), true);
@@ -673,7 +680,6 @@ extern uint32_t read_eip();
 int fork()
 {
 
-
         disable_scheduling();
 
         thread *parent_task = queue_get();
@@ -777,7 +783,7 @@ int fork()
         frame->es    = USER_DATA;
         frame->fs    = USER_DATA;
         frame->gs    = USER_DATA;
-        th->SS        = USER_DATA;
+        th->SS       = USER_DATA;
 
         /* set stack. */
         th->ESP = (uint32_t)kernel_esp;
@@ -793,7 +799,7 @@ int fork()
         th->priority = parent_task->priority;
 
         insert_thread_to_proc(parent_task->parent,th);
-        queue_insert_prioritized(*th);
+        queue_insert(*th);
 
         frame->eip = read_eip();
 
@@ -803,6 +809,7 @@ int fork()
         }
         else
         {
+
                 enable_scheduling();
                 return child_tid;
         }
