@@ -115,6 +115,37 @@ bool queue_insert(thread t) {
 
 }
 
+/* insert thread by priority. */
+bool queue_insert_prioritized(thread t) {
+
+        bool scheduling_enabled = (_currentTask == 0);
+
+        if (scheduling_enabled)
+                disable_scheduling();
+
+        queueEntry *tmp = _readyQueue;
+
+        queueEntry *new = (queueEntry *)kmalloc(sizeof(queueEntry));
+        new->next = 0;
+        //memcpy(&new->thread,&t,sizeof(thread));
+        new->thread = t;
+        if (tmp)
+        {
+                while (tmp->next && tmp->thread.priority <= t.priority)
+                        tmp = tmp->next;
+                new->next = tmp->next;
+                tmp->next = new;
+        }
+        else
+        {
+                _readyQueue = new;
+        }
+
+        if (scheduling_enabled)
+                enable_scheduling();
+
+}
+
 /* remove thread. */
 queueEntry *queue_remove() {
         queueEntry *t;
@@ -270,7 +301,7 @@ void scheduler_dispatch () {
         do
         {       
                 queueEntry *tmp = queue_remove();
-                queue_insert(tmp->thread);
+                queue_insert_prioritized(tmp->thread);
                 kfree(tmp);
                 _currentTask = queue_get();
 
@@ -333,7 +364,7 @@ void scheduler_initialize(void) {
 
         kernel_proc->id            = getFreeID();
         kernel_proc->pageDirectory = vmmngr_get_directory();
-        kernel_proc->priority      = 1;
+        kernel_proc->priority      = PRIORITY_HIGH;
         kernel_proc->state         = PROCESS_STATE_ACTIVE;
         kernel_proc->next = 0;
         kernel_proc->threadList = 0;
@@ -344,6 +375,7 @@ void scheduler_initialize(void) {
         thread_create(&_idleThread, idle_task, create_kernel_stack(), true);
         _idleThread.parent = kernel_proc;
         _idleThread.isMain = true;
+        _idleThread.priority = PRIORITY_LOW;
         queue_insert(_idleThread);
         insert_thread_to_proc(kernel_proc,&_idleThread);
 
@@ -352,6 +384,7 @@ void scheduler_initialize(void) {
         thread_create(shellThread, shell_main, create_kernel_stack(), true);
         shellThread->parent = kernel_proc;
         shellThread->isMain = false;
+        shellThread->priority = PRIORITY_HIGH;
         queue_insert(*shellThread);
         insert_thread_to_proc(kernel_proc,shellThread);
 
@@ -360,6 +393,7 @@ void scheduler_initialize(void) {
         thread_create(cursorThread, cursor_thread, create_kernel_stack(), true);
         cursorThread->parent = kernel_proc;
         cursorThread->isMain = false;
+        cursorThread->priority = PRIORITY_MID;
         queue_insert(*cursorThread);
         insert_thread_to_proc(kernel_proc,cursorThread);
 
@@ -410,6 +444,7 @@ void idle_task() {
         thread_create(t, color_thread, create_kernel_stack(), true);
         t->parent = kernel_proc;
         t->isMain = false;
+        t->priority = PRIORITY_LOW;
         queue_insert(*t);
         insert_thread_to_proc(kernel_proc,t);
         thread_sleep(100);

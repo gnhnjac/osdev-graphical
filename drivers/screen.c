@@ -393,7 +393,7 @@ int handle_scrolling(int offset_y)
 	uint8_t *vram = (uint8_t *)VIDEO_ADDRESS + char_line_size;
 
 	uint8_t prev_mask = 0;
-
+	
 	outb(0x3C4, MEMORY_PLANE_WRITE_ENABLE);
 	outb(0x3C5, 0xF);
 

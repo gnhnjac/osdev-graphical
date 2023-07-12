@@ -105,7 +105,7 @@ int createProcess (char* exec) {
 
     proc->id            = getFreeID();
     proc->pageDirectory = addressSpace;
-    proc->priority      = 1;
+    proc->priority      = PRIORITY_MID;
     proc->state         = PROCESS_STATE_ACTIVE;
     proc->next = 0;
     proc->imageBase = imageInfo->ImageBase;
@@ -133,6 +133,7 @@ int createProcess (char* exec) {
     mainThread->parent = proc;
     mainThread->initialStack = stack;
     mainThread->isMain = true;
+    mainThread->priority = proc->priority;
 
     kfree(imageInfo);
 

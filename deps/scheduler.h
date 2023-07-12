@@ -5,6 +5,10 @@
 #define THREAD_BLOCK_SLEEP  2
 #define THREAD_TERMINATE    4
 
+#define PRIORITY_HIGH 1
+#define PRIORITY_MID 2
+#define PRIORITY_LOW 3
+
 typedef struct _queueEntry{
 
 	thread thread;
@@ -24,6 +28,7 @@ void thread_sleep(uint32_t ms);
 void thread_wake();
 void clear_queue();
 bool queue_insert(thread t);
+bool queue_insert_prioritized(thread t);
 queueEntry *queue_remove();
 thread *queue_get();
 thread *queue_get_last();
