@@ -13,11 +13,11 @@ void _start()
 
 	if (tid)
 	{
-		//printf("hello from main thread! created new thread with tid %d",tid);
-		fork();
-		fork();
-		fork();
-		print("sup\n");
+		printf("hello from main thread! forked new thread with tid %d\nTesting fork recursion, calling fork 3 times:\n",tid);
+		int tid2 = fork();
+		int tid3 = fork();
+		int tid4 = fork();
+		print("forked, tid2: %d,tid3: %d,tid4: %d\n",tid2,tid3,tid4);
 		while(1) __asm__("pause");
 	}
 	else
