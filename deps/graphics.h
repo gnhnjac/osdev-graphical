@@ -47,5 +47,4 @@ void fill_rect(int x, int y, int width, int height, uint8_t color);
 void outline_circle(int mx, int my, int rad, uint8_t color);
 void set_pixel (int x, int y, uint8_t color);
 uint8_t is_planar_bit_activated(int x, int y, uint8_t plane);
-uint8_t is_planar_bit_activated_offset(uint8_t *byteoff, uint8_t bitmask, uint8_t plane);
 uint8_t get_pixel (int x, int y);

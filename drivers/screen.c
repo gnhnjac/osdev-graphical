@@ -408,23 +408,24 @@ int handle_scrolling(int offset_y)
 			for (int k = 0; k < PIXEL_WIDTH; k++)
 			{
 
-				uint8_t mask = (0x80>>(k%PIXELS_PER_BYTE));
+				uint8_t mask = 0x80>>(k%PIXELS_PER_BYTE);
 				uint32_t off = k/PIXELS_PER_BYTE;
-
+				uint8_t *color_byte = (uint8_t *)(tmp+off+scroll_diff_size);
+				
 				if (k%PIXELS_PER_BYTE == 0)
 				{
 					outb(0x3CE, READ_MAP_SELECT);
 					outb(0x3CF, 0);
-					if ((*(uint8_t *)(tmp+off+scroll_diff_size)))
+					if (*color_byte)
 						goto not_totally_black;
 					outb(0x3CF, 1);
-					if ((*(uint8_t *)(tmp+off+scroll_diff_size)))
+					if (*color_byte)
 						goto not_totally_black;
 					outb(0x3CF, 2);
-					if ((*(uint8_t *)(tmp+off+scroll_diff_size)))
+					if (*color_byte)
 						goto not_totally_black;
 					outb(0x3CF, 3);
-					if ((*(uint8_t *)(tmp+off+scroll_diff_size)))
+					if (*color_byte)
 						goto not_totally_black;
 
 					k += PIXELS_PER_BYTE-1;
@@ -458,16 +459,16 @@ int handle_scrolling(int offset_y)
 
 				outb(0x3CE, READ_MAP_SELECT);
 				outb(0x3CF, 0);
-				if ((*(uint8_t *)(tmp+off+scroll_diff_size)) & mask)
+				if (*color_byte & mask)
 					color |= 1;
 				outb(0x3CF, 1);
-				if ((*(uint8_t *)(tmp+off+scroll_diff_size)) & mask)
+				if (*color_byte & mask)
 					color |= 2;
 				outb(0x3CF, 2);
-				if ((*(uint8_t *)(tmp+off+scroll_diff_size)) & mask)
+				if (*color_byte & mask)
 					color |= 4;
 				outb(0x3CF, 3);
-				if ((*(uint8_t *)(tmp+off+scroll_diff_size)) & mask)
+				if (*color_byte & mask)
 					color |= 8;
 
 				if (prev_mask != color)

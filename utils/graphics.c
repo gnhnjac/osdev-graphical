@@ -138,9 +138,6 @@ void display_psf1_8x16_char(char c, int x, int y, uint8_t fgcolor)
 	uint8_t *src = font_buff + c * 16;
 	uint8_t *dest = (uint8_t *)VIDEO_ADDRESS + (y * PIXEL_WIDTH + x)/PIXELS_PER_BYTE;
 
-	uint8_t mask_lower = ~(1<<(x % 8)-1);
-	uint8_t mask_upper = (1<<(x % 8)-1);
-
 	outb(0x3C4, MEMORY_PLANE_WRITE_ENABLE);
 	outb(0x3CE,0x8);
 	for(int row = 0; row < 16; row++) {
@@ -227,11 +224,12 @@ void fill_rect(int x, int y, int width, int height, uint8_t color)
 
 		for (int j = 0; j < width; j++)
 		{
-			outb(0x3CF,(0x80>>((x+j)%PIXELS_PER_BYTE)));
+			uint8_t mask = (0x80>>((x+j)%PIXELS_PER_BYTE));
+			outb(0x3CF,mask);
 			outb(0x3C5, 0xF);
-			vram[(x+j)/PIXELS_PER_BYTE] &= ~(0x80>>((x+j)%PIXELS_PER_BYTE));
+			vram[(x+j)/PIXELS_PER_BYTE] &= ~mask;
 			outb(0x3C5, color);
-			vram[(x+j)/PIXELS_PER_BYTE] |= (0x80>>((x+j)%PIXELS_PER_BYTE));
+			vram[(x+j)/PIXELS_PER_BYTE] |= mask;
 
 		}
 
@@ -277,19 +275,21 @@ void set_pixel (int x, int y, uint8_t color)
 	if (x >= PIXEL_WIDTH || y >= PIXEL_HEIGHT)
 		return;
 
+	uint8_t mask = (0x80>>(x%PIXELS_PER_BYTE));
+
 	outb(0x3C4, MEMORY_PLANE_WRITE_ENABLE);
 	outb(0x3CE,0x8);
-	outb(0x3CF,(0x80>>(x%PIXELS_PER_BYTE)));
+	outb(0x3CF,mask);
 
 	outb(0x3C5, 0xF);
 
 	uint8_t *vram = (uint8_t *)VIDEO_ADDRESS + (y * PIXEL_WIDTH + x)/PIXELS_PER_BYTE;
 
-	*vram &= ~(0x80>>(x%PIXELS_PER_BYTE));
+	*vram &= ~mask;
 
 	outb(0x3C5, color);
 
-	*vram |= 0x80>>(x%PIXELS_PER_BYTE);
+	*vram |= mask;
 
 }
 
@@ -304,15 +304,6 @@ uint8_t is_planar_bit_activated(int x, int y, uint8_t plane)
 
 }
 
-uint8_t is_planar_bit_activated_offset(uint8_t *byteoff, uint8_t bitmask, uint8_t plane)
-{
-	outb(0x3CE, READ_MAP_SELECT);
-	outb(0x3CF, plane);
-
-	return (*byteoff) & bitmask;
-
-}
-
 uint8_t get_pixel (int x, int y)
 {
 
@@ -320,14 +311,22 @@ uint8_t get_pixel (int x, int y)
 		return 0;
 
 	uint8_t color = 0;
+	uint8_t mask = 0x80>>(x%PIXELS_PER_BYTE);
+	uint8_t *byte = (uint8_t *)(VIDEO_ADDRESS + (y * PIXEL_WIDTH + x)/PIXELS_PER_BYTE);
 
-	if (is_planar_bit_activated(x,y,0))
+	outb(0x3CE, READ_MAP_SELECT);
+
+	outb(0x3CF, 0);
+	if (*byte & mask)
 		color |= 1;
-	if (is_planar_bit_activated(x,y,1))
+	outb(0x3CF, 1);
+	if (*byte & mask)
 		color |= 2;
-	if (is_planar_bit_activated(x,y,2))
+	outb(0x3CF, 2);
+	if (*byte & mask)
 		color |= 4;
-	if (is_planar_bit_activated(x,y,3))
+	outb(0x3CF, 3);
+	if (*byte & mask)
 		color |= 8;
 
 	return color;
