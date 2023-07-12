@@ -51,6 +51,7 @@ pdirectory* vmmngr_get_directory ();
 pdirectory* vmmngr_create_pdir ();
 void * vmmngr_virt2phys(void *virt);
 void vmmngr_alloc_virt(pdirectory *dir, void *virt, uint32_t pde_flags, uint32_t pte_flags);
+bool vmmngr_check_virt_present(pdirectory *dir, void *virt);
 void vmmngr_free_virt(pdirectory *dir, void *virt);
 void vmmngr_map_page (pdirectory *dir, void* phys, void* virt, uint32_t pde_flags, uint32_t pte_flags);
 void vmmngr_pdirectory_clear(pdirectory *dir);

@@ -141,6 +141,28 @@ void vmmngr_alloc_virt(pdirectory *dir, void *virt, uint32_t pde_flags, uint32_t
 
 }
 
+bool vmmngr_check_virt_present(pdirectory *dir, void *virt)
+{
+
+	//! get page directory
+   pdirectory* pageDirectory = dir;
+
+   //! get page table
+   pd_entry* e = vmmngr_pdirectory_lookup_entry(pageDirectory,(virtual_addr)virt);
+
+   if (!pd_entry_is_present(*e))
+   	return false;
+
+   //! get table
+   ptable* table = (ptable*) pd_entry_pfn(*e);
+
+   //! get page
+   pt_entry* page = vmmngr_ptable_lookup_entry(table,(virtual_addr)virt);
+
+   return pt_entry_is_present(*page);
+
+}
+
 void vmmngr_free_virt(pdirectory *dir, void *virt)
 {
 

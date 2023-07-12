@@ -2,12 +2,14 @@
 #include "idt.h"
 #include "screen.h"
 #include "process.h"
+#include "scheduler.h"
 
 extern void syscall_stub(void);
 
 void* _syscalls[] = {
 	print,
-	terminateProcess
+	terminateProcess,
+	fork
 };
 
 void install_syscalls()

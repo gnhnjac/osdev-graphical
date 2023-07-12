@@ -566,6 +566,9 @@ void *create_user_kernel_stack()
 
         uint32_t loc = USER_KERNEL_STACK_ALLOC_BASE;
 
+        while(vmmngr_check_virt_present(vmmngr_get_directory(), (void *)loc))
+                loc += PAGE_SIZE;
+
         vmmngr_alloc_virt(vmmngr_get_directory(), (void *)loc, I86_PDE_WRITABLE, I86_PTE_WRITABLE);
 
         /* we are returning top of stack. */
@@ -661,4 +664,16 @@ void  thread_create (thread *t, void *entry, void *esp, bool is_kernel) {
         t->sleepTimeDelta = 0;
         t->tid = get_free_tid();
         t->next = 0;
+}
+
+void fork()
+{
+
+
+        // reg task returns something else to distinguish
+
+        // make forked task goto here (start eip is here) also the stack frame needs to be adjusted to fit the creating thread's one
+
+        return 0;
+
 }
