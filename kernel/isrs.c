@@ -143,7 +143,7 @@ void fault_handler(struct regs *r)
         else
             print(exception_messages[r->int_no]);
         printf(" Exception. Error Code: 0b%b\nCode faulted at 0x%U\nFaulted tid: %d\n",r->err_code,r->eip,get_current_task()->tid);
-        while(1);
+
         if (r->int_no == 14)
             print(page_fault_exceptions[r->err_code]);
 
