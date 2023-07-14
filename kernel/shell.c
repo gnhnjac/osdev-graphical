@@ -1,5 +1,5 @@
 #include "keyboard.h"
-#include "screen.h"
+//#include "screen.h"
 #include "mouse.h"
 #include "shell.h"
 #include "strings.h"
@@ -25,14 +25,29 @@ PINPINFO window_input_info = 0;
 #define SHELL_ROWS 25
 #define SHELL_COLS 70
 
+void print(char *s)
+{
+
+	gfx_print(main_window, window_input_info, s);
+
+}
+
+void printf(char *fmt, ...)
+{
+
+	va_list valist;
+	gfx_printf(main_window, window_input_info, fmt,valist);
+
+}
+
 void shell_main()
 {
 
-	// main_window = winsys_create_win(50,50,SHELL_COLS*CHAR_WIDTH,SHELL_ROWS*CHAR_HEIGHT, "shell", false);
-	// window_input_info = (PINPINFO)kcalloc(sizeof(INPINFO));
+	main_window = winsys_create_win(50,50,SHELL_COLS*CHAR_WIDTH,SHELL_ROWS*CHAR_HEIGHT, "shell", false);
+	window_input_info = (PINPINFO)kcalloc(sizeof(INPINFO));
 
-	// winsys_display_window(main_window);
-	// while(1);
+	winsys_display_window(main_window);
+	while(1);
 
 	path = kmalloc(3+1);
 
@@ -52,7 +67,7 @@ void shell_main()
 	while(true)
 	{
 		print("\n");
-		printf("%s",path);
+		printf(path);
 		print("> ");
 		char cmd_buff[300];
 		keyboard_input(-1,-1,cmd_buff,300);

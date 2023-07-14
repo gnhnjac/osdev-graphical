@@ -570,10 +570,9 @@ void gfx_print_char(PWINDOW win, PINPINFO inp_info, const char character, int ro
 	inp_info->cursor_offset_y = offset_y;
 }
 
-void gfx_printf(PWINDOW win, PINPINFO inp_info,const char *fmt, ...)
+void gfx_printf(PWINDOW win, PINPINFO inp_info,const char *fmt, va_list valist)
 {
 
-	va_list valist;
 	va_start(valist, fmt);
 
 	const char *orig = fmt;
