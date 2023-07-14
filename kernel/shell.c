@@ -13,15 +13,26 @@
 #include <stdint.h>
 #include "process.h"
 #include "scheduler.h"
-
-
-
+#include "window_sys.h"
+#include "graphics.h"
 #include "vmm.h"
 
 char *path = 0; // current path
 
+PWINDOW main_window = 0;
+PINPINFO window_input_info = 0;
+
+#define SHELL_ROWS 25
+#define SHELL_COLS 70
+
 void shell_main()
 {
+
+	// main_window = winsys_create_win(50,50,SHELL_COLS*CHAR_WIDTH,SHELL_ROWS*CHAR_HEIGHT, "shell", false);
+	// window_input_info = (PINPINFO)kcalloc(sizeof(INPINFO));
+
+	// winsys_display_window(main_window);
+	// while(1);
 
 	path = kmalloc(3+1);
 

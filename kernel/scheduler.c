@@ -397,15 +397,6 @@ void scheduler_initialize(void) {
         queue_insert(*shellThread);
         insert_thread_to_proc(kernel_proc,shellThread);
 
-        // /* create cursor thread and add it. */
-        thread *cursorThread = (thread *)kmalloc(sizeof(thread));
-        thread_create(cursorThread, cursor_thread, create_kernel_stack(), true);
-        cursorThread->parent = kernel_proc;
-        cursorThread->isMain = false;
-        cursorThread->priority = PRIORITY_MID;
-        queue_insert(*cursorThread);
-        insert_thread_to_proc(kernel_proc,cursorThread);
-
         /* register isr */
         idt_set_gate(32, (void *)scheduler_isr, 0x8E|0x60);
 

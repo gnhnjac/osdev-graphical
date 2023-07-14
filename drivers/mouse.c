@@ -191,8 +191,8 @@ void mouse_handler()
 
 	MOUSEY -= rel_y*2;
 
-	if (MOUSEY < 0)
-		MOUSEY = 0;
+	if (MOUSEY < TOP*CHAR_HEIGHT)
+		MOUSEY = TOP*CHAR_HEIGHT;
 	else if (MOUSEY >= PIXEL_HEIGHT)
 		MOUSEY = (uint16_t)PIXEL_HEIGHT-1;
 
@@ -222,29 +222,32 @@ void mouse_handler()
 	if (left_click)
 	{	
 
-		// if (!dragging_window)
-		// {
-		// 	PWINDOW win = winsys_get_window_from_title_collision(MOUSEX,MOUSEY);
-
-		// 	if (win)
-		// 		dragging_window = win;
-		// }
-		// else
-		// {
-
-		// 	winsys_move_window(dragging_window,MOUSEX+WIN_FRAME_SIZE,MOUSEY+TITLE_BAR_HEIGHT);
-		// 	save_to_mouse_buffer();
-		// 	dragging_window = 0;
-
-		// }
-
-		for(int i = 0; i < 20; i+=2)
+		if (!dragging_window)
 		{
-			outline_circle(MOUSEX,MOUSEY,i,0xf);
-			outline_circle(MOUSEX,MOUSEY,i,0);
+			clear_mouse();
+			PWINDOW win = winsys_get_window_from_title_collision(MOUSEX,MOUSEY);
+			save_to_mouse_buffer();
+			print_mouse();
+
+			if (win)
+				dragging_window = win;
 		}
-		fill_rect(get_screen_x(get_cursor_col()),get_screen_y(get_cursor_row())+12,8,4,0);
-		set_cursor_coords(get_logical_col(MOUSEX), get_logical_row(MOUSEY));
+		else
+		{
+
+			winsys_move_window(dragging_window,MOUSEX+WIN_FRAME_SIZE,MOUSEY+TITLE_BAR_HEIGHT);
+			save_to_mouse_buffer();
+			dragging_window = 0;
+
+		}
+
+		// for(int i = 0; i < 20; i+=2)
+		// {
+		// 	outline_circle(MOUSEX,MOUSEY,i,0xf);
+		// 	outline_circle(MOUSEX,MOUSEY,i,0);
+		// }
+		// fill_rect(get_screen_x(get_cursor_col()),get_screen_y(get_cursor_row())+12,8,4,0);
+		// set_cursor_coords(get_logical_col(MOUSEX), get_logical_row(MOUSEY));
 		
 	}
 

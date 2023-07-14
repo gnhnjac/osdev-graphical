@@ -90,14 +90,10 @@ void kmain(uint32_t _, multiboot_info* bootinfo, uint32_t _kernel_size) {
 	if (!load_psf1_8x16("a:\\font.psf"))
 		return;
 
+	winsys_init();
+
 	init_screen();
-
-	// winsys_init();
-
-	// winsys_create_win(100, 100, 100, 100, "hello");
-
-	//display_logo();
-	//install_nic();
+	
 	ps2_init();
 	timer_install();
 	keyboard_install();
@@ -108,7 +104,7 @@ void kmain(uint32_t _, multiboot_info* bootinfo, uint32_t _kernel_size) {
 
 	//! initialize TSS
 	install_tss (5,0x10,0);
-	
+
 	scheduler_initialize();
 
 	execute_idle();

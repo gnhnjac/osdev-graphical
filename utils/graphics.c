@@ -37,6 +37,12 @@ void init_psf1_8x16()
 
 }
 
+uint8_t *get_font_buffer()
+{
+
+	return font_buff;
+
+}
 int load_psf1_8x16(char *path)
 {
 
