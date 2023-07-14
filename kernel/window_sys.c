@@ -212,6 +212,33 @@ bool winsys_check_collide(PWINDOW w1, PWINDOW w2)
 
 }
 
+bool winsys_check_title_collide(PWINDOW w, int x, int y)
+{
+
+	uint32_t w_x = w->x-WIN_FRAME_SIZE;
+	uint32_t w_y = w->y-TITLE_BAR_HEIGHT;
+	uint32_t w_w = w->width + WIN_FRAME_SIZE*2;
+	uint32_t w_h = TITLE_BAR_HEIGHT;
+
+	return x < w_x + w_w &&
+    x > w_x &&
+    y < w_y + w_h &&
+    y > w_y;
+
+}
+
+PWINDOW winsys_get_window_from_title_collision(int x, int y)
+{
+
+	PWINDOW tmp = win_list;
+
+	while(!winsys_check_title_collide(tmp,x,y))
+		tmp = tmp->next;
+
+	return tmp;
+
+}
+
 void winsys_move_window(PWINDOW win, int x, int y)
 {
 

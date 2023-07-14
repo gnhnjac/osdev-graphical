@@ -106,6 +106,8 @@ void kmain(uint32_t _, multiboot_info* bootinfo, uint32_t _kernel_size) {
 
 	//! initialize TSS
 	install_tss (5,0x10,0);
+
+	return;
 	
 	scheduler_initialize();
 
