@@ -4,7 +4,6 @@
 #include "memory.h"
 #include "strings.h"
 #include "screen.h"
-#include <stdarg.h>
 
 static PWINDOW win_list;
 static PWINDOW working_window;
@@ -570,10 +569,8 @@ void gfx_print_char(PWINDOW win, PINPINFO inp_info, const char character, int ro
 	inp_info->cursor_offset_y = offset_y;
 }
 
-void gfx_printf(PWINDOW win, PINPINFO inp_info,const char *fmt, va_list valist)
+void gfx_vprintf(PWINDOW win, PINPINFO inp_info,const char *fmt, va_list valist)
 {
-
-	va_start(valist, fmt);
 
 	const char *orig = fmt;
 
@@ -612,7 +609,7 @@ void gfx_printf(PWINDOW win, PINPINFO inp_info,const char *fmt, va_list valist)
 					break;
 
 				case 's':
-					gfx_printf(win,inp_info,(char *)va_arg(valist, int));
+					gfx_print(win,inp_info,(char *)va_arg(valist, int));
 					break;
 
 				case 'x':
@@ -635,7 +632,7 @@ void gfx_printf(PWINDOW win, PINPINFO inp_info,const char *fmt, va_list valist)
 
 				default:
 
-					gfx_printf(win,inp_info,"Unknown format type \\%%c", fmt);
+					//gfx_printf(win,inp_info,"Unknown format type \\%%c", fmt);
 					return;
 			}
 

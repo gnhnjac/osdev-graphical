@@ -1,3 +1,4 @@
+#include <stdint.h>
 
 #define VERTICAL_SCROLL_UP 1
 #define VERTICAL_SCROLL_DOWN 0xF

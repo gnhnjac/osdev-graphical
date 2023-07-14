@@ -44,5 +44,8 @@ with open(header_file, 'w') as f:
 	f.write(header_file_contents)
 	for func in source_matches:
 
+		# if "static" in func:
+		# 	continue;
+
 		#print(f"Adding {func}")
 		f.write('\n'+func+';')

@@ -16,6 +16,9 @@
 #define check_flag(flags, n) ((flags) & bit(n))
 
 //refs
+// static void print(char *s);
+// static void printf(char *fmt, ...);
+// static void clear_viewport();
 void shell_main();
 void handle_command(char *cmd_buff);
 char *join_path(char* p, char* ext);

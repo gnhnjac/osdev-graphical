@@ -1,5 +1,5 @@
 #include "keyboard.h"
-//#include "screen.h"
+#include "screen.h"
 #include "mouse.h"
 #include "shell.h"
 #include "strings.h"
@@ -19,35 +19,41 @@
 
 char *path = 0; // current path
 
-PWINDOW main_window = 0;
-PINPINFO window_input_info = 0;
+// PWINDOW main_window = 0;
+// PINPINFO window_input_info = 0;
 
-#define SHELL_ROWS 25
-#define SHELL_COLS 70
+// #define SHELL_ROWS 25
+// #define SHELL_COLS 70
 
-void print(char *s)
-{
+// static void print(char *s)
+// {
 
-	gfx_print(main_window, window_input_info, s);
+// 	gfx_print(main_window, window_input_info, s);
 
-}
+// }
 
-void printf(char *fmt, ...)
-{
+// static void printf(char *fmt, ...)
+// {
 
-	va_list valist;
-	gfx_printf(main_window, window_input_info, fmt,valist);
+// 	va_list valist;
+// 	va_start(valist, fmt);
+// 	gfx_vprintf(main_window, window_input_info, fmt,valist);
 
-}
+// }
+
+// static void clear_viewport()
+// {
+
+// 	gfx_clear_win(main_window);
+// 	winsys_display_window(main_window);
+
+// }
 
 void shell_main()
 {
 
-	main_window = winsys_create_win(50,50,SHELL_COLS*CHAR_WIDTH,SHELL_ROWS*CHAR_HEIGHT, "shell", false);
-	window_input_info = (PINPINFO)kcalloc(sizeof(INPINFO));
-
-	winsys_display_window(main_window);
-	while(1);
+	//main_window = winsys_create_win(50,50,SHELL_COLS*CHAR_WIDTH,SHELL_ROWS*CHAR_HEIGHT, "shell", false);
+	//window_input_info = (PINPINFO)kcalloc(sizeof(INPINFO));
 
 	path = kmalloc(3+1);
 
@@ -128,8 +134,10 @@ void handle_command(char *cmd_buff)
 	{
 		disable_mouse();
 		clear_viewport();
-		set_cursor_input_row(TOP);
-		set_cursor_row(TOP);
+		set_cursor_coords(0,TOP);
+		set_cursor_input_coords(TOP,0);
+		//window_input_info->cursor_offset_y = 0;
+		//window_input_info->cursor_input_row = 0;
 		enable_mouse();
 	}
 	else if(strcmp(cmd,"rm"))

@@ -1,5 +1,7 @@
 #include <stdint.h>
 #include <stdbool.h>
+#include <stdarg.h>
+
 
 typedef struct _window
 {
@@ -59,7 +61,7 @@ void gfx_putchar(PWINDOW win, PINPINFO inp_info, char c);
 void gfx_print(PWINDOW win, PINPINFO inp_info, char *s);
 void gfx_print_color(PWINDOW win, PINPINFO inp_info, char *s, uint8_t color);
 void gfx_print_char(PWINDOW win, PINPINFO inp_info, const char character, int row, int col, char color);
-void gfx_printf(PWINDOW win, PINPINFO inp_info,const char *fmt, ...);
+void gfx_vprintf(PWINDOW win, PINPINFO inp_info,const char *fmt, va_list valist);
 // int handle_scrolling(int offset_y);
 // 	if (offset_y < MAX_ROWS);
 // 	for (int i = TOP+SCROLL_ROWS; i < MAX_ROWS; i++);
