@@ -43,6 +43,7 @@ void display_psf1_8x16_char_bg_linear(char c, int x, int y, int bgcolor, int fgc
 void display_psf1_8x16_char(char c, int x, int y, uint8_t fgcolor);
 void display_psf1_8x16_char_bg(char c, int x, int y, int bgcolor, int fgcolor);
 void fill_rect_linear(int x, int y, int width, int height, uint8_t color);
+void outline_rect(int x, int y, int width, int height, int size, uint8_t color);
 void fill_rect(int x, int y, int width, int height, uint8_t color);
 void outline_circle(int mx, int my, int rad, uint8_t color);
 void set_pixel (int x, int y, uint8_t color);

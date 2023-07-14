@@ -134,6 +134,8 @@ void display_psf1_8x16_char_bg_linear(char c, int x, int y, int bgcolor, int fgc
 void display_psf1_8x16_char(char c, int x, int y, uint8_t fgcolor)
 {
 
+	if (x+CHAR_WIDTH >= PIXEL_WIDTH || y+CHAR_HEIGHT >= PIXEL_HEIGHT)
+		return;
 
 	uint8_t *src = font_buff + c * 16;
 	uint8_t *dest = (uint8_t *)VIDEO_ADDRESS + (y * PIXEL_WIDTH + x)/PIXELS_PER_BYTE;
@@ -205,6 +207,17 @@ void fill_rect_linear(int x, int y, int width, int height, uint8_t color)
 
 }
 
+void outline_rect(int x, int y, int width, int height, int size, uint8_t color)
+{
+
+	fill_rect(x-size,y-size,width+size*2,size,color);
+	fill_rect(x-size,y+height,width+size*2,size,color);
+
+	fill_rect(x-size,y,size,height,color);
+	fill_rect(x+width,y,size,height,color);
+
+}
+
 void fill_rect(int x, int y, int width, int height, uint8_t color)
 {
 
@@ -224,7 +237,14 @@ void fill_rect(int x, int y, int width, int height, uint8_t color)
 
 		for (int j = 0; j < width; j++)
 		{
-			uint8_t mask = (0x80>>((x+j)%PIXELS_PER_BYTE));
+			uint8_t mask;
+			if (j+PIXELS_PER_BYTE < width && (x+j) % PIXELS_PER_BYTE == 0)
+			{
+				mask = 0xFF;
+				j += PIXELS_PER_BYTE-1;
+			}
+			else
+				mask = (0x80>>((x+j)%PIXELS_PER_BYTE));
 			outb(0x3CF,mask);
 			outb(0x3C5, 0xF);
 			vram[(x+j)/PIXELS_PER_BYTE] &= ~mask;
