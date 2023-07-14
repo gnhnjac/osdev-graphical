@@ -86,13 +86,15 @@ void kmain(uint32_t _, multiboot_info* bootinfo, uint32_t _kernel_size) {
 	// initialize the temp file system driver
 	tfsys_init();
 
-	winsys_init();
-
 	init_psf1_8x16();
 	if (!load_psf1_8x16("a:\\font.psf"))
 		return;
 
 	init_screen();
+
+	// winsys_init();
+
+	// winsys_create_win(100, 100, 100, 100, "hello");
 
 	//display_logo();
 	//install_nic();
@@ -106,8 +108,6 @@ void kmain(uint32_t _, multiboot_info* bootinfo, uint32_t _kernel_size) {
 
 	//! initialize TSS
 	install_tss (5,0x10,0);
-
-	return;
 	
 	scheduler_initialize();
 

@@ -123,6 +123,8 @@ void winsys_paint_window_frame(PWINDOW win)
 		tmp++;
 	}
 
+	display_psf1_8x16_char('x', win->x+win->width-CHAR_WIDTH, name_y, TITLE_NAME_COLOR);
+
 }
 
 void winsys_paint_window(PWINDOW win)
@@ -227,13 +229,37 @@ bool winsys_check_title_collide(PWINDOW w, int x, int y)
 
 }
 
+bool winsys_check_close_collide(PWINDOW w, int x, int y)
+{
+
+	uint32_t w_x = w->x+w->width-CHAR_WIDTH;
+	uint32_t w_y = w->y-TITLE_BAR_HEIGHT;
+	uint32_t w_w = CHAR_WIDTH;
+	uint32_t w_h = TITLE_BAR_HEIGHT;
+
+	return x < w_x + w_w &&
+    x > w_x &&
+    y < w_y + w_h &&
+    y > w_y;
+
+}
+
 PWINDOW winsys_get_window_from_title_collision(int x, int y)
 {
 
 	PWINDOW tmp = win_list;
 
-	while(!winsys_check_title_collide(tmp,x,y))
+	if (!tmp)
+		return 0;
+
+	while(!winsys_check_title_collide(tmp,x,y) && tmp)
 		tmp = tmp->next;
+
+	if (winsys_check_close_collide(tmp,x,y))
+	{
+		winsys_remove_window(tmp);
+		return 0;
+	}
 
 	return tmp;
 

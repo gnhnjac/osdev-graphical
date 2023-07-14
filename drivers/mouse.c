@@ -6,6 +6,7 @@
 #include "std.h"
 #include "keyboard.h"
 #include "graphics.h"
+#include "window_sys.h"
 #include <stdint.h>
 #include <stdbool.h>
 
@@ -18,9 +19,6 @@ static bool mouse_enabled = true;
 static bool mouse_installed = false;
 
 static PWINDOW dragging_window = 0;
-static int x_from_window_tl = 0
-static int y_from_window_tl = 0;
-static uint8_t dragging_window_indicator_color_buff = 0;
 
 // 18x10 cursor bitmap
 uint8_t mouse_bitmap[18][10] = {
@@ -200,13 +198,6 @@ void mouse_handler()
 
 	clear_mouse();
 
-	if(dragging_window)
-	{
-
-		set_pixel(MOUSEX+x_from_window_tl,MOUSEY+y_from_window_tl,dragging_window_indicator_color_buff);
-
-	}
-
 	PREVX = MOUSEX;
 	PREVY = MOUSEY;
 
@@ -231,47 +222,30 @@ void mouse_handler()
 	if (left_click)
 	{	
 
-		if (!dragging_window)
-		{
-			PWINDOW win = winsys_get_window_from_title_collision(MOUSEX,MOUSEY);
-
-			if (win)
-			{
-				dragging_window = win;
-				x_from_window_tl = MOUSEX-win->x;
-				y_from_window_tl = MOUSEY-win->y;
-				dragging_window_indicator_color_buff = get_pixel(MOUSEX+x_from_window_tl,MOUSEY+y_from_window_tl);
-				set_pixel(MOUSEX+x_from_window_tl,MOUSEY+y_from_window_tl,0x4);
-			}
-		}
-		else
-		{
-
-			dragging_window_indicator_color_buff = get_pixel(MOUSEX+x_from_window_tl,MOUSEY+y_from_window_tl);
-			set_pixel(MOUSEX+x_from_window_tl,MOUSEY+y_from_window_tl,0x4);
-
-		}
-
-		// for(int i = 0; i < 20; i+=2)
+		// if (!dragging_window)
 		// {
-		// 	outline_circle(MOUSEX,MOUSEY,i,0xf);
-		// 	outline_circle(MOUSEX,MOUSEY,i,0);
+		// 	PWINDOW win = winsys_get_window_from_title_collision(MOUSEX,MOUSEY);
+
+		// 	if (win)
+		// 		dragging_window = win;
 		// }
-		//fill_rect(get_screen_x(get_cursor_col()),get_screen_y(get_cursor_row())+12,8,4,0);
-		//set_cursor_coords(get_logical_col(MOUSEX), get_logical_row(MOUSEY));
-		
-	}
-	else
-	{
+		// else
+		// {
 
-		if(dragging_window)
+		// 	winsys_move_window(dragging_window,MOUSEX+WIN_FRAME_SIZE,MOUSEY+TITLE_BAR_HEIGHT);
+		// 	save_to_mouse_buffer();
+		// 	dragging_window = 0;
+
+		// }
+
+		for(int i = 0; i < 20; i+=2)
 		{
-
-			winsys_move_window(dragging_window,MOUSEX+x_from_window_tl,MOUSEY+y_from_window_tl);
-			dragging_window = 0;
-
+			outline_circle(MOUSEX,MOUSEY,i,0xf);
+			outline_circle(MOUSEX,MOUSEY,i,0);
 		}
-
+		fill_rect(get_screen_x(get_cursor_col()),get_screen_y(get_cursor_row())+12,8,4,0);
+		set_cursor_coords(get_logical_col(MOUSEX), get_logical_row(MOUSEY));
+		
 	}
 
 }

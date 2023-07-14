@@ -493,7 +493,7 @@ int handle_scrolling(int offset_y)
 
 	fill_rect(0,PIXEL_HEIGHT-CHAR_HEIGHT*SCROLL_ROWS,PIXEL_WIDTH,CHAR_HEIGHT*SCROLL_ROWS,0);
 
-	offset_y-=SCROLL_ROWS+1;
+	offset_y-=SCROLL_ROWS;
 
 	enable_mouse();
 	cursor_input_row -= SCROLL_ROWS;

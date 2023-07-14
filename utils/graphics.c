@@ -134,7 +134,7 @@ void display_psf1_8x16_char_bg_linear(char c, int x, int y, int bgcolor, int fgc
 void display_psf1_8x16_char(char c, int x, int y, uint8_t fgcolor)
 {
 
-	if (x+CHAR_WIDTH >= PIXEL_WIDTH || y+CHAR_HEIGHT >= PIXEL_HEIGHT)
+	if (x+CHAR_WIDTH > PIXEL_WIDTH || y+CHAR_HEIGHT > PIXEL_HEIGHT)
 		return;
 
 	uint8_t *src = font_buff + c * 16;
