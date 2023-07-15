@@ -85,7 +85,6 @@ typedef struct _terminal
 #define TITLE_BAR_HEIGHT 20
 #define WIN_FRAME_SIZE 1
 #define WIN_FRAME_COLOR 0x8
-#define WORKING_FRAME_COLOR 0x4
 #define TITLE_NAME_COLOR 0xF
 
 #define BG_COLOR 0x7

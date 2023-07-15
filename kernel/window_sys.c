@@ -107,9 +107,7 @@ int winsys_set_working_window(int wid)
 		if (tmp->id == wid)
 		{
 
-			PWINDOW prev_working = working_window;
 			working_window = tmp;
-			winsys_paint_window_frame(prev_working);
 
 			PWINDOW tmp2 = win_list;
 
@@ -154,19 +152,10 @@ void winsys_paint_window_frame(PWINDOW win)
 		return;
 
 	fill_rect(win->x-WIN_FRAME_SIZE,win->y-TITLE_BAR_HEIGHT,win->width+WIN_FRAME_SIZE*2,TITLE_BAR_HEIGHT,WIN_FRAME_COLOR);
+	fill_rect(win->x-WIN_FRAME_SIZE,win->y,WIN_FRAME_SIZE,win->height,WIN_FRAME_COLOR);
+	fill_rect(win->x+win->width,win->y,WIN_FRAME_SIZE,win->height,WIN_FRAME_COLOR);
+	fill_rect(win->x-WIN_FRAME_SIZE,win->y+win->height,win->width+WIN_FRAME_SIZE*2,WIN_FRAME_SIZE,WIN_FRAME_COLOR);
 
-	if (win->id != winsys_get_working_window()->id)
-	{
-		fill_rect(win->x-WIN_FRAME_SIZE,win->y,WIN_FRAME_SIZE,win->height,WIN_FRAME_COLOR);
-		fill_rect(win->x+win->width,win->y,WIN_FRAME_SIZE,win->height,WIN_FRAME_COLOR);
-		fill_rect(win->x-WIN_FRAME_SIZE,win->y+win->height,win->width+WIN_FRAME_SIZE*2,WIN_FRAME_SIZE,WIN_FRAME_COLOR);
-	}
-	else
-	{
-
-		outline_rect(win->x,win->y-TITLE_BAR_HEIGHT+WIN_FRAME_SIZE,win->width,win->height+TITLE_BAR_HEIGHT-WIN_FRAME_SIZE,WIN_FRAME_SIZE,WORKING_FRAME_COLOR);
-
-	}
 	char *tmp = win->w_name;
 
 	uint32_t name_y = win->y-(TITLE_BAR_HEIGHT+CHAR_HEIGHT)/2;
@@ -425,10 +414,11 @@ void winsys_display_collided_windows(PWINDOW win)
 	if (!win)
 		return;
 
+
 	PWINDOW tmp = win_list;
 
 	while(tmp)
-	{
+	{	
 		if (tmp != win && winsys_check_collide(win,tmp))
 			winsys_display_window_exclude_original(tmp,win);
 
@@ -466,23 +456,23 @@ void winsys_clear_whole_window(PWINDOW win)
 bool winsys_check_collide(PWINDOW w1, PWINDOW w2)
 {
 
-	if (!w1 | !w2)
+	if (!w1 || !w2)
 		return false;
 
 	int w1_x = w1->x-WIN_FRAME_SIZE;
 	int w1_y = w1->y-TITLE_BAR_HEIGHT;
-	uint32_t w1_w = w1->width + WIN_FRAME_SIZE*2;
-	uint32_t w1_h = w1->height + TITLE_BAR_HEIGHT+WIN_FRAME_SIZE;
+	int w1_w = w1->width + WIN_FRAME_SIZE*2;
+	int w1_h = w1->height + TITLE_BAR_HEIGHT+WIN_FRAME_SIZE;
 
 	int w2_x = w2->x-WIN_FRAME_SIZE;
 	int w2_y = w2->y-TITLE_BAR_HEIGHT;
-	uint32_t w2_w = w2->width + WIN_FRAME_SIZE*2;
-	uint32_t w2_h = w2->height + TITLE_BAR_HEIGHT+WIN_FRAME_SIZE;
+	int w2_w = w2->width + WIN_FRAME_SIZE*2;
+	int w2_h = w2->height + TITLE_BAR_HEIGHT+WIN_FRAME_SIZE;
 
-	return w1_x < w2_x + w2_w &&
-    w1_x + w1_w > w2_x &&
-    w1_y < w2_y + w2_h &&
-    w1_y + w1_h > w2_y;
+	return w2_x + w2_w > w1_x &&
+		   w2_y + w2_h > w1_y &&
+		   w1_x + w1_w > w2_x &&
+		   w1_y + w1_h > w2_y;
 
 }
 

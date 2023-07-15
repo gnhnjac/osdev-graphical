@@ -214,7 +214,7 @@ void handle_img(char *cmd_buff)
 	strip_from_end(param, ' ');
 	char *new_path = join_path(path,param);
 
-	gfx_open_bmp16(new_path,50,50);;
+	gfx_open_bmp16(new_path,PIXEL_WIDTH/2,PIXEL_HEIGHT/2);;
 
 	kfree(new_path);
 	kfree(param);
