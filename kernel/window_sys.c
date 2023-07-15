@@ -107,7 +107,9 @@ int winsys_set_working_window(int wid)
 		if (tmp->id == wid)
 		{
 
+			PWINDOW prev_working = working_window;
 			working_window = tmp;
+			winsys_paint_window_frame(prev_working);
 
 			PWINDOW tmp2 = win_list;
 
@@ -134,6 +136,8 @@ int winsys_set_working_window(int wid)
 			tmp2->next = tmp;
 			tmp->next = 0;
 
+			winsys_display_window(working_window);
+
 			return 1;
 		}
 		tmp = tmp->next;
@@ -146,11 +150,23 @@ int winsys_set_working_window(int wid)
 void winsys_paint_window_frame(PWINDOW win)
 {
 
-	fill_rect(win->x-WIN_FRAME_SIZE,win->y-TITLE_BAR_HEIGHT,win->width+WIN_FRAME_SIZE*2,TITLE_BAR_HEIGHT,WIN_FRAME_COLOR);
-	fill_rect(win->x-WIN_FRAME_SIZE,win->y,WIN_FRAME_SIZE,win->height,WIN_FRAME_COLOR);
-	fill_rect(win->x+win->width,win->y,WIN_FRAME_SIZE,win->height,WIN_FRAME_COLOR);
-	fill_rect(win->x-WIN_FRAME_SIZE,win->y+win->height,win->width+WIN_FRAME_SIZE*2,WIN_FRAME_SIZE,WIN_FRAME_COLOR);
+	if (!win)
+		return;
 
+	fill_rect(win->x-WIN_FRAME_SIZE,win->y-TITLE_BAR_HEIGHT,win->width+WIN_FRAME_SIZE*2,TITLE_BAR_HEIGHT,WIN_FRAME_COLOR);
+
+	if (win->id != winsys_get_working_window()->id)
+	{
+		fill_rect(win->x-WIN_FRAME_SIZE,win->y,WIN_FRAME_SIZE,win->height,WIN_FRAME_COLOR);
+		fill_rect(win->x+win->width,win->y,WIN_FRAME_SIZE,win->height,WIN_FRAME_COLOR);
+		fill_rect(win->x-WIN_FRAME_SIZE,win->y+win->height,win->width+WIN_FRAME_SIZE*2,WIN_FRAME_SIZE,WIN_FRAME_COLOR);
+	}
+	else
+	{
+
+		outline_rect(win->x,win->y-TITLE_BAR_HEIGHT+WIN_FRAME_SIZE,win->width,win->height+TITLE_BAR_HEIGHT-WIN_FRAME_SIZE,WIN_FRAME_SIZE,WORKING_FRAME_COLOR);
+
+	}
 	char *tmp = win->w_name;
 
 	uint32_t name_y = win->y-(TITLE_BAR_HEIGHT+CHAR_HEIGHT)/2;
@@ -311,6 +327,37 @@ void winsys_display_window_section(PWINDOW win, int x, int y, int width, int hei
 
 }
 
+void winsys_display_window_section_exclude_original(PWINDOW win, PWINDOW orig, int x, int y, int width, int height)
+{
+
+	if (!win)
+		return;
+	winsys_paint_window_section(win, x, y, width, height);
+
+	PWINDOW tmp = win->next;
+
+	while(tmp)
+	{
+		if (winsys_check_collide(win,tmp) && tmp != orig)
+		{
+			uint32_t overlap_x = max(win->x, tmp->x);
+
+			uint32_t overlap_y = max(win->y, tmp->y);
+
+			uint32_t overlap_w = min(win->x+win->width,tmp->x+tmp->width)-overlap_x;
+
+			uint32_t overlap_h = min(win->y+win->height, tmp->y+tmp->height)-overlap_y;
+
+			winsys_display_window_section(tmp,overlap_x-tmp->x,overlap_y-tmp->y,overlap_w,overlap_h);
+
+		}
+
+		tmp = tmp->next;
+
+	}
+
+}
+
 void winsys_display_window(PWINDOW win)
 {
 
@@ -354,7 +401,17 @@ void winsys_display_window_exclude_original(PWINDOW win, PWINDOW orig)
 	while(tmp)
 	{
 		if (tmp != orig && winsys_check_collide(win,tmp))
-			winsys_display_window(tmp);
+		{
+			uint32_t overlap_x = max(win->x, tmp->x);
+
+			uint32_t overlap_y = max(win->y, tmp->y);
+
+			uint32_t overlap_w = min(win->x+win->width,tmp->x+tmp->width)-overlap_x;
+
+			uint32_t overlap_h = min(win->y+win->height, tmp->y+tmp->height)-overlap_y;
+
+			winsys_display_window_section_exclude_original(tmp,orig,overlap_x-tmp->x,overlap_y-tmp->y,overlap_w,overlap_h);
+		}
 
 		tmp = tmp->next;
 
@@ -385,24 +442,24 @@ void winsys_display_collided_windows(PWINDOW win)
 void winsys_clear_window(PWINDOW win)
 {
 
-	fill_rect(win->x,win->y,win->width,win->height,0);
+	fill_rect(win->x,win->y,win->width,win->height,BG_COLOR);
 
 }
 
 void winsys_clear_window_frame(PWINDOW win)
 {
 
-	fill_rect(win->x-WIN_FRAME_SIZE,win->y-TITLE_BAR_HEIGHT,win->width+WIN_FRAME_SIZE*2,TITLE_BAR_HEIGHT,0);
-	fill_rect(win->x-WIN_FRAME_SIZE,win->y,WIN_FRAME_SIZE,win->height,0);
-	fill_rect(win->x+win->width,win->y,WIN_FRAME_SIZE,win->height,0);
-	fill_rect(win->x-WIN_FRAME_SIZE,win->y+win->height,win->width+WIN_FRAME_SIZE*2,WIN_FRAME_SIZE,0);
+	fill_rect(win->x-WIN_FRAME_SIZE,win->y-TITLE_BAR_HEIGHT,win->width+WIN_FRAME_SIZE*2,TITLE_BAR_HEIGHT,BG_COLOR);
+	fill_rect(win->x-WIN_FRAME_SIZE,win->y,WIN_FRAME_SIZE,win->height,BG_COLOR);
+	fill_rect(win->x+win->width,win->y,WIN_FRAME_SIZE,win->height,BG_COLOR);
+	fill_rect(win->x-WIN_FRAME_SIZE,win->y+win->height,win->width+WIN_FRAME_SIZE*2,WIN_FRAME_SIZE,BG_COLOR);
 
 }
 
 void winsys_clear_whole_window(PWINDOW win)
 {
 
-	fill_rect(win->x-WIN_FRAME_SIZE,win->y-TITLE_BAR_HEIGHT,win->width+WIN_FRAME_SIZE*2,win->height+TITLE_BAR_HEIGHT+WIN_FRAME_SIZE,0);
+	fill_rect(win->x-WIN_FRAME_SIZE,win->y-TITLE_BAR_HEIGHT,win->width+WIN_FRAME_SIZE*2,win->height+TITLE_BAR_HEIGHT+WIN_FRAME_SIZE,BG_COLOR);
 
 }
 
@@ -545,6 +602,17 @@ void winsys_remove_window(PWINDOW win)
 			tmp = tmp->next;
 
 		tmp->next = win->next;
+	}
+
+	tmp = win_list;
+	
+	while(tmp->next)
+		tmp = tmp->next;
+
+	if (working_window->id == win->id)
+	{
+		working_window = 0;
+		winsys_set_working_window(tmp->id);
 	}
 
 	winsys_display_collided_windows(win);

@@ -351,7 +351,7 @@ void clear_viewport()
 void clear_screen() 
 {
 
-	fill_rect(0,0,PIXEL_WIDTH,PIXEL_HEIGHT,0);
+	fill_rect(0,0,PIXEL_WIDTH,PIXEL_HEIGHT,BG_COLOR);
 }
 
 

@@ -272,6 +272,9 @@ void keyboard_handler()
 
     PWINDOW working_win = winsys_get_working_window();
 
+    if (!working_win)
+      return;
+
     PEVENTHAND win_event_handler = &working_win->event_handler;
 
     if (win_event_handler->event_mask & GENERAL_EVENT_KBD)

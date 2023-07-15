@@ -84,8 +84,11 @@ typedef struct _terminal
 
 #define TITLE_BAR_HEIGHT 20
 #define WIN_FRAME_SIZE 1
-#define WIN_FRAME_COLOR 0xF
-#define TITLE_NAME_COLOR 0
+#define WIN_FRAME_COLOR 0x8
+#define WORKING_FRAME_COLOR 0x4
+#define TITLE_NAME_COLOR 0xF
+
+#define BG_COLOR 0x7
 
 //refs
 PWINDOW winsys_get_working_window();
@@ -97,6 +100,7 @@ void winsys_paint_window_frame(PWINDOW win);
 void winsys_paint_window(PWINDOW win);
 void winsys_paint_window_section(PWINDOW win, int x, int y, int width, int height);
 void winsys_display_window_section(PWINDOW win, int x, int y, int width, int height);
+void winsys_display_window_section_exclude_original(PWINDOW win, PWINDOW orig, int x, int y, int width, int height);
 void winsys_display_window(PWINDOW win);
 void winsys_display_window_exclude_original(PWINDOW win, PWINDOW orig);
 void winsys_display_collided_windows(PWINDOW win);

@@ -58,7 +58,7 @@ typedef struct _userTrapFrame
 typedef struct _process process;
 typedef struct _thread thread;
 
-typedef struct _thread {
+struct _thread {
    uint32_t    ESP;
    uint32_t    SS;
    uint32_t    kernelESP;
@@ -73,7 +73,7 @@ typedef struct _thread {
    bool isMain;
 };
 
-typedef struct _process {
+struct _process {
    pdirectory*    pageDirectory;
    int            id;
    int            priority;
