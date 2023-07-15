@@ -24,7 +24,7 @@ PWINDOW main_window = 0;
 PINPINFO window_input_info = 0;
 
 #define SHELL_ROWS 25
-#define SHELL_COLS 65
+#define SHELL_COLS 70
 
 static void print(char *s) // private
 {
