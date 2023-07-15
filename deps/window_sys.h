@@ -131,3 +131,5 @@ void gfx_printf(PWINDOW win, PINPINFO inp_info,const char *fmt, ...);
 void gfx_keyboard_input(PINPINFO inp_info, int col, int row, char *buffer, int bf_size);
 int gfx_keyboard_input_character(PINPINFO inp_info, char character);
 int gfx_handle_scrolling(PWINDOW win, PINPINFO inp_info, int offset_y);
+void gfx_open_bmp16(char *path, int wx, int wy);
+void gfx_paint_bmp16(PWINDOW win, char *path, int x, int y);

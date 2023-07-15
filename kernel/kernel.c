@@ -93,7 +93,7 @@ void kmain(uint32_t _, multiboot_info* bootinfo, uint32_t _kernel_size) {
 	winsys_init();
 
 	init_screen();
-	
+
 	ps2_init();
 	timer_install();
 	keyboard_install();

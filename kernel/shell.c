@@ -188,6 +188,10 @@ void handle_command(char *cmd_buff)
 	{
 		print_processes();
 	}
+	else if(strcmp(cmd,"img"))
+	{
+		handle_img(cmd_buff);
+	}
 	else
 	{
 
@@ -197,6 +201,23 @@ void handle_command(char *cmd_buff)
 
 	kfree(cmd);
 
+}
+
+void handle_img(char *cmd_buff)
+{
+	int param_count = count_substrings(cmd_buff, ' '); // including cmd
+	if (param_count != 2)
+		return;
+
+	char *param = seperate_and_take(cmd_buff, ' ', 1);
+	strip_from_start(param, ' ');
+	strip_from_end(param, ' ');
+	char *new_path = join_path(path,param);
+
+	gfx_open_bmp16(new_path,50,50);;
+
+	kfree(new_path);
+	kfree(param);
 }
 
 char *join_path(char* p, char* ext)

@@ -6,6 +6,9 @@
 #include "screen.h"
 #include "low_level.h"
 #include "math.h"
+#include "vfs.h"
+#include "bmp.h"
+#include "process.h"
 
 static PWINDOW win_list;
 static PWINDOW working_window;
@@ -289,7 +292,18 @@ void winsys_display_window_section(PWINDOW win, int x, int y, int width, int hei
 	while(tmp)
 	{
 		if (winsys_check_collide(win,tmp))
-			winsys_display_window(tmp);
+		{
+			uint32_t overlap_x = max(win->x, tmp->x);
+
+			uint32_t overlap_y = max(win->y, tmp->y);
+
+			uint32_t overlap_w = min(win->x+win->width,tmp->x+tmp->width)-overlap_x;
+
+			uint32_t overlap_h = min(win->y+win->height, tmp->y+tmp->height)-overlap_y;
+
+			winsys_display_window_section(tmp,overlap_x-tmp->x,overlap_y-tmp->y,overlap_w,overlap_h);
+
+		}
 
 		tmp = tmp->next;
 
@@ -309,7 +323,18 @@ void winsys_display_window(PWINDOW win)
 	while(tmp)
 	{
 		if (winsys_check_collide(win,tmp))
-			winsys_display_window(tmp);
+		{
+			uint32_t overlap_x = max(win->x, tmp->x);
+
+			uint32_t overlap_y = max(win->y, tmp->y);
+
+			uint32_t overlap_w = min(win->x+win->width,tmp->x+tmp->width)-overlap_x;
+
+			uint32_t overlap_h = min(win->y+win->height, tmp->y+tmp->height)-overlap_y;
+
+			winsys_display_window_section(tmp,overlap_x-tmp->x,overlap_y-tmp->y,overlap_w,overlap_h);
+
+		}
 
 		tmp = tmp->next;
 
@@ -1038,5 +1063,150 @@ int gfx_handle_scrolling(PWINDOW win, PINPINFO inp_info, int offset_y)
 	inp_info->did_scroll = true;
 
 	return offset_y;
+
+}
+
+void gfx_open_bmp16(char *path, int wx, int wy)
+{
+
+	FILE bmp = volOpenFile(path);
+
+	BITMAPFILEHEADER bmp_header;
+
+	volReadFile(&bmp,(char *)&bmp_header,sizeof(BITMAPFILEHEADER));
+
+	if (bmp_header.Signature != BMP_SIGNATURE)
+	{
+		printf("File is not a bmp.\n");
+		volCloseFile(&bmp);
+		return;
+	}
+
+	BITMAPINFOHEADER bmp_info;
+
+	volReadFile(&bmp,(char *)&bmp_info,sizeof(BITMAPINFOHEADER));
+
+	if (bmp_info.BPP != 4)
+	{
+		printf("File is not a 16 color bmp.\n");
+		volCloseFile(&bmp);
+		return;
+	}
+
+	uint32_t width = bmp_info.Width;
+	uint32_t height = bmp_info.Height;
+
+	PWINDOW win = winsys_create_win(wx,wy,width+width%2,height,bmp.name,true);
+
+	uint32_t color_buff;
+
+	// read 16 color palette
+	for (int i = 0; i < 16; i++)
+		volReadFile(&bmp,(char *)&color_buff,4);
+
+	uint8_t two_pixels;
+	uint8_t padding_bytes = 4-(width/2+width%2)%4;
+	uint32_t padding_buff;
+
+	for (int i = 0; i < height; i++)
+	{
+		int pix_count = 0;
+		for (int j = 0; j < width; j++)
+		{
+
+			if (pix_count % 2 == 0)
+				volReadFile(&bmp,(char *)&two_pixels,1);
+			else
+				two_pixels >>= 4;
+
+			uint8_t color = two_pixels & 0xF;
+
+			gfx_set_pixel(win,j,height-i-1,color);
+
+			pix_count++;
+
+		}
+
+		if (padding_bytes != 4)
+		{
+			volReadFile(&bmp,(char *)&padding_buff,padding_bytes);
+		}
+
+	}
+	winsys_display_window(win);
+	volCloseFile(&bmp);
+
+}
+
+void gfx_paint_bmp16(PWINDOW win, char *path, int x, int y)
+{
+
+	if (x >= win->width || y >= win->height || !win)
+		return;
+
+	FILE bmp = volOpenFile(path);
+
+	BITMAPFILEHEADER bmp_header;
+
+	volReadFile(&bmp,(char *)&bmp_header,sizeof(BITMAPFILEHEADER));
+
+	if (bmp_header.Signature != BMP_SIGNATURE)
+	{
+		printf("File is not a bmp.\n");
+		volCloseFile(&bmp);
+		return;
+	}
+
+	BITMAPINFOHEADER bmp_info;
+
+	volReadFile(&bmp,(char *)&bmp_info,sizeof(BITMAPINFOHEADER));
+
+	if (bmp_info.BPP != 4)
+	{
+		printf("File is not a 16 color bmp.\n");
+		volCloseFile(&bmp);
+		return;
+	}
+
+	uint32_t width = bmp_info.Width;
+	uint32_t height = bmp_info.Height;
+
+	uint32_t color_buff;
+
+	// read 16 color palette
+	for (int i = 0; i < 16; i++)
+		volReadFile(&bmp,(char *)&color_buff,4);
+
+	uint8_t two_pixels;
+	uint8_t padding_bytes = 4-(width/2+width%2)%4;
+	uint32_t padding_buff;
+
+	for (int i = 0; i < height; i++)
+	{
+		int pix_count = 0;
+		for (int j = 0; j < width; j++)
+		{
+
+			if (pix_count % 2 == 0)
+				volReadFile(&bmp,(char *)&two_pixels,1);
+			else
+				two_pixels >>= 4;
+
+			uint8_t color = two_pixels & 0xF;
+
+			gfx_set_pixel(win,x+j,y+height-i-1,color);
+
+			pix_count++;
+
+		}
+
+		if (padding_bytes != 4)
+		{
+			volReadFile(&bmp,(char *)&padding_buff,padding_bytes);
+		}
+
+	}
+
+	volCloseFile(&bmp);
 
 }
