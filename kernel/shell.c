@@ -1,5 +1,5 @@
 #include "keyboard.h"
-#include "screen.h"
+//#include "screen.h"
 #include "mouse.h"
 #include "shell.h"
 #include "strings.h"
@@ -16,44 +16,107 @@
 #include "window_sys.h"
 #include "graphics.h"
 #include "vmm.h"
+#include "math.h"
 
 char *path = 0; // current path
 
-// PWINDOW main_window = 0;
-// PINPINFO window_input_info = 0;
+PWINDOW main_window = 0;
+PINPINFO window_input_info = 0;
 
-// #define SHELL_ROWS 25
-// #define SHELL_COLS 70
+#define SHELL_ROWS 25
+#define SHELL_COLS 65
 
-// static void print(char *s)
-// {
+static void print(char *s) // private
+{
+	int pre_y = gfx_get_win_y(window_input_info->cursor_offset_y);
+	gfx_print(main_window, window_input_info, s);
+	int post_y = gfx_get_win_y(window_input_info->cursor_offset_y);
+	if (!window_input_info->did_scroll)
+		winsys_display_window_section(main_window,0,min(pre_y,post_y),main_window->width,abs(post_y-pre_y)+CHAR_HEIGHT);
+	else
+	{
+		winsys_display_window(main_window);
+		window_input_info->did_scroll = false;
+	}
 
-// 	gfx_print(main_window, window_input_info, s);
+}
 
-// }
+static void printf(char *fmt, ...) // private
+{
 
-// static void printf(char *fmt, ...)
-// {
+	va_list valist;
+	va_start(valist, fmt);
 
-// 	va_list valist;
-// 	va_start(valist, fmt);
-// 	gfx_vprintf(main_window, window_input_info, fmt,valist);
+	int pre_y = gfx_get_win_y(window_input_info->cursor_offset_y);
+	gfx_vprintf(main_window, window_input_info, fmt,valist);
+	int post_y = gfx_get_win_y(window_input_info->cursor_offset_y);
+	if (!window_input_info->did_scroll)
+		winsys_display_window_section(main_window,0,min(pre_y,post_y),main_window->width,abs(post_y-pre_y)+CHAR_HEIGHT);
+	else
+	{
+		winsys_display_window(main_window);
+		window_input_info->did_scroll = false;
+	}
 
-// }
+}
 
-// static void clear_viewport()
-// {
+static void clear_viewport() // private
+{
 
-// 	gfx_clear_win(main_window);
-// 	winsys_display_window(main_window);
+	gfx_clear_win(main_window);
+	winsys_display_window(main_window);
 
-// }
+}
+
+void get_shell_input(char *buff, int buff_size)
+{
+
+	gfx_keyboard_input(window_input_info,-1,-1,buff,buff_size);
+
+	while(window_input_info->is_taking_input)
+	{
+		while(main_window->event_handler.events[0].event_type & EVENT_INVALID)
+			continue;
+
+		EVENT e = winsys_dequeue_from_event_handler(&main_window->event_handler);
+
+		char *kbdus = get_kbdus_char_array();
+
+		char *shift_kbdus = get_kbdus_shift_char_array();
+
+		if (e.event_type & EVENT_KBD_PRESS)
+		{
+			int pre_x = gfx_get_win_x(window_input_info->cursor_offset_x)-CHAR_WIDTH;
+			int pre_y = gfx_get_win_y(window_input_info->cursor_offset_y);
+
+			char c;
+			char scancode = e.event_data&0xFF;
+
+			if (e.event_data&0x200) // shift
+				c = shift_kbdus[scancode];
+			else
+				c = kbdus[scancode];
+
+			if (gfx_keyboard_input_character(window_input_info,c) != -1)
+			{
+				gfx_putchar(main_window, window_input_info, c);
+				winsys_display_window_section(main_window,pre_x,pre_y,CHAR_WIDTH*3,CHAR_HEIGHT);
+				window_input_info->cursor_input_col = window_input_info->cursor_offset_x;
+				window_input_info->cursor_input_row = window_input_info->cursor_offset_y;
+			}
+
+		}
+	
+	}
+
+}
 
 void shell_main()
 {
 
-	//main_window = winsys_create_win(50,50,SHELL_COLS*CHAR_WIDTH,SHELL_ROWS*CHAR_HEIGHT, "shell", false);
-	//window_input_info = (PINPINFO)kcalloc(sizeof(INPINFO));
+	main_window = winsys_create_win(0,50,SHELL_COLS*CHAR_WIDTH,SHELL_ROWS*CHAR_HEIGHT, "shell", false);
+	main_window->event_handler.event_mask |= GENERAL_EVENT_KBD;
+	window_input_info = (PINPINFO)kcalloc(sizeof(INPINFO));
 
 	path = kmalloc(3+1);
 
@@ -61,9 +124,8 @@ void shell_main()
 
 	print("Please write the time in the following format (hh:mm): ");
 	char time_buff[5+1];
-	keyboard_input(-1,-1,time_buff,6);
-	while(is_taking_input())
-		continue;
+
+	get_shell_input(time_buff,6);
 	
 	strip_character(time_buff, ' ');
 	time_buff[2] = 0; // null instead of :
@@ -76,9 +138,7 @@ void shell_main()
 		printf(path);
 		print("> ");
 		char cmd_buff[300];
-		keyboard_input(-1,-1,cmd_buff,300);
-		while(is_taking_input())
-			continue;
+		get_shell_input(cmd_buff,300);
 		handle_command(cmd_buff);
 	}
 
@@ -134,10 +194,8 @@ void handle_command(char *cmd_buff)
 	{
 		disable_mouse();
 		clear_viewport();
-		set_cursor_coords(0,TOP);
-		set_cursor_input_coords(TOP,0);
-		//window_input_info->cursor_offset_y = 0;
-		//window_input_info->cursor_input_row = 0;
+		window_input_info->cursor_offset_y = 0;
+		window_input_info->cursor_input_row = 0;
 		enable_mouse();
 	}
 	else if(strcmp(cmd,"rm"))
@@ -209,7 +267,7 @@ char *join_path(char* p, char* ext)
 
 void handle_stats()
 {
-
+	return;
 	printf("PMM:\nTotal memory: %dKb\nTotal Blocks: %d\nUsed Blocks: %d\nFree Blocks: %d\n",pmmngr_get_memory_size(),pmmngr_get_block_count(),pmmngr_get_used_blocks(),pmmngr_get_free_block_count());
 	print_mem_map();
 	printf("\nHEAP:\n");

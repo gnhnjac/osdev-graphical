@@ -219,7 +219,7 @@ void mouse_handler()
 	int left_click = flags & 1;
 	int right_click = flags & 2;
 
-	if (left_click)
+	if (right_click)
 	{	
 
 		if (!dragging_window)
@@ -249,6 +249,38 @@ void mouse_handler()
 		// fill_rect(get_screen_x(get_cursor_col()),get_screen_y(get_cursor_row())+12,8,4,0);
 		// set_cursor_coords(get_logical_col(MOUSEX), get_logical_row(MOUSEY));
 		
+	}
+	if (left_click)
+	{
+
+		PWINDOW win = winsys_get_window_from_collision(MOUSEX, MOUSEY);
+		if (win)
+			winsys_set_working_window(win->id);
+
+	}
+
+	PWINDOW working_win = winsys_get_working_window();
+
+	PEVENTHAND win_event_handler = &working_win->event_handler;
+
+	if (win_event_handler->event_mask & GENERAL_EVENT_MOUSE)
+	{
+
+		EVENT mouse_event;
+
+		mouse_event.event_type = 0;
+
+		if (left_click)
+			mouse_event.event_type |= EVENT_MOUSE_LEFT_CLICK;
+		if (right_click)
+			mouse_event.event_type |= EVENT_MOUSE_RIGHT_CLICK;
+		if (rel_x != 0 || rel_y != 0)
+			mouse_event.event_type |= EVENT_MOUSE_MOVE;
+
+		mouse_event.event_data = MOUSEX | (MOUSEY<<16);
+
+		winsys_enqueue_to_event_handler(win_event_handler, mouse_event);
+
 	}
 
 }

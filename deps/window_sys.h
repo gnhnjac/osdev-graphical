@@ -1,7 +1,64 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include <stdarg.h>
+#include "scheduler.h"
 
+typedef struct _inputInfo
+{
+
+	uint32_t cursor_input_row;
+	uint32_t cursor_input_col;
+	uint32_t cursor_offset_x;
+	uint32_t cursor_offset_y;
+
+	bool is_taking_input;
+	uint32_t input_buffer_index;
+	uint32_t input_buffer_limit;
+	char *input_buffer;
+
+	bool did_scroll;
+
+} INPINFO, *PINPINFO;
+
+typedef enum _eventType
+{
+
+	EVENT_INVALID = 1,
+	EVENT_KBD_PRESS = 2,
+	EVENT_KBD_RELEASE = 4,
+	EVENT_MOUSE_MOVE = 8,
+	EVENT_MOUSE_LEFT_CLICK = 16,
+	EVENT_MOUSE_RIGHT_CLICK = 32,
+
+
+} eventType;
+
+typedef enum _generalEventType
+{
+
+	GENERAL_EVENT_KBD = 1,
+	GENERAL_EVENT_MOUSE = 2,
+
+} generalEventType;
+
+typedef struct _event
+{
+
+	eventType event_type;
+	uint32_t event_data;
+
+} EVENT, *PEVENT;
+
+#define EVENT_HANDLER_QUEUE_SIZE 10
+
+typedef struct _eventHandler
+{
+
+	thread event_thread;
+	EVENT events[EVENT_HANDLER_QUEUE_SIZE];
+	generalEventType event_mask;
+
+} EVENTHAND, *PEVENTHAND;
 
 typedef struct _window
 {
@@ -13,19 +70,10 @@ typedef struct _window
 	char *w_name;
 	int id;
 	bool closable;
+	EVENTHAND event_handler;
 	struct _window *next;
 
 } WINDOW, *PWINDOW;
-
-typedef struct _inputInfo
-{
-
-	uint32_t cursor_input_row;
-	uint32_t cursor_input_col;
-	uint32_t cursor_offset_x;
-	uint32_t cursor_offset_y;
-
-} INPINFO, *PINPINFO;
 
 #define TITLE_BAR_HEIGHT 20
 #define WIN_FRAME_SIZE 1
@@ -40,16 +88,22 @@ PWINDOW winsys_create_win(int x, int y, int width, int height, char *w_name, boo
 int winsys_set_working_window(int wid);
 void winsys_paint_window_frame(PWINDOW win);
 void winsys_paint_window(PWINDOW win);
+void winsys_paint_window_section(PWINDOW win, int x, int y, int width, int height);
+void winsys_display_window_section(PWINDOW win, int x, int y, int width, int height);
 void winsys_display_window(PWINDOW win);
 void winsys_clear_window(PWINDOW win);
 void winsys_clear_window_frame(PWINDOW win);
 void winsys_clear_whole_window(PWINDOW win);
 bool winsys_check_collide(PWINDOW w1, PWINDOW w2);
+bool winsys_check_collide_coords(PWINDOW w, int x, int y);
 bool winsys_check_title_collide(PWINDOW w, int x, int y);
 bool winsys_check_close_collide(PWINDOW w, int x, int y);
+PWINDOW winsys_get_window_from_collision(int x, int y);
 PWINDOW winsys_get_window_from_title_collision(int x, int y);
 void winsys_move_window(PWINDOW win, int x, int y);
 void winsys_remove_window(PWINDOW win);
+void winsys_enqueue_to_event_handler(PEVENTHAND handler, EVENT e);
+EVENT winsys_dequeue_from_event_handler(PEVENTHAND handler);
 void gfx_paint_char(PWINDOW win, char c, int x, int y, uint8_t fgcolor);
 void gfx_paint_char_bg(PWINDOW win, char c, int x, int y, uint8_t bgcolor, uint8_t fgcolor);
 void gfx_set_pixel(PWINDOW win,int x, int y,uint8_t color);
@@ -57,25 +111,14 @@ void gfx_fill_rect(PWINDOW win, int x, int y, int width, int height, uint8_t col
 void gfx_clear_win(PWINDOW win);
 int gfx_get_win_x(int col);
 int gfx_get_win_y(int row);
+int gfx_get_logical_row(int y);
+int gfx_get_logical_col(int x);
 void gfx_putchar(PWINDOW win, PINPINFO inp_info, char c);
 void gfx_print(PWINDOW win, PINPINFO inp_info, char *s);
 void gfx_print_color(PWINDOW win, PINPINFO inp_info, char *s, uint8_t color);
 void gfx_print_char(PWINDOW win, PINPINFO inp_info, const char character, int row, int col, char color);
 void gfx_vprintf(PWINDOW win, PINPINFO inp_info,const char *fmt, va_list valist);
-// int handle_scrolling(int offset_y);
-// 	if (offset_y < MAX_ROWS);
-// 	for (int i = TOP+SCROLL_ROWS; i < MAX_ROWS; i++);
-// 		for (int j = 0; j < CHAR_HEIGHT; j++);
-// 			for (int k = 0; k < PIXEL_WIDTH; k++);
-// 				if (k%PIXELS_PER_BYTE == 0);
-// 					if (*color_byte);
-// 					if (*color_byte);
-// 					if (*color_byte);
-// 					if (*color_byte);
-// 					if (prev_mask != 0xF);
-// 				if (prev_mask != 0xF);
-// 				if (*color_byte & mask);
-// 				if (*color_byte & mask);
-// 				if (*color_byte & mask);
-// 				if (*color_byte & mask);
-// 				if (prev_mask != color);
+void gfx_printf(PWINDOW win, PINPINFO inp_info,const char *fmt, ...);
+void gfx_keyboard_input(PINPINFO inp_info, int col, int row, char *buffer, int bf_size);
+int gfx_keyboard_input_character(PINPINFO inp_info, char character);
+int gfx_handle_scrolling(PWINDOW win, PINPINFO inp_info, int offset_y);

@@ -7,6 +7,7 @@
 #include "memory.h"
 #include "mouse.h"
 #include "ps2.h"
+#include "window_sys.h"
 
 // status byte for keyboard
 // [n,n,n,n,caps,shift,alt,ctrl]
@@ -265,8 +266,48 @@ void keyboard_handler()
           return;
         }
         
-        handle_character(scancode);
+        //handle_character(scancode);
     }
+
+    PWINDOW working_win = winsys_get_working_window();
+
+    PEVENTHAND win_event_handler = &working_win->event_handler;
+
+    if (win_event_handler->event_mask & GENERAL_EVENT_KBD)
+    {
+
+      EVENT kbd_event;
+
+      if (scancode & 0x80)
+        kbd_event.event_type = EVENT_KBD_RELEASE;
+      else
+        kbd_event.event_type = EVENT_KBD_PRESS;
+
+      kbd_event.event_data = scancode&((char)~0x80);
+
+      if (check_caps())
+        kbd_event.event_data |= 0x100;
+      if (check_shift())
+        kbd_event.event_data |= 0x200;
+
+      winsys_enqueue_to_event_handler(win_event_handler, kbd_event);
+
+    }
+
+}
+
+char *get_kbdus_char_array()
+{
+
+  return kbdus;
+
+}
+
+char *get_kbdus_shift_char_array()
+{
+
+  return kbdus_shift;
+
 }
 
 static void handle_character(unsigned char scancode)

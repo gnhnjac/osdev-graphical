@@ -4,6 +4,8 @@
 #include "memory.h"
 #include "strings.h"
 #include "screen.h"
+#include "low_level.h"
+#include "math.h"
 
 static PWINDOW win_list;
 static PWINDOW working_window;
@@ -54,6 +56,15 @@ PWINDOW winsys_create_win(int x, int y, int width, int height, char *w_name, boo
 	win->height = height;
 	win->closable = is_closable;
 
+	for (int i = 0; i < EVENT_HANDLER_QUEUE_SIZE; i++)
+	{
+
+		win->event_handler.events[i].event_type = EVENT_INVALID;
+
+	}
+
+	win->event_handler.event_thread = *queue_get();
+
 	win->w_buffer = kcalloc(width*height/2);
 	win->w_name = (char *)kcalloc(strlen(w_name)+1);
 	strcpy(win->w_name,w_name);
@@ -93,6 +104,22 @@ int winsys_set_working_window(int wid)
 		if (tmp->id == wid)
 		{
 			working_window = tmp;
+
+			PWINDOW tmp2 = win_list;
+
+			if (tmp2->id == wid)
+				return 1;
+
+			while (tmp2->next->id != wid)
+				tmp2 = tmp2->next;
+
+			tmp2->next = tmp->next;
+
+			while(tmp2->next)
+				tmp2 = tmp2->next;
+
+			tmp2->next = tmp;
+
 			return 1;
 		}
 		tmp = tmp->next;
@@ -136,12 +163,19 @@ void winsys_paint_window(PWINDOW win)
 		return;
 
 	uint8_t *buff = (uint8_t *)win->w_buffer;
+	uint8_t *vram = (uint8_t *)VIDEO_ADDRESS + win->y * PIXEL_WIDTH / PIXELS_PER_BYTE;
 
 	for (int i = 0; i < win->height; i++)
 	{
 
 		for (int j = 0; j < win->width; j++)
 		{
+
+			uint32_t x = win->x+j;
+			uint32_t y = win->y+i;
+
+			if (x >= PIXEL_WIDTH || y >= PIXEL_HEIGHT)
+				continue;
 
 			uint8_t color = buff[j/2];
 
@@ -150,15 +184,96 @@ void winsys_paint_window(PWINDOW win)
 			else
 				color &= 0xF;
 
-			set_pixel(win->x+j,win->y+i,color);
+			uint8_t mask = (0x80>>(x%PIXELS_PER_BYTE));
+
+			outb(0x3C4, MEMORY_PLANE_WRITE_ENABLE);
+			outb(0x3CE,0x8);
+			outb(0x3CF,mask);
+
+			outb(0x3C5, 0xF);
+
+			vram[x/PIXELS_PER_BYTE] &= ~mask;
+
+			outb(0x3C5, color);
+
+			vram[x/PIXELS_PER_BYTE] |= mask;
 
 		}
 
 		buff += win->width/2;
+		vram += PIXEL_WIDTH/PIXELS_PER_BYTE;
 
 	}
 
 	winsys_paint_window_frame(win);
+
+}
+
+void winsys_paint_window_section(PWINDOW win, int x, int y, int width, int height)
+{
+
+
+	uint32_t min_height = min(win->height,height);
+	uint32_t min_width = min(win->width,width);
+
+	int max_x = max(x,0);
+	int max_y = max(y,0);
+
+	uint8_t *buff = (uint8_t *)win->w_buffer + max_y*win->width/2;
+	uint8_t *vram = (uint8_t *)VIDEO_ADDRESS + (win->y+max_y) * PIXEL_WIDTH / PIXELS_PER_BYTE;
+
+	for (int i = max_y; i < max_y+min_height; i++)
+	{
+
+		for (int j = max_x; j < max_x+min_width; j++)
+		{
+
+			uint32_t x = win->x+j;
+			uint32_t y = win->y+i;
+
+			if (x >= PIXEL_WIDTH || y >= PIXEL_HEIGHT)
+				continue;
+
+			uint8_t color = buff[j/2];
+
+			if (j % 2)
+				color >>= 4;
+			else
+				color &= 0xF;
+
+			uint8_t mask = (0x80>>(x%PIXELS_PER_BYTE));
+
+			outb(0x3C4, MEMORY_PLANE_WRITE_ENABLE);
+			outb(0x3CE,0x8);
+			outb(0x3CF,mask);
+
+			outb(0x3C5, 0xF);
+
+			vram[x/PIXELS_PER_BYTE] &= ~mask;
+
+			outb(0x3C5, color);
+
+			vram[x/PIXELS_PER_BYTE] |= mask;
+
+		}
+
+		buff += win->width/2;
+		vram += PIXEL_WIDTH/PIXELS_PER_BYTE;
+
+	}
+
+	winsys_paint_window_frame(win);
+
+}
+
+void winsys_display_window_section(PWINDOW win, int x, int y, int width, int height)
+{
+
+	if (!win)
+		return;
+	winsys_paint_window_section(win, x, y, width, height);
+	if (winsys_check_collide(win,win->next))
+		winsys_display_window(win->next);
 
 }
 
@@ -168,7 +283,8 @@ void winsys_display_window(PWINDOW win)
 	if (!win)
 		return;
 	winsys_paint_window(win);
-	winsys_display_window(win->next);
+	if (winsys_check_collide(win,win->next))
+		winsys_display_window(win->next);
 
 }
 
@@ -199,6 +315,9 @@ void winsys_clear_whole_window(PWINDOW win)
 bool winsys_check_collide(PWINDOW w1, PWINDOW w2)
 {
 
+	if (!w1 | !w2)
+		return false;
+
 	uint32_t w1_x = w1->x-WIN_FRAME_SIZE;
 	uint32_t w1_y = w1->y-TITLE_BAR_HEIGHT;
 	uint32_t w1_w = w1->width + WIN_FRAME_SIZE*2;
@@ -213,6 +332,21 @@ bool winsys_check_collide(PWINDOW w1, PWINDOW w2)
     w1_x + w1_w > w2_x &&
     w1_y < w2_y + w2_h &&
     w1_y + w1_h > w2_y;
+
+}
+
+bool winsys_check_collide_coords(PWINDOW w, int x, int y)
+{
+
+	uint32_t w_x = w->x-WIN_FRAME_SIZE;
+	uint32_t w_y = w->y-TITLE_BAR_HEIGHT;
+	uint32_t w_w = w->width + WIN_FRAME_SIZE*2;
+	uint32_t w_h = w->height + TITLE_BAR_HEIGHT+WIN_FRAME_SIZE;
+
+	return x < w_x + w_w &&
+    x > w_x &&
+    y < w_y + w_h &&
+    y > w_y;
 
 }
 
@@ -246,6 +380,21 @@ bool winsys_check_close_collide(PWINDOW w, int x, int y)
     x > w_x &&
     y < w_y + w_h &&
     y > w_y;
+
+}
+
+PWINDOW winsys_get_window_from_collision(int x, int y)
+{
+
+	PWINDOW tmp = win_list;
+
+	if (!tmp)
+		return 0;
+
+	while(!winsys_check_collide_coords(tmp,x,y) && tmp)
+		tmp = tmp->next;
+
+	return tmp;
 
 }
 
@@ -307,6 +456,38 @@ void winsys_remove_window(PWINDOW win)
 
 }
 
+void winsys_enqueue_to_event_handler(PEVENTHAND handler, EVENT e)
+{
+
+	for (int i = 0; i < EVENT_HANDLER_QUEUE_SIZE; i++)
+	{
+
+		if (handler->events[i].event_type & EVENT_INVALID)
+		{
+			handler->events[i] = e;
+			return;
+		}
+	}
+
+}
+
+EVENT winsys_dequeue_from_event_handler(PEVENTHAND handler)
+{
+	EVENT e = handler->events[0];
+
+	for (int i = 0; i < EVENT_HANDLER_QUEUE_SIZE-1; i++)
+	{
+
+		handler->events[i] = handler->events[i+1];
+
+	}
+
+	handler->events[EVENT_HANDLER_QUEUE_SIZE-1].event_type = EVENT_INVALID;
+
+	return e;
+
+}
+
 // needs to be in a seperate graphics libraray
 
 void gfx_paint_char(PWINDOW win, char c, int x, int y, uint8_t fgcolor)
@@ -329,10 +510,15 @@ void gfx_paint_char(PWINDOW win, char c, int x, int y, uint8_t fgcolor)
 			if(col%2)
 			{
 				uint8_t color_mask = fgcolor;
+				uint8_t cancel_mask = 0xF0;
 
 				if (bit % 2)
+				{
 					color_mask <<= 4;
+					cancel_mask >>= 4;
+				}
 
+				dest[bit/2] &= cancel_mask;
 				dest[bit/2] |= color_mask;
 			}
 				
@@ -364,6 +550,7 @@ void gfx_paint_char_bg(PWINDOW win, char c, int x, int y, uint8_t bgcolor, uint8
 		for (int bit = 0; bit < 8; bit++)
 		{
 			uint8_t color_mask;
+			uint8_t cancel_mask = 0xF0;
 
 			if(col%2)
 				color_mask = fgcolor;
@@ -371,8 +558,12 @@ void gfx_paint_char_bg(PWINDOW win, char c, int x, int y, uint8_t bgcolor, uint8
 				color_mask = bgcolor;
 
 			if (bit % 2)
+			{
 				color_mask <<= 4;
+				cancel_mask >>= 4;
+			}
 
+			dest[bit/2] &= cancel_mask;
 			dest[bit/2] |= color_mask;
 				
 			col /= 2;
@@ -394,10 +585,15 @@ void gfx_set_pixel(PWINDOW win,int x, int y,uint8_t color)
 	uint8_t *buff = (uint8_t *)((uint32_t)win->w_buffer + (y*win->width + x)/2);
 
 	uint8_t color_mask = color;
+	uint8_t cancel_mask = 0xF0;
 
 	if (x % 2)
+	{
 		color_mask <<= 4;
+		cancel_mask >>= 4;
+	}
 
+	*buff &= cancel_mask;
 	*buff |= color_mask;
 
 }
@@ -405,7 +601,7 @@ void gfx_set_pixel(PWINDOW win,int x, int y,uint8_t color)
 void gfx_fill_rect(PWINDOW win, int x, int y, int width, int height, uint8_t color)
 {
 
-	if (x >= win->width || y >= win->height || !win)
+	if (x >= win->width || y >= win->height || (!win))
 		return;
 
 	if (x + width >= win->width)
@@ -422,10 +618,15 @@ void gfx_fill_rect(PWINDOW win, int x, int y, int width, int height, uint8_t col
 		{
 
 			uint8_t color_mask = color;
+			uint8_t cancel_mask = 0xF0;
 
 			if (j % 2)
+			{
 				color_mask <<= 4;
+				cancel_mask >>= 4;
+			}
 
+			buff[j/2] &= cancel_mask;
 			buff[j/2] |= color_mask;
 
 		}
@@ -454,6 +655,20 @@ int gfx_get_win_y(int row)
 {
 
 	return row * CHAR_HEIGHT;
+
+}
+
+int gfx_get_logical_row(int y)
+{
+
+	return y/CHAR_HEIGHT;
+
+}
+
+int gfx_get_logical_col(int x)
+{
+
+	return x/CHAR_WIDTH;
 
 }
 
@@ -516,13 +731,13 @@ void gfx_print_char(PWINDOW win, PINPINFO inp_info, const char character, int ro
 		if (offset_x < 0)
 		{
 			offset_y -= 1;
-			offset_x = MAX_COLS-1;
+			offset_x = gfx_get_logical_col(win->width)-1;
 		}
-		if (offset_y < TOP) // can't be lower than start of screen.
+		if (offset_y < 0) // can't be lower than start of screen.
 		{
 
 			offset_x = 0;
-			offset_y = TOP;
+			offset_y = 0;
 
 		}
 		gfx_fill_rect(win,gfx_get_win_x(offset_x),gfx_get_win_y(offset_y),CHAR_WIDTH,CHAR_HEIGHT,0);
@@ -544,7 +759,7 @@ void gfx_print_char(PWINDOW win, PINPINFO inp_info, const char character, int ro
 
 	// Make scrolling adjustment, for when we reach the bottom
 	// of the screen.
-	//offset_y = handle_scrolling(offset_y);
+	offset_y = gfx_handle_scrolling(win, inp_info, offset_y);
 
 	// If we see a newline character, set offset to the end of
 	// current row, so it will be advanced to the first col
@@ -559,7 +774,7 @@ void gfx_print_char(PWINDOW win, PINPINFO inp_info, const char character, int ro
 	}
 
 	//if it reached the scroll bar set it to the end of the line so the next character will be in the new line.
-	if (offset_x >= MAX_COLS)
+	if (offset_x >= gfx_get_logical_col(win->width))
 	{
 		offset_x = 0;
 		offset_y += 1;
@@ -632,7 +847,7 @@ void gfx_vprintf(PWINDOW win, PINPINFO inp_info,const char *fmt, va_list valist)
 
 				default:
 
-					//gfx_printf(win,inp_info,"Unknown format type \\%%c", fmt);
+					gfx_printf(win,inp_info,"Unknown format type \\%%c", fmt);
 					return;
 			}
 
@@ -656,127 +871,98 @@ void gfx_vprintf(PWINDOW win, PINPINFO inp_info,const char *fmt, va_list valist)
 
 }
 
-// int handle_scrolling(int offset_y)
-// {
+void gfx_printf(PWINDOW win, PINPINFO inp_info,const char *fmt, ...)
+{
 
-// 	if (offset_y < MAX_ROWS)
-// 	{
-// 		return offset_y;
-// 	}
+	va_list valist;
+	va_start(valist,fmt);
 
-// 	disable_mouse();
+	gfx_vprintf(win,inp_info,fmt,valist);
+
+}
+
+void gfx_keyboard_input(PINPINFO inp_info, int col, int row, char *buffer, int bf_size)
+{
+
+  if(row < 0)
+    row = inp_info->cursor_offset_y;
+  if(col < 0)
+    col = inp_info->cursor_offset_x;
+
+  inp_info->cursor_input_row = row;
+  inp_info->cursor_input_col = col;
+
+  inp_info->input_buffer_index = 0;
+
+  inp_info->input_buffer_limit = bf_size;
+  inp_info->input_buffer = buffer;
+
+  inp_info->is_taking_input = true;
 
 
-// 	uint32_t char_line_size = PIXEL_WIDTH*CHAR_HEIGHT/PIXELS_PER_BYTE;
-// 	uint32_t scroll_diff_size = SCROLL_ROWS*char_line_size;
-// 	uint8_t *vram = (uint8_t *)VIDEO_ADDRESS + char_line_size;
+}
 
-// 	uint8_t prev_mask = 0;
-	
-// 	outb(0x3C4, MEMORY_PLANE_WRITE_ENABLE);
-// 	outb(0x3C5, 0xF);
+int gfx_keyboard_input_character(PINPINFO inp_info, char character)
+{
+  inp_info->cursor_offset_x = inp_info->cursor_input_col;
+  inp_info->cursor_offset_y = inp_info->cursor_input_row;
 
-// 	for (int i = TOP+SCROLL_ROWS; i < MAX_ROWS; i++)
-// 	{
+  if (character == '\b') // handle backspace
+  {
 
-// 		uint8_t *tmp = vram;
+    if (inp_info->input_buffer_index == 0)
+      return -1;
 
-// 		for (int j = 0; j < CHAR_HEIGHT; j++)
-// 		{
+    inp_info->input_buffer_index--;
+    return 0;
 
-// 			for (int k = 0; k < PIXEL_WIDTH; k++)
-// 			{
+  }
 
-// 				uint8_t mask = 0x80>>(k%PIXELS_PER_BYTE);
-// 				uint32_t off = k/PIXELS_PER_BYTE;
-// 				uint8_t *color_byte = (uint8_t *)(tmp+off+scroll_diff_size);
-				
-// 				if (k%PIXELS_PER_BYTE == 0)
-// 				{
-// 					outb(0x3CE, READ_MAP_SELECT);
-// 					outb(0x3CF, 0);
-// 					if (*color_byte)
-// 						goto not_totally_black;
-// 					outb(0x3CF, 1);
-// 					if (*color_byte)
-// 						goto not_totally_black;
-// 					outb(0x3CF, 2);
-// 					if (*color_byte)
-// 						goto not_totally_black;
-// 					outb(0x3CF, 3);
-// 					if (*color_byte)
-// 						goto not_totally_black;
+  else if (character == '\n') // handle newline (submit string)
+  {
+    inp_info->input_buffer[inp_info->input_buffer_index] = 0; // end of string
+    inp_info->is_taking_input = false;
+    return 1;
+  }
 
-// 					k += PIXELS_PER_BYTE-1;
+  if (inp_info->input_buffer_index == inp_info->input_buffer_limit-1) // only if character is \n let it pass and finish taking the input
+    return -1;
 
-// 					if (prev_mask != 0xF)
-// 					{
-// 						outb(0x3C5, 0xF);
-// 						prev_mask = 0xF;
-// 					}
-// 					outb(0x3CE,0x8);
-// 					outb(0x3CF,0xFF);
-// 					tmp[off] = 0;
+  inp_info->input_buffer[inp_info->input_buffer_index] = character;
+  inp_info->input_buffer_index++;
 
-// 					continue;
-					
-// 				}
+  return 0;
 
-// 				not_totally_black:
+}
 
-// 				if (prev_mask != 0xF)
-// 				{
-// 					outb(0x3C5, 0xF);
-// 					prev_mask = 0xF;
-// 				}
-// 				outb(0x3CE,0x8);
-// 				outb(0x3CF,mask);
+int gfx_handle_scrolling(PWINDOW win, PINPINFO inp_info, int offset_y)
+{
+	if (offset_y < gfx_get_logical_row(win->height))
+	{
+		return offset_y;
+	}
 
-// 				tmp[off] &= ~mask;
+	uint32_t char_line_size = win->width*CHAR_HEIGHT/2;
+	uint32_t scroll_diff_size = SCROLL_ROWS*char_line_size;
+	uint8_t *buff = (uint8_t *)win->w_buffer;
 
-// 				uint8_t color = 0;
+	for (int i = SCROLL_ROWS; i < gfx_get_logical_row(win->height); i++)
+	{
 
-// 				outb(0x3CE, READ_MAP_SELECT);
-// 				outb(0x3CF, 0);
-// 				if (*color_byte & mask)
-// 					color |= 1;
-// 				outb(0x3CF, 1);
-// 				if (*color_byte & mask)
-// 					color |= 2;
-// 				outb(0x3CF, 2);
-// 				if (*color_byte & mask)
-// 					color |= 4;
-// 				outb(0x3CF, 3);
-// 				if (*color_byte & mask)
-// 					color |= 8;
+		memcpy(buff,buff+scroll_diff_size,char_line_size);
 
-// 				if (prev_mask != color)
-// 				{
-// 					outb(0x3C5, color);
-// 					prev_mask = color;
-// 				}
+		buff += char_line_size;
 
-// 				tmp[off] |= mask;
+	}
 
-// 				//set_pixel(j,get_screen_y(i-1)+k,get_pixel(j,get_screen_y(i)+k));
+	gfx_fill_rect(win,0,win->height-CHAR_HEIGHT*SCROLL_ROWS,win->width,CHAR_HEIGHT*SCROLL_ROWS,0);
 
-// 			}
+	offset_y-=SCROLL_ROWS;
 
-// 			tmp += PIXEL_WIDTH / PIXELS_PER_BYTE;
+	inp_info->cursor_input_row -= SCROLL_ROWS;
 
-// 		}
+	inp_info->did_scroll = true;
 
-// 		vram += char_line_size;
+	return offset_y;
 
-// 	}
-
-// 	fill_rect(0,PIXEL_HEIGHT-CHAR_HEIGHT*SCROLL_ROWS,PIXEL_WIDTH,CHAR_HEIGHT*SCROLL_ROWS,0);
-
-// 	offset_y-=SCROLL_ROWS;
-
-// 	enable_mouse();
-// 	cursor_input_row -= SCROLL_ROWS;
-
-// 	return offset_y;
-
-// }
+}

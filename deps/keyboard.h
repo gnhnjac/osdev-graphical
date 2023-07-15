@@ -40,6 +40,8 @@ void disable_alt();
 int check_alt();
 char kybrd_ctrl_read_status ();
 void keyboard_handler();
+char *get_kbdus_char_array();
+char *get_kbdus_shift_char_array();
 static void handle_character(unsigned char scancode);
 void keyboard_input(int row, int col, char *buffer, int bf_size);
 bool is_taking_input();
