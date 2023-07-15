@@ -6,6 +6,7 @@
 #include "dma.h"
 #include "memory.h"
 #include "vmm.h"
+#include "process.h"
 volatile bool flpydsk_irq_finished = false;
 
 uint8_t _CurrentDrive = 0;

@@ -8,6 +8,7 @@
 #include "mouse.h"
 #include "ps2.h"
 #include "window_sys.h"
+#include "process.h"
 
 // status byte for keyboard
 // [n,n,n,n,caps,shift,alt,ctrl]

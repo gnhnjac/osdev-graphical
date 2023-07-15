@@ -103,22 +103,33 @@ int winsys_set_working_window(int wid)
 
 		if (tmp->id == wid)
 		{
+
 			working_window = tmp;
 
 			PWINDOW tmp2 = win_list;
 
-			if (tmp2->id == wid)
+			if (tmp2->next == 0)
 				return 1;
 
-			while (tmp2->next->id != wid)
+			if (tmp2->id == wid)
+			{
+
 				tmp2 = tmp2->next;
+				win_list = tmp2;
 
-			tmp2->next = tmp->next;
+			}
+			else
+			{
+				while (tmp2->next->id != wid)
+					tmp2 = tmp2->next;
 
+				tmp2->next = tmp->next;
+			}
 			while(tmp2->next)
 				tmp2 = tmp2->next;
 
 			tmp2->next = tmp;
+			tmp->next = 0;
 
 			return 1;
 		}
@@ -272,8 +283,17 @@ void winsys_display_window_section(PWINDOW win, int x, int y, int width, int hei
 	if (!win)
 		return;
 	winsys_paint_window_section(win, x, y, width, height);
-	if (winsys_check_collide(win,win->next))
-		winsys_display_window(win->next);
+
+	PWINDOW tmp = win->next;
+
+	while(tmp)
+	{
+		if (winsys_check_collide(win,tmp))
+			winsys_display_window(tmp);
+
+		tmp = tmp->next;
+
+	}
 
 }
 
@@ -283,10 +303,59 @@ void winsys_display_window(PWINDOW win)
 	if (!win)
 		return;
 	winsys_paint_window(win);
-	if (winsys_check_collide(win,win->next))
-		winsys_display_window(win->next);
+
+	PWINDOW tmp = win->next;
+
+	while(tmp)
+	{
+		if (winsys_check_collide(win,tmp))
+			winsys_display_window(tmp);
+
+		tmp = tmp->next;
+
+	}
 
 }
+
+void winsys_display_window_exclude_original(PWINDOW win, PWINDOW orig)
+{
+
+	if (!win)
+		return;
+	winsys_paint_window(win);
+
+	PWINDOW tmp = win->next;
+
+	while(tmp)
+	{
+		if (tmp != orig && winsys_check_collide(win,tmp))
+			winsys_display_window(tmp);
+
+		tmp = tmp->next;
+
+	}
+
+}
+
+void winsys_display_collided_windows(PWINDOW win)
+{
+
+	if (!win)
+		return;
+
+	PWINDOW tmp = win_list;
+
+	while(tmp)
+	{
+		if (tmp != win && winsys_check_collide(win,tmp))
+			winsys_display_window_exclude_original(tmp,win);
+
+		tmp = tmp->next;
+
+	}
+
+}
+
 
 void winsys_clear_window(PWINDOW win)
 {
@@ -426,11 +495,13 @@ void winsys_move_window(PWINDOW win, int x, int y)
 {
 
 	winsys_clear_whole_window(win);
+	winsys_display_collided_windows(win);
 
 	win->x = x;
 	win->y = y;
+	winsys_set_working_window(win->id);
 
-	winsys_display_window(win_list);
+	winsys_display_window(win);
 
 }
 
@@ -451,11 +522,11 @@ void winsys_remove_window(PWINDOW win)
 		tmp->next = win->next;
 	}
 
+	winsys_display_collided_windows(win);
+
 	kfree(win->w_buffer);
 	kfree(win->w_name);
 	kfree(win);
-
-	winsys_display_window(win_list);
 
 }
 

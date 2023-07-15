@@ -98,6 +98,8 @@ void winsys_paint_window(PWINDOW win);
 void winsys_paint_window_section(PWINDOW win, int x, int y, int width, int height);
 void winsys_display_window_section(PWINDOW win, int x, int y, int width, int height);
 void winsys_display_window(PWINDOW win);
+void winsys_display_window_exclude_original(PWINDOW win, PWINDOW orig);
+void winsys_display_collided_windows(PWINDOW win);
 void winsys_clear_window(PWINDOW win);
 void winsys_clear_window_frame(PWINDOW win);
 void winsys_clear_whole_window(PWINDOW win);
