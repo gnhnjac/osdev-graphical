@@ -91,16 +91,6 @@ void shell_main()
 
 	strcpy(path,"a:\\");
 
-	print("Please write the time in the following format (hh:mm): ");
-	char time_buff[5+1];
-
-	get_shell_input(time_buff,6);
-	
-	strip_character(time_buff, ' ');
-	time_buff[2] = 0; // null instead of :
-
-	set_time(decimal_to_uint(time_buff),decimal_to_uint(time_buff+3));
-
 	while(true)
 	{
 		printf("\n%s> ",path);

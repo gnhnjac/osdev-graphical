@@ -4,6 +4,7 @@
 #include "low_level.h"
 #include "mouse.h"
 #include "strings.h"
+#include "cmos.h"
 
 void timer_phase(int hz)
 {
@@ -37,9 +38,10 @@ void timer_handler()
 *  into IRQ0 */
 void timer_install()
 {
-    current_sec = 0;
-    current_min = 0;
-    current_hour = 0;
+
+    current_sec = cmos_rtc_get_seconds();
+    current_min = cmos_rtc_get_minutes();
+    current_hour = cmos_rtc_get_hour();
     second_ticks = 0;
     timer_ticks = 0;
     /* Installs 'timer_handler' to IRQ0 */
