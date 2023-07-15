@@ -797,7 +797,7 @@ void gfx_fill_rect(PWINDOW win, int x, int y, int width, int height, uint8_t col
 void gfx_clear_win(PWINDOW win)
 {
 
-	fill_rect(0,0,win->width,win->height,0);
+	gfx_fill_rect(win,0,0,win->width,win->height,0);
 
 }
 
@@ -880,6 +880,10 @@ void gfx_print_char(PWINDOW win, PINPINFO inp_info, const char character, int ro
 		offset_y = inp_info->cursor_offset_y;
 	}
 
+	// Make scrolling adjustment, for when we reach the bottom
+	// of the screen.
+	offset_y = gfx_handle_scrolling(win, inp_info, offset_y);
+
 	if (character == '\b')
 	{
 
@@ -913,10 +917,6 @@ void gfx_print_char(PWINDOW win, PINPINFO inp_info, const char character, int ro
 		return;
 
 	}
-
-	// Make scrolling adjustment, for when we reach the bottom
-	// of the screen.
-	offset_y = gfx_handle_scrolling(win, inp_info, offset_y);
 
 	// If we see a newline character, set offset to the end of
 	// current row, so it will be advanced to the first col
@@ -1094,7 +1094,7 @@ int gfx_keyboard_input_character(PINPINFO inp_info, char character)
 
 int gfx_handle_scrolling(PWINDOW win, PINPINFO inp_info, int offset_y)
 {
-	if (offset_y < gfx_get_logical_row(win->height))
+	if (offset_y < gfx_get_logical_row(win->height)-1)
 	{
 		return offset_y;
 	}

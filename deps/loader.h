@@ -12,4 +12,3 @@ typedef struct _ImageInfo
 
 //refs
 PImageInfo load_executable(pdirectory *pdir, char *path);
-PImageInfo load_mz_executable(pdirectory *pdir, char *path);
