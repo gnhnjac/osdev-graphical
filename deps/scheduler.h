@@ -41,7 +41,6 @@ int get_free_tid();
 void scheduler_dispatch ();
 void scheduler_tick(void);
 void scheduler_initialize(void);
-void print_threads();
 void idle_task();
 void color_thread();
 void execute_idle();

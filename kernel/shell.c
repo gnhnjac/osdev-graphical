@@ -103,9 +103,7 @@ void shell_main()
 
 	while(true)
 	{
-		print("\n");
-		print(path);
-		print("> ");
+		printf("\n%s> ",path);
 		char cmd_buff[300];
 		get_shell_input(cmd_buff,300);
 		handle_command(cmd_buff);
@@ -136,7 +134,6 @@ void handle_command(char *cmd_buff)
 	}
 	else if(strcmp(cmd, "ls"))
 	{
-		//ls(fid);
 		handle_ls();
 	}
 	else if(strcmp(cmd, "cd"))
@@ -183,10 +180,6 @@ void handle_command(char *cmd_buff)
 	{
 		handle_stats();
 	}
-	else if(strcmp(cmd,"paint"))
-	{
-		handle_paint(cmd_buff);
-	}
 	else if(strcmp(cmd,"exec"))
 	{
 		handle_exec(cmd_buff);
@@ -194,10 +187,6 @@ void handle_command(char *cmd_buff)
 	else if(strcmp(cmd, "ps"))
 	{
 		print_processes();
-	}
-	else if(strcmp(cmd, "pt"))
-	{
-		print_threads();
 	}
 	else
 	{
@@ -236,7 +225,6 @@ char *join_path(char* p, char* ext)
 
 void handle_stats()
 {
-	return;
 	printf("PMM:\nTotal memory: %dKb\nTotal Blocks: %d\nUsed Blocks: %d\nFree Blocks: %d\n",pmmngr_get_memory_size(),pmmngr_get_block_count(),pmmngr_get_used_blocks(),pmmngr_get_free_block_count());
 	print_mem_map();
 	printf("\nHEAP:\n");
@@ -604,84 +592,6 @@ void handle_size(char *cmd_buff)
 	
 }
 
-void handle_paint(char *cmd_buff)
-{
-
-	// int param_count = count_substrings(cmd_buff, ' '); // including cmd
-
-	// if (param_count != 2)
-	// 	return;
-
-	// char *param = seperate_and_take(cmd_buff, ' ', 1);
-	// strip_from_start(param, ' ');
-	// strip_from_end(param, ' ');
-
-	// disable_scrolling();
-	// clear_viewport();
-
-	// uint32_t file_fid = get_fid_by_name(param,fid);
-
-	// if(file_fid == fid) // didn't find file
-	// {
-	// 	handle_touch(cmd_buff);
-	// 	file_fid = get_fid_by_name(param,fid);
-	// }
-	// else
-	// {
-	// 	disable_mouse();
-	// 	int n = 0;
-	// 	for (int i = TOP; i < MAX_ROWS; i++)
-	// 	{
-
-	// 		for(int j = 0; j < MAX_COLS-2; j++)
-	// 		{
-
-	// 			char ascii = get_nth_char(file_fid, n);
-	// 			char attrib = get_nth_char(file_fid, n+1);
-	// 			print_char(ascii,i,j,attrib);
-
-	// 			n+=2;
-
-	// 		}
-
-	// 	}
-	// 	enable_mouse();
-	// }
-
-	// char buff[1];
-
-	// do
-	// {
-	// 	getchar(-1,-1,buff);
-
-	// 	while(is_taking_char())
-	// 		continue;
-
-	// } while (*buff != 27); // 27 is escape ascii
-
-	// disable_mouse();
-	// reset_file(file_fid);
-	// char *vidmem = (char *)VIDEO_ADDRESS;
-	// for (int i = TOP; i < MAX_ROWS; i++)
-	// {
-
-	// 	for(int j = 0; j < MAX_COLS-2; j++)
-	// 	{
-
-	// 		write(file_fid,vidmem+get_screen_offset(i,j), 1);
-	// 		write(file_fid,vidmem+get_screen_offset(i,j)+1, 1);
-
-	// 	}
-
-	// }
-	// clear_viewport();
-	// enable_scrolling();
-	// enable_mouse();
-
-	// kfree(param);
-	
-}
-
 char *help_strings[15] = {
 
 	"Provides help for a certain command\nUsage: help CMD",
@@ -697,7 +607,6 @@ char *help_strings[15] = {
 	"Removes a file or directory within the current directory with the specified name\nUsage: rm NAME",
 	"Gives the size of the specified file in bytes\nUsage: size NAME",
 	"Concatenates 2 files and stores them in a destination file\nUsage: concat DEST F1 F2",
-	"Opens a paint editor, press esc to exit it, saves it with the specified name\nUsage: paint NAME",
 	"Displays various stats\nUsage: stats",
 };
 
@@ -713,7 +622,7 @@ void handle_help(char *cmd_buff)
 	}
 	else if (param_count == 1)
 	{
-		print("Available commands:\nhelp\nreboot\nshutdown\nls\ncd\nmkdir\ntouch\nwrite\ncat\ncls\nrm\nsize\nconcat\npaint\nstats");
+		print("Available commands:\nhelp\nreboot\nshutdown\nls\ncd\nmkdir\ntouch\nwrite\ncat\ncls\nrm\nsize\nconcat\nstats");
 	}
 	else
 	{

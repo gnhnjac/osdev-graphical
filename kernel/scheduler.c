@@ -402,32 +402,6 @@ void scheduler_initialize(void) {
 
 }
 
-void print_threads()
-{
-
-        disable_scheduling();
-
-        queueEntry *tmp = _readyQueue;
-
-        while (tmp)
-        {
-
-                printf("tid: %d, state: ",tmp->thread.tid);
-
-                if (tmp->thread.state & THREAD_BLOCK_SLEEP)
-                        printf("SLEEPING\n");
-                else if(tmp->thread.state & THREAD_TERMINATE)
-                        printf("TERMINATE\n");
-                else if (tmp->thread.state & THREAD_RUN)
-                        printf("RUNNING\n");
-                tmp = tmp->next;
-
-        }
-
-        enable_scheduling();
-
-}
-
 /* idle task. */
 void idle_task() {
 
