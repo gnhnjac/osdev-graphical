@@ -1,4 +1,5 @@
 #include <stdint.h>
+#include <stdarg.h>
 
 #define VIDEO_ADDRESS 0xa0000
 #define MAX_ROWS 30
@@ -11,7 +12,7 @@
 #define SCROLL_ROWS 10
 
 //refs
-void print_char(const char character, int row, int col, char color);
+void screen_print_char(const char character, int row, int col, char color);
 int get_screen_offset(int row, int col);
 int get_screen_x(int col);
 int get_screen_y(int row);
@@ -26,12 +27,13 @@ void set_cursor_input_row(uint8_t row);
 void attach_cursor_to_input();
 void set_cursor_coords(int col, int row);
 void set_cursor_row(int row);
-void putchar(char c);
-void putchar_at(char c, int row, int col, int attr_byte);
-void print_at(const char *msg, int row, int col, int attr_byte);
-void print(const char *msg);
-void print_color(const char *msg, int attr_byte);
-int printf(const char *fmt, ...);
+void screen_putchar(char c);
+void screen_putchar_at(char c, int row, int col, int attr_byte);
+void screen_print_at(const char *msg, int row, int col, int attr_byte);
+void screen_print(const char *msg);
+void screen_print_color(const char *msg, int attr_byte);
+int screen_printf(const char *fmt, ...);
+int screen_vprintf(const char *fmt, va_list valist);
 void clear_viewport();
 void clear_screen();
 int handle_scrolling(int offset_y);

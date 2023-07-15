@@ -105,7 +105,7 @@ void update_time()
 
         int cursor_coords = get_cursor();
         set_cursor_coords(TIME_OFF,0);
-        printf("%s:%s:%s",hour_str,min_str,second_str);
+        screen_printf("%s:%s:%s",hour_str,min_str,second_str);
         set_cursor(cursor_coords);
     }
 }

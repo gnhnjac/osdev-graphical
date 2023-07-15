@@ -1,6 +1,7 @@
 #include "pmm.h"
 #include "memory.h"
 #include "screen.h"
+#include "process.h"
 
 //! different memory regions (in memory_region.type)
 char* strMemoryTypes[] = {

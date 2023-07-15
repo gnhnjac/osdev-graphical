@@ -1,5 +1,4 @@
 #include "keyboard.h"
-//#include "screen.h"
 #include "mouse.h"
 #include "shell.h"
 #include "strings.h"
@@ -25,40 +24,6 @@ PINPINFO window_input_info = 0;
 
 #define SHELL_ROWS 25
 #define SHELL_COLS 65
-
-static void print(char *s) // private
-{
-	int pre_y = gfx_get_win_y(window_input_info->cursor_offset_y);
-	gfx_print(main_window, window_input_info, s);
-	int post_y = gfx_get_win_y(window_input_info->cursor_offset_y);
-	if (!window_input_info->did_scroll)
-		winsys_display_window_section(main_window,0,min(pre_y,post_y),main_window->width,abs(post_y-pre_y)+CHAR_HEIGHT);
-	else
-	{
-		winsys_display_window(main_window);
-		window_input_info->did_scroll = false;
-	}
-
-}
-
-static void printf(char *fmt, ...) // private
-{
-
-	va_list valist;
-	va_start(valist, fmt);
-
-	int pre_y = gfx_get_win_y(window_input_info->cursor_offset_y);
-	gfx_vprintf(main_window, window_input_info, fmt,valist);
-	int post_y = gfx_get_win_y(window_input_info->cursor_offset_y);
-	if (!window_input_info->did_scroll)
-		winsys_display_window_section(main_window,0,min(pre_y,post_y),main_window->width,abs(post_y-pre_y)+CHAR_HEIGHT);
-	else
-	{
-		winsys_display_window(main_window);
-		window_input_info->did_scroll = false;
-	}
-
-}
 
 static void clear_viewport() // private
 {
@@ -118,6 +83,10 @@ void shell_main()
 	main_window->event_handler.event_mask |= GENERAL_EVENT_KBD;
 	window_input_info = (PINPINFO)kcalloc(sizeof(INPINFO));
 
+	process *proc = get_running_process();
+	proc->term.term_win = main_window;
+	proc->term.term_inp_info = window_input_info;
+
 	path = kmalloc(3+1);
 
 	strcpy(path,"a:\\");
@@ -135,7 +104,7 @@ void shell_main()
 	while(true)
 	{
 		print("\n");
-		printf(path);
+		print(path);
 		print("> ");
 		char cmd_buff[300];
 		get_shell_input(cmd_buff,300);

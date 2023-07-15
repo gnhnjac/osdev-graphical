@@ -1,6 +1,7 @@
 #pragma once
 #include <stdint.h>
 #include "vmm.h"
+#include "window_sys.h"
 
 #define PROCESS_STATE_SLEEP  0
 #define PROCESS_STATE_ACTIVE 1
@@ -79,6 +80,7 @@ typedef struct _process {
    int            state;
    uint32_t  imageBase;
    uint32_t  imageSize;
+   terminal term;
    process* next;
    thread* threadList;
    char *name;
@@ -98,3 +100,7 @@ void clear_kernel_space(pdirectory *out);
 void clear_kernel_stacks(pdirectory *out);
 pdirectory* create_address_space ();
 void print_processes();
+bool does_process_own_term(process *p);
+void printf(char *fmt,...);
+void putchar(char c);
+void print(char *msg);

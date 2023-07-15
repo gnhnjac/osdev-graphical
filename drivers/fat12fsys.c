@@ -3,6 +3,7 @@
 #include "strings.h"
 #include "heap.h"
 #include "screen.h"
+#include "process.h"
 
 //! FAT FileSystem
 FILESYSTEM _FSysFat;

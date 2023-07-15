@@ -44,8 +44,6 @@ void scheduler_initialize(void);
 void print_threads();
 void idle_task();
 void color_thread();
-void test_thread();
-void test_thread2();
 void execute_idle();
 void thread_execute(thread t);
 void* create_kernel_stack();

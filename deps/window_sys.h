@@ -1,7 +1,7 @@
+#pragma once
 #include <stdint.h>
 #include <stdbool.h>
 #include <stdarg.h>
-#include "scheduler.h"
 
 typedef struct _inputInfo
 {
@@ -54,7 +54,6 @@ typedef struct _event
 typedef struct _eventHandler
 {
 
-	thread event_thread;
 	EVENT events[EVENT_HANDLER_QUEUE_SIZE];
 	generalEventType event_mask;
 
@@ -74,6 +73,14 @@ typedef struct _window
 	struct _window *next;
 
 } WINDOW, *PWINDOW;
+
+typedef struct _terminal
+{
+
+   PWINDOW term_win;
+   PINPINFO term_inp_info;
+
+} terminal;
 
 #define TITLE_BAR_HEIGHT 20
 #define WIN_FRAME_SIZE 1

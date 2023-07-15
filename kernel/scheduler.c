@@ -368,7 +368,7 @@ void scheduler_initialize(void) {
         /* clear ready queue. */
         clear_queue();
 
-        kernel_proc = (process *)kmalloc(sizeof(process));
+        kernel_proc = (process *)kcalloc(sizeof(process));
 
         kernel_proc->id            = getFreeID();
         kernel_proc->pageDirectory = vmmngr_get_directory();
@@ -449,14 +449,6 @@ void idle_task() {
 
   }
 
-  // thread test1;
-  // thread_create(&test1, test_thread, create_kernel_stack(), true);
-  // queue_insert(test1);
-
-  // thread test2;
-  // thread_create(&test2, test_thread2, create_kernel_stack(), true);
-  // queue_insert(test2);
-
   while(1) __asm__ ("pause");
 }
 
@@ -478,38 +470,6 @@ void color_thread()
                 display_psf1_8x16_char_bg(akos[own_off], get_screen_x(own_off),0, 0xf, cycler);
                 cycler = (cycler + 1) % 15;
                 thread_sleep(100);
-        }
-
-}
-
-void test_thread()
-{
-        char asc = 0;
-        while (1)
-        {
-
-                putchar(asc+'a');
-
-                wait_milliseconds(100);
-
-                asc = (asc + 1) % 26;
-
-        }
-
-}
-
-void test_thread2()
-{
-        char asc = 0;
-        while (1)
-        {
-
-                putchar(asc+'0');
-
-                wait_milliseconds(100);
-
-                asc = (asc + 1) % 10;
-
         }
 
 }

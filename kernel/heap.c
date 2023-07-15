@@ -1,6 +1,7 @@
 #include "heap.h"
 #include "memory.h"
 #include "screen.h"
+#include "process.h"
 
 //! size of physical memory
 static const uint32_t	_alloc_memory_size=HEAP_CEILING-HEAP_BASE;

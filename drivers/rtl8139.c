@@ -6,6 +6,7 @@
 #include "network.h"
 #include "rtl8139.h"
 #include "low_level.h"
+#include "process.h"
 
 char rx_buffer[RX_BUF_SIZE + 16 + 1500]; // 1500 because wrap bit is active so to prevent overflow
 

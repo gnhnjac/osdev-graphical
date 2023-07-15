@@ -63,7 +63,7 @@ PWINDOW winsys_create_win(int x, int y, int width, int height, char *w_name, boo
 
 	}
 
-	win->event_handler.event_thread = *queue_get();
+	// win->event_handler.event_thread = *get_current_task();
 
 	win->w_buffer = kcalloc(width*height/2);
 	win->w_name = (char *)kcalloc(strlen(w_name)+1);
@@ -855,7 +855,7 @@ void gfx_vprintf(PWINDOW win, PINPINFO inp_info,const char *fmt, va_list valist)
 			}
 
 		}
-		else if(*fmt == '\\')
+		else if(*fmt == '\\' && *(fmt+1) == '%')
 		{	
 			fmt++;
 			continue;

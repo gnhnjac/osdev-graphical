@@ -4,6 +4,7 @@
 #include "heap.h"
 #include "std.h"
 #include "screen.h"
+#include "process.h"
 
 void int_to_str_padding(int n, char *buffer, int base, int padding)
 {

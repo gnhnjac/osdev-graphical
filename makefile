@@ -15,7 +15,7 @@ ROOT_C_LIB = $(wildcard root/cstdlib/*.c)
 # the ’.c’ extension of filenames in C_SOURCES with ’.o’
 OBJ = ${C_SOURCES:.c=.o}
 
-emu = QEMU
+emu = BOCHS
 
 DEPS := $(OBJ:.o=.d)
 

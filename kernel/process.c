@@ -8,6 +8,8 @@
 #include "screen.h"
 #include "scheduler.h"
 #include "pmm.h"
+#include "graphics.h"
+#include "math.h"
 
 #define PAGE_SIZE 4096
 #define PROC_INVALID_ID -1
@@ -128,6 +130,8 @@ int createProcess (char* exec) {
     thread_create(mainThread,(void *)(imageInfo->EntryPointRVA + imageInfo->ImageBase),stack, false);
     vmmngr_switch_pdirectory(prevDir);
     enable_scheduling();
+
+    proc->term = get_running_process()->term;
 
     mainThread->parent = proc;
     mainThread->initialStack = stack;
@@ -314,5 +318,104 @@ void print_processes()
         tmp = tmp->next;
 
     }
+
+}
+
+bool does_process_own_term(process *p)
+{
+
+    terminal term = p->term;
+
+    return term.term_win && term.term_inp_info;
+
+}
+
+void printf(char *fmt,...)
+{
+
+    va_list valist;
+    va_start(valist,fmt);
+
+    process *proc = get_running_process();
+
+    if (!proc)
+    {
+        screen_vprintf(fmt,valist);
+        return;
+    }
+
+    terminal term = proc->term;
+
+    if (term.term_win && term.term_inp_info)
+    {
+        int pre_y = gfx_get_win_y(term.term_inp_info->cursor_offset_y);
+        gfx_vprintf(term.term_win, term.term_inp_info, fmt,valist);
+        int post_y = gfx_get_win_y(term.term_inp_info->cursor_offset_y);
+        if (!term.term_inp_info->did_scroll)
+            winsys_display_window_section(term.term_win,0,min(pre_y,post_y),term.term_win->width,abs(post_y-pre_y)+CHAR_HEIGHT);
+        else
+        {
+            winsys_display_window(term.term_win);
+            term.term_inp_info->did_scroll = false;
+        }
+    }
+    else
+        screen_vprintf(fmt,valist);
+
+}
+
+void putchar(char c)
+{
+
+    process *proc = get_running_process();
+
+    if (!proc)
+    {
+        screen_putchar(c);
+        return;
+    }
+
+    terminal term = proc->term;
+
+    if (term.term_win && term.term_inp_info)
+    {
+        int pre_x = gfx_get_win_x(term.term_inp_info->cursor_offset_x)-CHAR_WIDTH;
+        int pre_y = gfx_get_win_y(term.term_inp_info->cursor_offset_y);
+        gfx_putchar(term.term_win, term.term_inp_info, c);
+        winsys_display_window_section(term.term_win,pre_x,pre_y,CHAR_WIDTH*3,CHAR_HEIGHT);
+    }
+    else
+        screen_putchar(c);
+
+}
+
+void print(char *msg)
+{
+
+    process *proc = get_running_process();
+
+    if (!proc)
+    {
+        screen_print(msg);
+        return;
+    }
+
+    terminal term = proc->term;
+
+    if (term.term_win && term.term_inp_info)
+    {
+        int pre_y = gfx_get_win_y(term.term_inp_info->cursor_offset_y);
+        gfx_print(term.term_win, term.term_inp_info, msg);
+        int post_y = gfx_get_win_y(term.term_inp_info->cursor_offset_y);
+        if (!term.term_inp_info->did_scroll)
+            winsys_display_window_section(term.term_win,0,min(pre_y,post_y),term.term_win->width,abs(post_y-pre_y)+CHAR_HEIGHT);
+        else
+        {
+            winsys_display_window(term.term_win);
+            term.term_inp_info->did_scroll = false;
+        }
+    }
+    else
+        screen_print(msg);
 
 }

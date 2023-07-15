@@ -1,4 +1,3 @@
-#include <stdarg.h>
 #include "screen.h"
 #include "low_level.h"
 #include "memory.h"
@@ -19,7 +18,7 @@ static uint32_t cursor_offset_x = 0;
 static uint32_t cursor_offset_y = 0;
 
 /* Print a char on the screen at col, row, or at cursor position */
-void print_char(const char character, int row, int col, char color) 
+void screen_print_char(const char character, int row, int col, char color) 
 {
 
 	if(character == 27 || character == '\r' || !screen_initialized) // don't print escape character
@@ -66,10 +65,10 @@ void print_char(const char character, int row, int col, char color)
 	{
 
 		// handle tab
-		putchar(' ');
-		putchar(' ');
-		putchar(' ');
-		putchar(' ');
+		screen_putchar(' ');
+		screen_putchar(' ');
+		screen_putchar(' ');
+		screen_putchar(' ');
 		return;
 
 	}
@@ -196,25 +195,25 @@ void set_cursor_row(int row)
 
 }
 
-void putchar(char c)
+void screen_putchar(char c)
 {
 
-	print_char(c, -1, -1, 0xF);
+	screen_print_char(c, -1, -1, 0xF);
 
 }
 
-void putchar_at(char c, int row, int col, int attr_byte)
+void screen_putchar_at(char c, int row, int col, int attr_byte)
 {
 
 	if ( col >= 0 && row >= 0) {
 		set_cursor_coords(col, row);
 	}
 
-	print_char(c, -1, -1, attr_byte);
+	screen_print_char(c, -1, -1, attr_byte);
 
 }
 
-void print_at(const char *msg, int row, int col, int attr_byte) 
+void screen_print_at(const char *msg, int row, int col, int attr_byte) 
 {
 	if ( col >= 0 && row >= 0) {
 		set_cursor_coords(col, row);
@@ -223,28 +222,34 @@ void print_at(const char *msg, int row, int col, int attr_byte)
 	while (*msg)
 	{
 
-		print_char(*msg++, -1, -1, attr_byte);
+		screen_print_char(*msg++, -1, -1, attr_byte);
 	}
 }
 
-void print(const char *msg) 
+void screen_print(const char *msg) 
 {
-	print_at(msg, -1, -1, 0);
+	screen_print_at(msg, -1, -1, 0);
 }
 
-void print_color(const char *msg, int attr_byte)
+void screen_print_color(const char *msg, int attr_byte)
 {
 
-	print_at(msg, -1, -1, attr_byte);
+	screen_print_at(msg, -1, -1, attr_byte);
 
 }
 
 
-int printf(const char *fmt, ...)
+int screen_printf(const char *fmt, ...)
 {
 
 	va_list valist;
 	va_start(valist, fmt);
+	screen_vprintf(fmt,valist);
+
+}
+
+int screen_vprintf(const char *fmt, va_list valist)
+{
 
 	const char *orig = fmt;
 
@@ -262,56 +267,56 @@ int printf(const char *fmt, ...)
 				case 'd':
 
 					int_to_str(va_arg(valist, int), buff, 10);
-					print(buff);
+					screen_print(buff);
 					break;
 
 				case 'u':
 
 					uint_to_str(va_arg(valist, int), buff, 10);
-					print(buff);
+					screen_print(buff);
 					break;
 
 				case 'U':
 
 					uint_to_str(va_arg(valist, int), buff, 16);
-					print(buff);
+					screen_print(buff);
 					break;
 
 				case 'c':
 
-					putchar((char)va_arg(valist, int));
+					screen_putchar((char)va_arg(valist, int));
 					break;
 
 				case 's':
-					print((char *)va_arg(valist, int));
+					screen_print((char *)va_arg(valist, int));
 					break;
 
 				case 'x':
 					int_to_str(va_arg(valist, int), buff, 16);
-					print(buff);
+					screen_print(buff);
 					break;
 
 				case 'X':
 
 					byte_to_str((uint8_t)va_arg(valist, int), buff, 16);
-					print(buff);
+					screen_print(buff);
 					break;
 
 				case 'b':
 					int_to_str(va_arg(valist, int), buff, 2);
-					print(buff);
+					screen_print(buff);
 					break;
 
 
 
 				default:
 
-					printf("Unknown format type \\%%c", fmt);
+					screen_printf("Unknown format type \\%%c", fmt);
 					return STDERR;
 			}
 
 		}
-		else if(*fmt == '\\')
+		else if(*fmt == '\\' && *(fmt+1) == '%')
 		{	
 			fmt++;
 			continue;
@@ -319,7 +324,7 @@ int printf(const char *fmt, ...)
 		else
 		{
 
-			putchar(*fmt);
+			screen_putchar(*fmt);
 
 		}
 
