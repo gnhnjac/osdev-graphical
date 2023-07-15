@@ -318,13 +318,13 @@ bool winsys_check_collide(PWINDOW w1, PWINDOW w2)
 	if (!w1 | !w2)
 		return false;
 
-	uint32_t w1_x = w1->x-WIN_FRAME_SIZE;
-	uint32_t w1_y = w1->y-TITLE_BAR_HEIGHT;
+	int w1_x = w1->x-WIN_FRAME_SIZE;
+	int w1_y = w1->y-TITLE_BAR_HEIGHT;
 	uint32_t w1_w = w1->width + WIN_FRAME_SIZE*2;
 	uint32_t w1_h = w1->height + TITLE_BAR_HEIGHT+WIN_FRAME_SIZE;
 
-	uint32_t w2_x = w2->x-WIN_FRAME_SIZE;
-	uint32_t w2_y = w2->y-TITLE_BAR_HEIGHT;
+	int w2_x = w2->x-WIN_FRAME_SIZE;
+	int w2_y = w2->y-TITLE_BAR_HEIGHT;
 	uint32_t w2_w = w2->width + WIN_FRAME_SIZE*2;
 	uint32_t w2_h = w2->height + TITLE_BAR_HEIGHT+WIN_FRAME_SIZE;
 
@@ -338,8 +338,8 @@ bool winsys_check_collide(PWINDOW w1, PWINDOW w2)
 bool winsys_check_collide_coords(PWINDOW w, int x, int y)
 {
 
-	uint32_t w_x = w->x-WIN_FRAME_SIZE;
-	uint32_t w_y = w->y-TITLE_BAR_HEIGHT;
+	int w_x = w->x-WIN_FRAME_SIZE;
+	int w_y = w->y-TITLE_BAR_HEIGHT;
 	uint32_t w_w = w->width + WIN_FRAME_SIZE*2;
 	uint32_t w_h = w->height + TITLE_BAR_HEIGHT+WIN_FRAME_SIZE;
 
@@ -353,11 +353,14 @@ bool winsys_check_collide_coords(PWINDOW w, int x, int y)
 bool winsys_check_title_collide(PWINDOW w, int x, int y)
 {
 
-	uint32_t w_x = w->x-WIN_FRAME_SIZE;
-	uint32_t w_y = w->y-(TITLE_BAR_HEIGHT+CHAR_HEIGHT)/2;
-	uint32_t w_w = w->width + WIN_FRAME_SIZE*2;
-	uint32_t w_h = CHAR_HEIGHT;
+	if (!w)
+		return false;
 
+	int w_x = w->x-WIN_FRAME_SIZE;
+	int w_y = w->y-TITLE_BAR_HEIGHT;
+	uint32_t w_w = w->width + WIN_FRAME_SIZE*2;
+	uint32_t w_h = TITLE_BAR_HEIGHT;
+	
 	return x < w_x + w_w &&
     x > w_x &&
     y < w_y + w_h &&
@@ -371,10 +374,10 @@ bool winsys_check_close_collide(PWINDOW w, int x, int y)
 	if (!w->closable)
 		return false;
 
-	uint32_t w_x = w->x+w->width-CHAR_WIDTH;
-	uint32_t w_y = w->y-TITLE_BAR_HEIGHT;
+	int w_x = w->x+w->width-CHAR_WIDTH;
+	int w_y = w->y-(TITLE_BAR_HEIGHT+CHAR_HEIGHT)/2;
 	uint32_t w_w = CHAR_WIDTH;
-	uint32_t w_h = TITLE_BAR_HEIGHT;
+	uint32_t w_h = CHAR_HEIGHT;
 
 	return x < w_x + w_w &&
     x > w_x &&

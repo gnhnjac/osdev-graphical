@@ -228,9 +228,10 @@ void mouse_handler()
 			PWINDOW win = winsys_get_window_from_title_collision(MOUSEX,MOUSEY);
 			save_to_mouse_buffer();
 			print_mouse();
-
 			if (win)
+			{
 				dragging_window = win;
+			}
 		}
 		else
 		{
