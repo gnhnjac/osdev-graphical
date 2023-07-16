@@ -342,7 +342,7 @@ irq_common_stub:
 
 global _syscall_stub
 extern __syscalls
-%define MAX_SYSCALL 3
+%define MAX_SYSCALL 10
 
 ; ***process stack and kernel stack
 _syscall_stub:

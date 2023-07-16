@@ -46,6 +46,7 @@ typedef struct {
 static uint8_t reverse(uint8_t b);
 void init_psf1_8x16();
 uint8_t *get_font_buffer();
+void load_font_to_buffer(void *buff);
 int load_psf1_8x16(char *path);
 void display_psf1_8x16_char_linear(char c, int x, int y, int fgcolor);
 void display_psf1_8x16_char_bg_linear(char c, int x, int y, int bgcolor, int fgcolor);

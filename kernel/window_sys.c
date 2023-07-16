@@ -9,6 +9,8 @@
 #include "vfs.h"
 #include "bmp.h"
 #include "process.h"
+#include "vmm.h"
+#include "scheduler.h"
 
 static PWINDOW win_list;
 static PWINDOW working_window;
@@ -41,6 +43,25 @@ int winsys_get_free_id()
 
 }
 
+PWINDOW winsys_get_window_by_id(int wid)
+{
+
+	PWINDOW tmp = win_list;
+
+    while (tmp)
+    {
+
+            if (tmp->id == wid)
+                return tmp;
+
+            tmp = tmp->next;
+
+    }
+
+    return 0;
+
+}
+
 void winsys_init()
 {
 
@@ -58,6 +79,8 @@ PWINDOW winsys_create_win(int x, int y, int width, int height, char *w_name, boo
 	win->width = width;
 	win->height = height;
 	win->closable = is_closable;
+	win->parent_pid = get_running_process()->id;
+	win->is_user = false;
 
 	for (int i = 0; i < EVENT_HANDLER_QUEUE_SIZE; i++)
 	{
@@ -65,8 +88,6 @@ PWINDOW winsys_create_win(int x, int y, int width, int height, char *w_name, boo
 		win->event_handler.events[i].event_type = EVENT_INVALID;
 
 	}
-
-	// win->event_handler.event_thread = *get_current_task();
 
 	win->w_buffer = kcalloc(width*height/2);
 	win->w_name = (char *)kcalloc(strlen(w_name)+1);
@@ -93,6 +114,63 @@ PWINDOW winsys_create_win(int x, int y, int width, int height, char *w_name, boo
 	winsys_display_window(win);
 
 	return win;
+
+}
+
+void winsys_create_win_user(PWINDOW local_win, int x, int y, int width, int height)
+{
+
+	process *parent_proc = get_running_process();
+
+	PWINDOW win = (PWINDOW)kcalloc(sizeof(WINDOW));
+	win->x = x;
+	win->y = y;
+	win->width = width;
+	win->height = height;
+	win->closable = false;
+	win->parent_pid = parent_proc->id;
+	win->is_user = true;
+
+	for (int i = 0; i < EVENT_HANDLER_QUEUE_SIZE; i++)
+	{
+
+		win->event_handler.events[i].event_type = EVENT_INVALID;
+
+	}
+
+	uint32_t framebuffer_size_in_bytes = width*height/2;
+	uint32_t framebuffer_page_amt = framebuffer_size_in_bytes/PAGE_SIZE;
+
+    if (framebuffer_size_in_bytes % PAGE_SIZE != 0)
+        framebuffer_page_amt += 1;
+
+
+	win->w_buffer = allocate_user_space_pages(framebuffer_page_amt);
+	memset(win->w_buffer,0,width*height/2);
+	win->w_name = (char *)kcalloc(strlen(parent_proc->name)+1);
+	strcpy(win->w_name,parent_proc->name);
+
+	win->id = winsys_get_free_id();
+
+	win->next = 0;
+
+	working_window = win;
+
+	if (win_list)
+	{
+		PWINDOW tmp = win_list;
+
+		while(tmp->next)
+			tmp = tmp->next;
+
+		tmp->next = win;
+	}
+	else
+		win_list = win;
+
+	winsys_display_window(win);
+
+	memcpy((char *)local_win,(char *)win,sizeof(WINDOW));
 
 }
 
@@ -181,6 +259,13 @@ void winsys_paint_window(PWINDOW win)
 	if (!win)
 		return;
 
+	pdirectory *prevDir;
+
+	if (win->is_user){
+		prevDir = vmmngr_get_directory();
+		vmmngr_switch_pdirectory(getProcessByID(win->parent_pid)->pageDirectory);
+	}
+
 	uint8_t *buff = (uint8_t *)win->w_buffer;
 	uint8_t *vram = (uint8_t *)VIDEO_ADDRESS + win->y * PIXEL_WIDTH / PIXELS_PER_BYTE;
 
@@ -224,6 +309,9 @@ void winsys_paint_window(PWINDOW win)
 
 	}
 
+	if (win->is_user)
+		vmmngr_switch_pdirectory(prevDir);
+
 	winsys_paint_window_frame(win);
 
 }
@@ -231,6 +319,15 @@ void winsys_paint_window(PWINDOW win)
 void winsys_paint_window_section(PWINDOW win, int x, int y, int width, int height)
 {
 
+	if (!win)
+		return;
+
+	pdirectory *prevDir;
+
+	if (win->is_user){
+		prevDir = vmmngr_get_directory();
+		vmmngr_switch_pdirectory(getProcessByID(win->parent_pid)->pageDirectory);
+	}
 
 	uint32_t min_height = min(win->height,height);
 	uint32_t min_width = min(win->width,width);
@@ -281,6 +378,9 @@ void winsys_paint_window_section(PWINDOW win, int x, int y, int width, int heigh
 
 	}
 
+	if (win->is_user)
+		vmmngr_switch_pdirectory(prevDir);
+
 	winsys_paint_window_frame(win);
 
 }
@@ -313,6 +413,18 @@ void winsys_display_window_section(PWINDOW win, int x, int y, int width, int hei
 		tmp = tmp->next;
 
 	}
+
+}
+
+void winsys_display_window_section_user(PWINDOW win, int x, int y, int width, int height)
+{
+
+	if (!win)
+		return;
+
+	win = winsys_get_window_by_id(win->id);
+
+	winsys_display_window_section(win, x, y, width, height);
 
 }
 
@@ -580,6 +692,9 @@ void winsys_move_window(PWINDOW win, int x, int y)
 void winsys_remove_window(PWINDOW win)
 {
 
+	if (!win)
+		return;
+
 	winsys_clear_whole_window(win);
 
 	PWINDOW tmp = win_list;
@@ -608,6 +723,72 @@ void winsys_remove_window(PWINDOW win)
 	winsys_display_collided_windows(win);
 
 	kfree(win->w_buffer);
+	kfree(win->w_name);
+	kfree(win);
+
+}
+
+void winsys_remove_windows_by_pid(int pid)
+{
+
+	PWINDOW tmp = win_list;
+
+	while(tmp)
+	{
+
+		PWINDOW to_remove = tmp;
+		tmp = tmp->next;
+		if (to_remove->parent_pid == pid)
+			winsys_remove_window_user(to_remove);
+
+	}
+
+
+}
+
+void winsys_remove_window_user(PWINDOW win)
+{
+
+	if (!win)
+		return;
+
+	win = winsys_get_window_by_id(win->id);
+
+	winsys_clear_whole_window(win);
+
+	PWINDOW tmp = win_list;
+
+	if (tmp->id == win->id)
+		win_list = win->next;
+	else
+	{
+		while(tmp->next->id != win->id)
+			tmp = tmp->next;
+
+		tmp->next = win->next;
+	}
+
+	tmp = win_list;
+	
+	while(tmp->next)
+		tmp = tmp->next;
+
+	if (working_window->id == win->id)
+	{
+		working_window = 0;
+		winsys_set_working_window(tmp->id);
+	}
+
+	winsys_display_collided_windows(win);
+
+	uint32_t framebuffer_size_in_bytes = win->width*win->height/2;
+	uint32_t framebuffer_page_amt = framebuffer_size_in_bytes/PAGE_SIZE;
+
+    if (framebuffer_size_in_bytes % PAGE_SIZE != 0)
+        framebuffer_page_amt += 1;
+
+    for (int i = 0; i < framebuffer_page_amt; i++)
+		vmmngr_free_virt(getProcessByID(win->parent_pid)->pageDirectory, (void *) win->w_buffer + i*PAGE_SIZE);
 	kfree(win->w_name);
 	kfree(win);
 

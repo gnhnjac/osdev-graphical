@@ -489,7 +489,6 @@ void* create_kernel_stack() {
 }
 
 /* create a new kernel space stack for user mode process. */
-// NOTE **THIS ONLY WORKS FOR SINGLE THREADED PROCESSES SINCE IT'S ALLOCATED STATICALLY
 void *create_user_kernel_stack()
 {
 
@@ -508,6 +507,47 @@ void *create_user_kernel_stack()
 
         /* and return top of stack. */
         return ret;
+
+}
+
+/* allocate user space pages for user mode process. */
+void *allocate_user_space_pages(int page_amt)
+{
+
+/* we are reserving this area for 4k space chunks. */
+#define USER_SPACE 0xA0000000
+
+        void *loc;
+
+        pdirectory *pdir = vmmngr_get_directory();
+
+        int count = 0;
+        int i = 0;
+        while(1)
+        {
+
+                if (USER_SPACE+i*PAGE_SIZE >= 0xC0000000)
+                        return 0;
+
+                if (!vmmngr_check_virt_present(pdir, (void *)USER_SPACE+i*PAGE_SIZE))
+                {
+                        if (count == 0)
+                                loc = (void *)((uint32_t)USER_SPACE+i*PAGE_SIZE);
+                        count++;
+                }
+                else
+                        count = 0;
+
+                if (count == page_amt)
+                        break;
+
+                i++;
+        }
+
+        for (i = 0; i < page_amt; i++)
+                vmmngr_alloc_virt(pdir, loc+i*PAGE_SIZE, I86_PDE_WRITABLE|I86_PDE_USER, I86_PTE_WRITABLE|I86_PTE_USER);
+
+        return loc;
 
 }
 

@@ -4,6 +4,7 @@
 #include "heap.h"
 #include "low_level.h"
 #include "math.h"
+#include "memory.h"
 
 //uint32_t mask_table[256][2];
 
@@ -43,6 +44,14 @@ uint8_t *get_font_buffer()
 	return font_buff;
 
 }
+
+void load_font_to_buffer(void *buff)
+{
+
+	memcpy((char *)buff,font_buff,256*16);
+
+}
+
 int load_psf1_8x16(char *path)
 {
 

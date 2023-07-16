@@ -3,13 +3,19 @@
 #include "screen.h"
 #include "process.h"
 #include "scheduler.h"
+#include "graphics.h"
 
 extern void syscall_stub(void);
 
 void* _syscalls[] = {
 	print,
 	terminateProcess,
-	fork
+	fork,
+	winsys_create_win_user,
+	winsys_remove_window_user,
+	winsys_display_window_section_user,
+	load_font_to_buffer,
+	thread_sleep
 };
 
 void install_syscalls()

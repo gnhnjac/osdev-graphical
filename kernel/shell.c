@@ -684,10 +684,8 @@ int get_help_index(char *cmd)
 		return 11;
 	if(strcmp(cmd,"concat"))
 		return 12;
-	if(strcmp(cmd,"paint"))
-		return 13;
 	if(strcmp(cmd,"stats"))
-		return 14;
+		return 13;
 
 	return -1;
 

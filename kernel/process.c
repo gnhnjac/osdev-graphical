@@ -219,6 +219,9 @@ void terminateProcess () {
 
     }
 
+    // release windows created by process
+    winsys_remove_windows_by_pid(proc->id);
+
    printf("\nProcess %d terminated.\n",proc->id);
 
    removeProcessFromList(proc->id);
