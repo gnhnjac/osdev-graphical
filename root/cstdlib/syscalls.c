@@ -80,3 +80,13 @@ void sleep(uint32_t ms)
 	__asm__("int $0x80");
 
 }
+
+void get_window_event(PWINDOW win, PEVENT event_buff)
+{
+
+	__asm__("mov $8, %eax");
+	__asm__("mov %0, %%ebx" : : "m" (win));
+	__asm__("mov %0, %%ecx" : : "m" (event_buff));
+	__asm__("int $0x80");
+
+}

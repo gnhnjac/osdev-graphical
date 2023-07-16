@@ -15,7 +15,8 @@ void* _syscalls[] = {
 	winsys_remove_window_user,
 	winsys_display_window_section_user,
 	load_font_to_buffer,
-	thread_sleep
+	thread_sleep,
+	winsys_dequeue_from_event_handler_user
 };
 
 void install_syscalls()

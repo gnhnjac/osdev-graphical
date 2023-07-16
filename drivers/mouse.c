@@ -255,7 +255,7 @@ void mouse_handler()
 	{
 
 		PWINDOW win = winsys_get_window_from_collision(MOUSEX, MOUSEY);
-		if (win)
+		if (win && winsys_get_working_window() != win)
 			winsys_set_working_window(win->id);
 
 	}
@@ -278,7 +278,7 @@ void mouse_handler()
 		if (rel_x != 0 || rel_y != 0)
 			mouse_event.event_type |= EVENT_MOUSE_MOVE;
 
-		mouse_event.event_data = MOUSEX | (MOUSEY<<16);
+		mouse_event.event_data = (MOUSEX-working_win->x) | ((MOUSEY-working_win->y)<<16);
 
 		winsys_enqueue_to_event_handler(win_event_handler, mouse_event);
 

@@ -287,7 +287,7 @@ void keyboard_handler()
       else
         kbd_event.event_type = EVENT_KBD_PRESS;
 
-      kbd_event.event_data = scancode&((char)~0x80);
+      kbd_event.event_data = scancode&0x7F;
 
       if (check_caps())
         kbd_event.event_data |= 0x100;

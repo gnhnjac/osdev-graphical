@@ -11,6 +11,7 @@
 #include "process.h"
 #include "vmm.h"
 #include "scheduler.h"
+#include "mouse.h"
 
 static PWINDOW win_list;
 static PWINDOW working_window;
@@ -130,6 +131,7 @@ void winsys_create_win_user(PWINDOW local_win, int x, int y, int width, int heig
 	win->closable = false;
 	win->parent_pid = parent_proc->id;
 	win->is_user = true;
+	win->event_handler.event_mask = GENERAL_EVENT_KBD|GENERAL_EVENT_MOUSE;
 
 	for (int i = 0; i < EVENT_HANDLER_QUEUE_SIZE; i++)
 	{
@@ -322,6 +324,8 @@ void winsys_paint_window_section(PWINDOW win, int x, int y, int width, int heigh
 	if (!win)
 		return;
 
+	disable_mouse();
+
 	pdirectory *prevDir;
 
 	if (win->is_user){
@@ -381,6 +385,8 @@ void winsys_paint_window_section(PWINDOW win, int x, int y, int width, int heigh
 	if (win->is_user)
 		vmmngr_switch_pdirectory(prevDir);
 
+	enable_mouse();
+
 	winsys_paint_window_frame(win);
 
 }
@@ -388,8 +394,9 @@ void winsys_paint_window_section(PWINDOW win, int x, int y, int width, int heigh
 void winsys_display_window_section(PWINDOW win, int x, int y, int width, int height)
 {
 
-	if (!win)
+	if (!win || x >= win->width || y >= win->height)
 		return;
+
 	winsys_paint_window_section(win, x, y, width, height);
 
 	PWINDOW tmp = win->next;
@@ -398,15 +405,23 @@ void winsys_display_window_section(PWINDOW win, int x, int y, int width, int hei
 	{
 		if (winsys_check_collide(win,tmp))
 		{
-			uint32_t overlap_x = max(win->x, tmp->x);
+			int overlap_x = max(win->x, tmp->x);
+			int overlap_y = max(win->y, tmp->y);
+			int overlap_w = min(win->x+win->width,tmp->x+tmp->width)-overlap_x;
+			int overlap_h = min(win->y+win->height, tmp->y+tmp->height)-overlap_y;
 
-			uint32_t overlap_y = max(win->y, tmp->y);
+			int sect_x = win->x+max(x,0);
+			int sect_y = win->y+max(y,0);
+			int sect_w = min(win->width,width);
+			int sect_h = min(win->height,height);
 
-			uint32_t overlap_w = min(win->x+win->width,tmp->x+tmp->width)-overlap_x;
+			int overlap_sect_x = max(overlap_x,sect_x);
+			int overlap_sect_y = max(overlap_y,sect_y);
+			int overlap_sect_w = min(overlap_x+overlap_w,sect_x+sect_w)-overlap_sect_x;
+			int overlap_sect_h = min(overlap_y+overlap_h, sect_y+sect_h)-overlap_sect_y;
 
-			uint32_t overlap_h = min(win->y+win->height, tmp->y+tmp->height)-overlap_y;
-
-			winsys_display_window_section(tmp,overlap_x-tmp->x,overlap_y-tmp->y,overlap_w,overlap_h);
+			if (overlap_sect_w > 0 && overlap_sect_h > 0)
+				winsys_display_window_section(tmp,overlap_sect_x-tmp->x,overlap_sect_y-tmp->y,overlap_sect_w,overlap_sect_h);
 
 		}
 
@@ -441,13 +456,13 @@ void winsys_display_window_section_exclude_original(PWINDOW win, PWINDOW orig, i
 	{
 		if (winsys_check_collide(win,tmp) && tmp != orig)
 		{
-			uint32_t overlap_x = max(win->x, tmp->x);
+			int overlap_x = max(win->x, tmp->x);
 
-			uint32_t overlap_y = max(win->y, tmp->y);
+			int overlap_y = max(win->y, tmp->y);
 
-			uint32_t overlap_w = min(win->x+win->width,tmp->x+tmp->width)-overlap_x;
+			int overlap_w = min(win->x+win->width,tmp->x+tmp->width)-overlap_x;
 
-			uint32_t overlap_h = min(win->y+win->height, tmp->y+tmp->height)-overlap_y;
+			int overlap_h = min(win->y+win->height, tmp->y+tmp->height)-overlap_y;
 
 			winsys_display_window_section(tmp,overlap_x-tmp->x,overlap_y-tmp->y,overlap_w,overlap_h);
 
@@ -472,13 +487,13 @@ void winsys_display_window(PWINDOW win)
 	{
 		if (winsys_check_collide(win,tmp))
 		{
-			uint32_t overlap_x = max(win->x, tmp->x);
+			int overlap_x = max(win->x, tmp->x);
 
-			uint32_t overlap_y = max(win->y, tmp->y);
+			int overlap_y = max(win->y, tmp->y);
 
-			uint32_t overlap_w = min(win->x+win->width,tmp->x+tmp->width)-overlap_x;
+			int overlap_w = min(win->x+win->width,tmp->x+tmp->width)-overlap_x;
 
-			uint32_t overlap_h = min(win->y+win->height, tmp->y+tmp->height)-overlap_y;
+			int overlap_h = min(win->y+win->height, tmp->y+tmp->height)-overlap_y;
 
 			winsys_display_window_section(tmp,overlap_x-tmp->x,overlap_y-tmp->y,overlap_w,overlap_h);
 
@@ -503,13 +518,13 @@ void winsys_display_window_exclude_original(PWINDOW win, PWINDOW orig)
 	{
 		if (tmp != orig && winsys_check_collide(win,tmp))
 		{
-			uint32_t overlap_x = max(win->x, tmp->x);
+			int overlap_x = max(win->x, tmp->x);
 
-			uint32_t overlap_y = max(win->y, tmp->y);
+			int overlap_y = max(win->y, tmp->y);
 
-			uint32_t overlap_w = min(win->x+win->width,tmp->x+tmp->width)-overlap_x;
+			int overlap_w = min(win->x+win->width,tmp->x+tmp->width)-overlap_x;
 
-			uint32_t overlap_h = min(win->y+win->height, tmp->y+tmp->height)-overlap_y;
+			int overlap_h = min(win->y+win->height, tmp->y+tmp->height)-overlap_y;
 
 			winsys_display_window_section_exclude_original(tmp,orig,overlap_x-tmp->x,overlap_y-tmp->y,overlap_w,overlap_h);
 		}
@@ -643,14 +658,21 @@ PWINDOW winsys_get_window_from_collision(int x, int y)
 {
 
 	PWINDOW tmp = win_list;
+	PWINDOW top_collision = 0;
 
 	if (!tmp)
 		return 0;
 
-	while(!winsys_check_collide_coords(tmp,x,y) && tmp)
-		tmp = tmp->next;
+	while(tmp)
+	{
+		while(!winsys_check_collide_coords(tmp,x,y) && tmp)
+			tmp = tmp->next;
+		top_collision = tmp;
+		if (tmp)
+			tmp = tmp->next;
+	}
 
-	return tmp;
+	return top_collision;
 
 }
 
@@ -658,20 +680,30 @@ PWINDOW winsys_get_window_from_title_collision(int x, int y)
 {
 
 	PWINDOW tmp = win_list;
+	PWINDOW top_collision = 0;
 
 	if (!tmp)
 		return 0;
 
-	while(!winsys_check_title_collide(tmp,x,y) && tmp)
-		tmp = tmp->next;
-
-	if (winsys_check_close_collide(tmp,x,y))
+	while(tmp)
 	{
-		winsys_remove_window(tmp);
+		while(!winsys_check_title_collide(tmp,x,y) && tmp)
+			tmp = tmp->next;
+		top_collision = tmp;
+		if (tmp)
+			tmp = tmp->next;
+	}
+
+	if (!top_collision)
+		return 0;
+
+	if (winsys_check_close_collide(top_collision,x,y))
+	{
+		winsys_remove_window(top_collision);
 		return 0;
 	}
 
-	return tmp;
+	return top_collision;
 
 }
 
@@ -823,6 +855,26 @@ EVENT winsys_dequeue_from_event_handler(PEVENTHAND handler)
 	handler->events[EVENT_HANDLER_QUEUE_SIZE-1].event_type = EVENT_INVALID;
 
 	return e;
+
+}
+
+void winsys_dequeue_from_event_handler_user(PWINDOW win, PEVENT event_buff)
+{
+
+	PEVENTHAND handler = &winsys_get_window_by_id(win->id)->event_handler;
+
+	EVENT e = handler->events[0];
+
+	for (int i = 0; i < EVENT_HANDLER_QUEUE_SIZE-1; i++)
+	{
+
+		handler->events[i] = handler->events[i+1];
+
+	}
+
+	handler->events[EVENT_HANDLER_QUEUE_SIZE-1].event_type = EVENT_INVALID;
+
+	memcpy((char *)event_buff,(char *)&e,sizeof(EVENT));
 
 }
 

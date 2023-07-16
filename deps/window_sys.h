@@ -123,6 +123,7 @@ void winsys_remove_windows_by_pid(int pid);
 void winsys_remove_window_user(PWINDOW win);
 void winsys_enqueue_to_event_handler(PEVENTHAND handler, EVENT e);
 EVENT winsys_dequeue_from_event_handler(PEVENTHAND handler);
+void winsys_dequeue_from_event_handler_user(PWINDOW win, PEVENT event_buff);
 void gfx_paint_char(PWINDOW win, char c, int x, int y, uint8_t fgcolor);
 void gfx_paint_char_bg(PWINDOW win, char c, int x, int y, uint8_t bgcolor, uint8_t fgcolor);
 void gfx_set_pixel(PWINDOW win,int x, int y,uint8_t color);
