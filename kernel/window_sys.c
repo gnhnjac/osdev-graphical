@@ -149,8 +149,6 @@ void winsys_create_win_user(PWINDOW local_win, int x, int y, int width, int heig
 
 	win->w_buffer = allocate_user_space_pages(framebuffer_page_amt);
 	memset(win->w_buffer,0,width*height/2);
-	win->w_name = (char *)kcalloc(strlen(parent_proc->name)+1);
-	strcpy(win->w_name,parent_proc->name);
 
 	win->id = winsys_get_free_id();
 
@@ -170,10 +168,12 @@ void winsys_create_win_user(PWINDOW local_win, int x, int y, int width, int heig
 	else
 		win_list = win;
 
+	win->w_name = (char *)kcalloc(strlen(local_win->w_name)+1);
+	strcpy(win->w_name,local_win->w_name);
+
 	winsys_display_window(win);
 
 	memcpy((char *)local_win,(char *)win,sizeof(WINDOW));
-
 }
 
 int winsys_set_working_window(int wid)
@@ -385,9 +385,9 @@ void winsys_paint_window_section(PWINDOW win, int x, int y, int width, int heigh
 	if (win->is_user)
 		vmmngr_switch_pdirectory(prevDir);
 
-	enable_mouse();
-
 	winsys_paint_window_frame(win);
+
+	enable_mouse();
 
 }
 

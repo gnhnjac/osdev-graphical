@@ -16,6 +16,8 @@ void init_win();
 void _start()
 {
 	load_font((void *)font_buff);
+
+	win.w_name = "tictactoe";
 	create_window(&win,100,100,BLOCK_SIZE*3,BLOCK_SIZE*3);
 	init_win();
 	display_window_section(&win,0,0,win.width,win.height);
@@ -67,7 +69,7 @@ void _start()
 				break;
 
 			turn = !turn;
-			if (++count == 10)
+			if (++count == 9)
 				break;
 
 		}
@@ -79,7 +81,7 @@ void _start()
 	if (turn)
 		color = 0x4;
 
-	if (count == 10)
+	if (count == 9)
 		color = 0xd;
 
 	gfx_fill_rect(&win,0,0,win.width,win.height,color);

@@ -11,6 +11,7 @@ void cycle(int col, int cycler_start);
 void _start()
 {
 	load_font((void *)font_buff);
+	win.w_name = "party";
 	create_window(&win,100,100,PARTIERS*CHAR_WIDTH,CHAR_HEIGHT);
 
 	int off = 0;
