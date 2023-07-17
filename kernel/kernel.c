@@ -94,6 +94,8 @@ void kmain(uint32_t _, multiboot_info* bootinfo, uint32_t _kernel_size) {
 
 	init_screen();
 
+	//install_nic();
+
 	ps2_init();
 	timer_install();
 	keyboard_install();

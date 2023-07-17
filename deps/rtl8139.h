@@ -28,7 +28,7 @@ typedef struct rtl8139_dev {
 //refs
 // Four TXAD register, you must use a different one to send packet each time(for example, use the first one, second... fourth and back to the first);
 void install_nic();
-void send_packet(char *packet,int len);
+void send_packet(char *data,int len);
 void rtl8139_handler(struct regs *r);
 void receive_packet();
 char *get_mac_addr();

@@ -28,7 +28,7 @@ run: all
 	
 # Run qemu
 runq: all
-	@run_qemu_no_net.bat
+	@run_qemu_alt.bat
 
 pre-build:
 	@python update_headers.py
