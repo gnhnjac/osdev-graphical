@@ -667,9 +667,10 @@ PWINDOW winsys_get_window_from_collision(int x, int y)
 	{
 		while(!winsys_check_collide_coords(tmp,x,y) && tmp)
 			tmp = tmp->next;
+		if (!tmp)
+			break;
 		top_collision = tmp;
-		if (tmp)
-			tmp = tmp->next;
+		tmp = tmp->next;
 	}
 
 	return top_collision;
@@ -689,9 +690,10 @@ PWINDOW winsys_get_window_from_title_collision(int x, int y)
 	{
 		while(!winsys_check_title_collide(tmp,x,y) && tmp)
 			tmp = tmp->next;
+		if (!tmp)
+			break;
 		top_collision = tmp;
-		if (tmp)
-			tmp = tmp->next;
+		tmp = tmp->next;
 	}
 
 	if (!top_collision)
