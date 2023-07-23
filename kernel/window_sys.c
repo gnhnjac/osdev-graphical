@@ -561,12 +561,12 @@ void winsys_paint_window_section(PWINDOW win, int x, int y, int width, int heigh
 
 	}
 
+	enable_mouse();
+	
 	if (win->is_user)
 		vmmngr_switch_pdirectory(prevDir);
 
-	winsys_paint_window_frame(win);
-
-	enable_mouse();
+	//winsys_paint_window_frame(win);
 
 }
 
