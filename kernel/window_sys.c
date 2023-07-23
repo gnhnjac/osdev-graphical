@@ -255,6 +255,27 @@ void winsys_paint_window_frame(PWINDOW win)
 
 }
 
+uint32_t xor_masks[16] = {
+
+	0x0,
+	0x11111111,
+	0x22222222,
+	0x33333333,
+	0x44444444,
+	0x55555555,
+	0x66666666,
+	0x77777777,
+	0x88888888,
+	0x99999999,
+	0xAAAAAAAA,
+	0xBBBBBBBB,
+	0xCCCCCCCC,
+	0xDDDDDDDD,
+	0xEEEEEEEE,
+	0xFFFFFFFF,
+
+};
+
 void winsys_paint_window(PWINDOW win)
 {
 
@@ -283,6 +304,80 @@ void winsys_paint_window(PWINDOW win)
 			if (x >= PIXEL_WIDTH || y >= PIXEL_HEIGHT)
 				continue;
 
+			if (x % 8 == 0 && j < win->width-8 && x < PIXEL_WIDTH-8)
+			{
+
+				uint32_t eight_colors = *(uint32_t *)(buff+j/2);
+
+				if (j%2 != 0)
+					eight_colors = ((eight_colors&0xFFFFFFF0)>>4)|((*(buff+j/2+4)&0xF)<<28);
+
+				for (uint8_t color = 0; color < 16; color++)
+				{
+
+					uint32_t color_mask = eight_colors^(~xor_masks[color]);
+
+					if (color_mask == 0xFFFFFFFF)
+					{
+
+						outb(0x3C4, MEMORY_PLANE_WRITE_ENABLE);
+						outb(0x3CE,0x8);
+						outb(0x3CF,0xFF);
+
+						if (color != 0xF)
+						{
+							outb(0x3C5, 0xF);
+
+							vram[x/PIXELS_PER_BYTE] = 0;
+						}
+						if (color != 0)
+						{
+							outb(0x3C5, color);
+
+							vram[x/PIXELS_PER_BYTE] = 0xFF;
+						}
+						break;
+
+					}
+
+					uint8_t mask = 0;
+					uint8_t mask_mask = 0x80;
+
+					while (color_mask > 0)
+					{
+						if ((color_mask&0xF) == 0xF)
+							mask |= mask_mask;
+						mask_mask >>= 1;
+						color_mask >>= 4;
+
+					}
+
+					if (mask == 0)
+						continue;
+
+					outb(0x3C4, MEMORY_PLANE_WRITE_ENABLE);
+					outb(0x3CE,0x8);
+					outb(0x3CF,mask);
+
+					if (color != 0xF)
+					{
+						outb(0x3C5, 0xF);
+
+						vram[x/PIXELS_PER_BYTE] &= ~mask;
+					}
+					if (color != 0)
+					{
+						outb(0x3C5, color);
+
+						vram[x/PIXELS_PER_BYTE] |= mask;
+					}
+
+				}
+
+				j += 7;
+				continue;
+			}
+
 			uint8_t color = buff[j/2];
 
 			if (j % 2)
@@ -296,13 +391,18 @@ void winsys_paint_window(PWINDOW win)
 			outb(0x3CE,0x8);
 			outb(0x3CF,mask);
 
-			outb(0x3C5, 0xF);
+			if (color != 0xF)
+			{
+				outb(0x3C5, 0xF);
 
-			vram[x/PIXELS_PER_BYTE] &= ~mask;
+				vram[x/PIXELS_PER_BYTE] &= ~mask;
+			}
+			if (color != 0)
+			{
+				outb(0x3C5, color);
 
-			outb(0x3C5, color);
-
-			vram[x/PIXELS_PER_BYTE] |= mask;
+				vram[x/PIXELS_PER_BYTE] |= mask;
+			}
 
 		}
 
@@ -354,6 +454,80 @@ void winsys_paint_window_section(PWINDOW win, int x, int y, int width, int heigh
 			if (x >= PIXEL_WIDTH || y >= PIXEL_HEIGHT)
 				continue;
 
+			if (x % 8 == 0 && j < max_x+min_width-8 && x < PIXEL_WIDTH-8)
+			{
+
+				uint32_t eight_colors = *(uint32_t *)(buff+j/2);
+
+				if (j%2 != 0)
+					eight_colors = ((eight_colors&0xFFFFFFF0)>>4)|((*(buff+j/2+4)&0xF)<<28);
+
+				for (uint8_t color = 0; color < 16; color++)
+				{
+
+					uint32_t color_mask = eight_colors^(~xor_masks[color]);
+
+					if (color_mask == 0xFFFFFFFF)
+					{
+
+						outb(0x3C4, MEMORY_PLANE_WRITE_ENABLE);
+						outb(0x3CE,0x8);
+						outb(0x3CF,0xFF);
+
+						if (color != 0xF)
+						{
+							outb(0x3C5, 0xF);
+
+							vram[x/PIXELS_PER_BYTE] = 0;
+						}
+						if (color != 0)
+						{
+							outb(0x3C5, color);
+
+							vram[x/PIXELS_PER_BYTE] = 0xFF;
+						}
+						break;
+
+					}
+
+					uint8_t mask = 0;
+					uint8_t mask_mask = 0x80;
+
+					while (color_mask > 0)
+					{
+						if ((color_mask&0xF) == 0xF)
+							mask |= mask_mask;
+						mask_mask >>= 1;
+						color_mask >>= 4;
+
+					}
+
+					if (mask == 0)
+						continue;
+
+					outb(0x3C4, MEMORY_PLANE_WRITE_ENABLE);
+					outb(0x3CE,0x8);
+					outb(0x3CF,mask);
+
+					if (color != 0xF)
+					{
+						outb(0x3C5, 0xF);
+
+						vram[x/PIXELS_PER_BYTE] &= ~mask;
+					}
+					if (color != 0)
+					{
+						outb(0x3C5, color);
+
+						vram[x/PIXELS_PER_BYTE] |= mask;
+					}
+
+				}
+
+				j += 7;
+				continue;
+			}
+
 			uint8_t color = buff[j/2];
 
 			if (j % 2)
@@ -367,13 +541,18 @@ void winsys_paint_window_section(PWINDOW win, int x, int y, int width, int heigh
 			outb(0x3CE,0x8);
 			outb(0x3CF,mask);
 
-			outb(0x3C5, 0xF);
+			if (color != 0xF)
+			{
+				outb(0x3C5, 0xF);
 
-			vram[x/PIXELS_PER_BYTE] &= ~mask;
+				vram[x/PIXELS_PER_BYTE] &= ~mask;
+			}
+			if (color != 0)
+			{
+				outb(0x3C5, color);
 
-			outb(0x3C5, color);
-
-			vram[x/PIXELS_PER_BYTE] |= mask;
+				vram[x/PIXELS_PER_BYTE] |= mask;
+			}
 
 		}
 
@@ -802,14 +981,14 @@ void winsys_remove_window_user(PWINDOW win)
 		tmp->next = win->next;
 	}
 
-	tmp = win_list;
-	
-	while(tmp->next)
-		tmp = tmp->next;
-
 	if (working_window->id == win->id)
 	{
 		working_window = 0;
+
+		tmp = win_list;
+		while(tmp->next)
+			tmp = tmp->next;
+
 		winsys_set_working_window(tmp->id);
 	}
 
@@ -823,6 +1002,7 @@ void winsys_remove_window_user(PWINDOW win)
 
     for (int i = 0; i < framebuffer_page_amt; i++)
 		vmmngr_free_virt(getProcessByID(win->parent_pid)->pageDirectory, (void *) win->w_buffer + i*PAGE_SIZE);
+	
 	kfree(win->w_name);
 	kfree(win);
 
