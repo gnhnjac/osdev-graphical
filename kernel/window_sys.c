@@ -71,6 +71,22 @@ void winsys_init()
 
 }
 
+uint32_t get_win_page_amt(PWINDOW win)
+{
+
+	if (!win)
+		return 0;
+
+	uint32_t framebuffer_size_in_bytes = win->width*win->height/2;
+	uint32_t framebuffer_page_amt = framebuffer_size_in_bytes/PAGE_SIZE;
+
+    if (framebuffer_size_in_bytes % PAGE_SIZE != 0)
+        framebuffer_page_amt += 1;
+
+    return framebuffer_page_amt;
+
+}
+
 PWINDOW winsys_create_win(int x, int y, int width, int height, char *w_name, bool is_closable)
 {
 
@@ -140,14 +156,8 @@ void winsys_create_win_user(PWINDOW local_win, int x, int y, int width, int heig
 
 	}
 
-	uint32_t framebuffer_size_in_bytes = width*height/2;
-	uint32_t framebuffer_page_amt = framebuffer_size_in_bytes/PAGE_SIZE;
 
-    if (framebuffer_size_in_bytes % PAGE_SIZE != 0)
-        framebuffer_page_amt += 1;
-
-
-	win->w_buffer = allocate_user_space_pages(framebuffer_page_amt);
+	win->w_buffer = allocate_user_space_pages(get_win_page_amt(win));
 	memset(win->w_buffer,0,width*height/2);
 
 	win->id = winsys_get_free_id();
@@ -282,11 +292,13 @@ void winsys_paint_window(PWINDOW win)
 	if (!win)
 		return;
 
-	pdirectory *prevDir;
+	pdirectory *winDir;
 
 	if (win->is_user){
-		prevDir = vmmngr_get_directory();
-		vmmngr_switch_pdirectory(getProcessByID(win->parent_pid)->pageDirectory);
+		winDir = getProcessByID(win->parent_pid)->pageDirectory;
+		#define TMP_WIN_BUF_VIRT 0xB0000000
+		for (int i = 0; i < get_win_page_amt(win); i++)
+			vmmngr_mmap_virt2virt(winDir, vmmngr_get_directory(), win->w_buffer, (void *)((uint32_t)TMP_WIN_BUF_VIRT + i*PAGE_SIZE), I86_PDE_WRITABLE, I86_PTE_WRITABLE);
 	}
 
 	uint8_t *buff = (uint8_t *)win->w_buffer;
@@ -412,7 +424,10 @@ void winsys_paint_window(PWINDOW win)
 	}
 
 	if (win->is_user)
-		vmmngr_switch_pdirectory(prevDir);
+	{
+		for (int i = 0; i < get_win_page_amt(win); i++)
+			vmmngr_unmap_virt(winDir, (void *) TMP_WIN_BUF_VIRT + i*PAGE_SIZE); // MEMORY WILL LEAK SINCE WE ARE NOT FREEING THE PAGE TABLE!! thats fine though
+	}
 
 	winsys_paint_window_frame(win);
 
@@ -426,11 +441,12 @@ void winsys_paint_window_section(PWINDOW win, int x, int y, int width, int heigh
 
 	disable_mouse();
 
-	pdirectory *prevDir;
+	pdirectory *winDir;
 
 	if (win->is_user){
-		prevDir = vmmngr_get_directory();
-		vmmngr_switch_pdirectory(getProcessByID(win->parent_pid)->pageDirectory);
+		winDir = getProcessByID(win->parent_pid)->pageDirectory;
+		for (int i = 0; i < get_win_page_amt(win); i++)
+			vmmngr_mmap_virt2virt(winDir, vmmngr_get_directory(), win->w_buffer, (void *)((uint32_t)TMP_WIN_BUF_VIRT + i*PAGE_SIZE), I86_PDE_WRITABLE, I86_PTE_WRITABLE);
 	}
 
 	uint32_t min_height = min(win->height,height);
@@ -562,9 +578,12 @@ void winsys_paint_window_section(PWINDOW win, int x, int y, int width, int heigh
 	}
 
 	enable_mouse();
-	
+
 	if (win->is_user)
-		vmmngr_switch_pdirectory(prevDir);
+	{
+		for (int i = 0; i < get_win_page_amt(win); i++)
+			vmmngr_unmap_virt(winDir, (void *) TMP_WIN_BUF_VIRT + i*PAGE_SIZE); // MEMORY WILL LEAK SINCE WE ARE NOT FREEING THE PAGE TABLE!! thats fine though
+	}
 
 	//winsys_paint_window_frame(win);
 
@@ -617,6 +636,9 @@ void winsys_display_window_section_user(PWINDOW win, int x, int y, int width, in
 		return;
 
 	win = winsys_get_window_by_id(win->id);
+
+	if (!win)
+		return;
 
 	winsys_display_window_section(win, x, y, width, height);
 
@@ -922,18 +944,17 @@ void winsys_remove_window(PWINDOW win)
 		tmp->next = win->next;
 	}
 
-	tmp = win_list;
-	
-	while(tmp->next)
-		tmp = tmp->next;
-
 	if (working_window->id == win->id)
 	{
+		tmp = win_list;
+		while(tmp->next)
+			tmp = tmp->next;
 		working_window = 0;
 		winsys_set_working_window(tmp->id);
 	}
 
-	winsys_display_collided_windows(win);
+
+	//winsys_display_collided_windows(win);
 
 	kfree(win->w_buffer);
 	kfree(win->w_name);
@@ -952,7 +973,12 @@ void winsys_remove_windows_by_pid(int pid)
 		PWINDOW to_remove = tmp;
 		tmp = tmp->next;
 		if (to_remove->parent_pid == pid)
-			winsys_remove_window_user(to_remove);
+		{
+			if (to_remove->is_user)
+				winsys_remove_window_user(to_remove);
+			else
+				winsys_remove_window(to_remove);
+		}
 
 	}
 
@@ -966,6 +992,9 @@ void winsys_remove_window_user(PWINDOW win)
 		return;
 
 	win = winsys_get_window_by_id(win->id);
+
+	if (!win)
+		return;
 
 	winsys_clear_whole_window(win);
 
@@ -994,13 +1023,7 @@ void winsys_remove_window_user(PWINDOW win)
 
 	winsys_display_collided_windows(win);
 
-	uint32_t framebuffer_size_in_bytes = win->width*win->height/2;
-	uint32_t framebuffer_page_amt = framebuffer_size_in_bytes/PAGE_SIZE;
-
-    if (framebuffer_size_in_bytes % PAGE_SIZE != 0)
-        framebuffer_page_amt += 1;
-
-    for (int i = 0; i < framebuffer_page_amt; i++)
+    for (int i = 0; i < get_win_page_amt(win); i++)
 		vmmngr_free_virt(getProcessByID(win->parent_pid)->pageDirectory, (void *) win->w_buffer + i*PAGE_SIZE);
 	
 	kfree(win->w_name);

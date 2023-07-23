@@ -119,6 +119,28 @@ void * vmmngr_virt2phys(void *virt)
 
 }
 
+void * vmmngr_virt2phys_pdir(pdirectory *pdir, void *virt)
+{
+	//! get page directory
+   pdirectory* pageDirectory = pdir;
+
+   //! get page directory entry
+   pd_entry* pageDirectoryEntry = vmmngr_pdirectory_lookup_entry(pageDirectory,(virtual_addr)virt);
+   if (!pd_entry_is_present(*pageDirectoryEntry))
+   	return 0;
+
+   //! get page table
+   ptable* pageTable = (ptable*) pd_entry_pfn(*pageDirectoryEntry);
+
+   //! get page entry
+   pt_entry* pageEntry = vmmngr_ptable_lookup_entry(pageTable,(virtual_addr)virt);
+   if (!pt_entry_is_present(*pageEntry))
+   	return 0;
+   // return the frame + offset
+   return pt_entry_pfn(*pageEntry) + FRAME_OFFSET((uint32_t)virt);
+
+}
+
 void vmmngr_alloc_virt(pdirectory *dir, void *virt, uint32_t pde_flags, uint32_t pte_flags)
 {
 
@@ -236,6 +258,36 @@ void vmmngr_map_page (pdirectory *dir, void* phys, void* virt, uint32_t pde_flag
    pt_entry_set_frame ( page, (void *) phys);
    pt_entry_add_attrib( page, pte_flags);
    pt_entry_add_attrib ( page, I86_PTE_PRESENT);
+}
+
+void vmmngr_mmap_virt2virt(pdirectory *orig, pdirectory *new, void* orig_virt, void* new_virt, uint32_t pde_flags, uint32_t pte_flags)
+{
+
+   vmmngr_map_page(new,vmmngr_virt2phys_pdir(orig,orig_virt),new_virt,pde_flags,pte_flags);
+
+}
+
+void vmmngr_unmap_virt(pdirectory *dir, void *virt)
+{
+
+	//! get page directory
+   pdirectory* pageDirectory = dir;
+
+   //! get page table
+   pd_entry* e = vmmngr_pdirectory_lookup_entry(pageDirectory,(virtual_addr)virt);
+
+   if (!pd_entry_is_present(*e))
+   	return;
+
+   //! get table
+   ptable* table = (ptable*) pd_entry_pfn(*e);
+
+   //! get page
+   pt_entry* page = vmmngr_ptable_lookup_entry(table,(virtual_addr)virt);
+
+   pt_entry_set_frame ( page, 0);
+   pt_entry_del_attrib ( page, I86_PTE_PRESENT);
+
 }
 
 void vmmngr_pdirectory_clear(pdirectory *dir)

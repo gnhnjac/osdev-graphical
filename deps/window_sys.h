@@ -96,6 +96,7 @@ PWINDOW winsys_get_working_window();
 int winsys_get_free_id();
 PWINDOW winsys_get_window_by_id(int wid);
 void winsys_init();
+uint32_t get_win_page_amt(PWINDOW win);
 PWINDOW winsys_create_win(int x, int y, int width, int height, char *w_name, bool is_closable);
 void winsys_create_win_user(PWINDOW local_win, int x, int y, int width, int height);
 int winsys_set_working_window(int wid);
