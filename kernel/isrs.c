@@ -149,10 +149,7 @@ void fault_handler(struct regs *r)
 
         if (get_running_process())
         {
-            if (get_running_process()->id != 1)
-                terminateProcess();
-            else
-                for(;;);
+            terminateProcess();
         }
         else
             for (;;);
