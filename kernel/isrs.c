@@ -148,7 +148,12 @@ void fault_handler(struct regs *r)
             print(page_fault_exceptions[r->err_code]);
 
         if (get_running_process())
-            terminateProcess();
+        {
+            if (get_running_process()->id != 1)
+                terminateProcess();
+            else
+                for(;;);
+        }
         else
             for (;;);
     }
