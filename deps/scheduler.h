@@ -47,6 +47,7 @@ void execute_idle();
 void thread_execute(thread t);
 void* create_kernel_stack();
 void *create_user_kernel_stack();
+void *create_user_stack(pdirectory *addressSpace);
 void *allocate_user_space_pages(int page_amt);
 void  thread_create (thread *t, void *entry, void *esp, bool is_kernel);
 int fork();

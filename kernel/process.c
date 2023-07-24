@@ -115,26 +115,28 @@ int createProcess (char* exec) {
     proc->threadList = 0;
 
     /* Create userspace stack (4k size) */
-    void* stack = (void*) (imageInfo->ImageBase + imageInfo->ImageSize + PAGE_SIZE);
+    // void* stack = (void*) (imageInfo->ImageBase + imageInfo->ImageSize + PAGE_SIZE);
 
-    if ((uint32_t)stack % PAGE_SIZE != 0)
-        stack += PAGE_SIZE - (uint32_t)stack % PAGE_SIZE;
+    // if ((uint32_t)stack % PAGE_SIZE != 0)
+    //     stack += PAGE_SIZE - (uint32_t)stack % PAGE_SIZE;
 
-    /* map user process stack space */
-    vmmngr_alloc_virt (addressSpace, stack - PAGE_SIZE, // stack grows downwards
-    I86_PDE_WRITABLE|I86_PDE_USER,
-    I86_PTE_WRITABLE|I86_PTE_USER);
+    // /* map user process stack space */
+    // vmmngr_alloc_virt (addressSpace, stack - PAGE_SIZE, // stack grows downwards
+    // I86_PDE_WRITABLE|I86_PDE_USER,
+    // I86_PTE_WRITABLE|I86_PTE_USER);
+
+    void *stack = create_user_stack(addressSpace);
 
     /* create thread descriptor */
     thread *mainThread       = (thread *)kmalloc(sizeof(thread));
-    thread_create(mainThread,(void *)(imageInfo->EntryPointRVA + imageInfo->ImageBase),stack, false);
+    thread_create(mainThread,(void *)(imageInfo->EntryPointRVA + imageInfo->ImageBase),stack+PAGE_SIZE, false);
     vmmngr_switch_pdirectory(prevDir);
     enable_scheduling();
 
     proc->term = get_running_process()->term;
 
     mainThread->parent = proc;
-    mainThread->initialStack = stack;
+    mainThread->initialStack = stack+PAGE_SIZE;
     mainThread->isMain = true;
     mainThread->priority = proc->priority;
 

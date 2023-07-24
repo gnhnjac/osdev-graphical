@@ -489,7 +489,7 @@ void* create_kernel_stack() {
         return ret;
 }
 
-/* create a new kernel space stack for user mode process. */
+/* create a new kernel space stack for user mode thread. */
 void *create_user_kernel_stack()
 {
 
@@ -511,7 +511,23 @@ void *create_user_kernel_stack()
 
 }
 
-/* allocate user space pages for user mode process. */
+/* create a new user space stack for user mode thread. */
+void *create_user_stack(pdirectory *addressSpace)
+{
+
+        uint32_t loc = USER_KERNEL_STACK_ALLOC_BASE-PAGE_SIZE; // we're growing downwards from the kernel stack alloc base
+
+        while(vmmngr_check_virt_present(addressSpace, (void *)loc))
+                loc -= PAGE_SIZE;
+
+        vmmngr_alloc_virt(addressSpace, (void *)loc, I86_PDE_WRITABLE|I86_PDE_USER, I86_PTE_WRITABLE|I86_PTE_USER);
+
+        /* and return bot of stack. */
+        return (void*)loc;
+
+}
+
+/* allocate user space pages for user mode thread. */
 void *allocate_user_space_pages(int page_amt)
 {
 
@@ -652,17 +668,19 @@ int fork()
         thread *th = (thread *)kmalloc(sizeof(thread));
 
         /* Create userspace stack (4k size) */
-        void* stack = parent_task->initialStack;
+        //void* stack = parent_task->initialStack;
 
         pdirectory *addressSpace = vmmngr_get_directory();
 
-        while(vmmngr_check_virt_present(addressSpace,stack))
-                stack += PAGE_SIZE;
+        void *stack = create_user_stack(addressSpace);
 
-        /* map user process stack space */
-        vmmngr_alloc_virt (addressSpace, stack,
-        I86_PDE_WRITABLE|I86_PDE_USER,
-        I86_PTE_WRITABLE|I86_PTE_USER);
+        // while(vmmngr_check_virt_present(addressSpace,stack))
+        //         stack += PAGE_SIZE;
+
+        // /* map user process stack space */
+        // vmmngr_alloc_virt (addressSpace, stack,
+        // I86_PDE_WRITABLE|I86_PDE_USER,
+        // I86_PTE_WRITABLE|I86_PTE_USER);
 
         uint32_t stack_diff = stack-parent_task->initialStack+PAGE_SIZE;
 
