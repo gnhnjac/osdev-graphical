@@ -356,6 +356,7 @@ void scheduler_tick(void)
         scheduler_dispatch();
 
         // switch to it's address space if it's parent is different than the old parent
+        // cant do that here because we're still in the old esp, maybe it's not virtually mapped in the new page directory
         // if (prev_task.parent != _currentTask->parent || vmmngr_get_directory() != _currentTask->parent->pageDirectory)
         //         vmmngr_switch_pdirectory(_currentTask->parent->pageDirectory);
 }

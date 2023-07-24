@@ -89,7 +89,7 @@ int createProcess (char* exec) {
     clone_kernel_stacks(addressSpace);
 
     disable_scheduling();
-    vmmngr_switch_pdirectory(addressSpace);
+    vmmngr_switch_pdirectory(addressSpace); // this will only work when we're in a kernel process because were mapping kernel stacks to all processes, as opposed to user stacks which are individual.
     PImageInfo imageInfo = load_executable(addressSpace,exec);
 
     if (!imageInfo)
