@@ -426,7 +426,7 @@ void winsys_paint_window(PWINDOW win)
 	if (win->is_user)
 	{
 		for (int i = 0; i < get_win_page_amt(win); i++)
-			vmmngr_unmap_virt(winDir, (void *) TMP_WIN_BUF_VIRT + i*PAGE_SIZE); // MEMORY WILL LEAK SINCE WE ARE NOT FREEING THE PAGE TABLE!! thats fine though
+			vmmngr_unmap_virt(vmmngr_get_directory(), (void *) TMP_WIN_BUF_VIRT + i*PAGE_SIZE); // MEMORY WILL LEAK SINCE WE ARE NOT FREEING THE PAGE TABLE!! thats fine though as it's only if its called from a kernel proc
 	}
 
 	winsys_paint_window_frame(win);
@@ -582,7 +582,7 @@ void winsys_paint_window_section(PWINDOW win, int x, int y, int width, int heigh
 	if (win->is_user)
 	{
 		for (int i = 0; i < get_win_page_amt(win); i++)
-			vmmngr_unmap_virt(winDir, (void *) TMP_WIN_BUF_VIRT + i*PAGE_SIZE); // MEMORY WILL LEAK SINCE WE ARE NOT FREEING THE PAGE TABLE!! thats fine though
+			vmmngr_unmap_virt(vmmngr_get_directory(), (void *) TMP_WIN_BUF_VIRT + i*PAGE_SIZE); // MEMORY WILL LEAK SINCE WE ARE NOT FREEING THE PAGE TABLE!! thats fine though
 	}
 
 	//winsys_paint_window_frame(win);
