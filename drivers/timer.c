@@ -5,6 +5,8 @@
 #include "mouse.h"
 #include "strings.h"
 #include "cmos.h"
+#include "memory.h"
+#include "graphics.h"
 
 void timer_phase(int hz)
 {
@@ -105,9 +107,21 @@ void update_time()
         char second_str[2 + 1];
         int_to_str_padding(current_sec,second_str,10,2);
 
-        int cursor_coords = get_cursor();
-        set_cursor_coords(TIME_OFF,0);
-        screen_printf("%s:%s:%s",hour_str,min_str,second_str);
-        set_cursor(cursor_coords);
+        char *time_str = "xx:xx:xx";
+
+        strcpy(time_str,hour_str);
+        strcpy(time_str+3,min_str);
+        strcpy(time_str+6,second_str);
+        time_str[2] = ':';
+        time_str[5] = ':';
+
+        uint32_t off = TIME_OFF;
+
+        while(*time_str)
+        {
+            display_psf1_8x16_char_bg(*time_str,get_screen_x(off),0,0xF,0);
+            time_str++;
+            off++;
+        }
     }
 }
