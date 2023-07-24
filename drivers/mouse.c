@@ -44,6 +44,20 @@ uint8_t mouse_bitmap[18][10] = {
 
 uint8_t mouse_placeholder_buffer[18][10];
 
+int get_mouse_x()
+{
+
+	return MOUSEX;
+
+}
+
+int get_mouse_y()
+{
+
+	return MOUSEY;
+
+}
+
 void mouse_wait(uint8_t type)
 {
 	uint32_t _timeout = 1000000;
@@ -148,10 +162,9 @@ void enable_mouse()
 {
 	if (!mouse_installed)
 		return;
-	mouse_enabled = true;
 	save_to_mouse_buffer();
 	print_mouse();
-
+	mouse_enabled = true;
 }
 
 void mouse_handler()
@@ -237,7 +250,6 @@ void mouse_handler()
 		{
 
 			winsys_move_window(dragging_window,MOUSEX+WIN_FRAME_SIZE,MOUSEY+TITLE_BAR_HEIGHT);
-			save_to_mouse_buffer();
 			dragging_window = 0;
 
 		}

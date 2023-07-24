@@ -309,6 +309,11 @@ void winsys_paint_window(PWINDOW win)
 
 	uint8_t *vram = (uint8_t *)VIDEO_ADDRESS + win->y * PIXEL_WIDTH / PIXELS_PER_BYTE;
 
+	bool hide_mouse = winsys_check_collide_win_rect(win,get_mouse_x(),get_mouse_y(),MOUSE_WIDTH,MOUSE_HEIGHT);
+
+	if (hide_mouse)
+		disable_mouse();
+
 	for (int i = 0; i < win->height; i++)
 	{
 
@@ -428,13 +433,16 @@ void winsys_paint_window(PWINDOW win)
 
 	}
 
+	winsys_paint_window_frame(win);
+
+	if (hide_mouse)
+		enable_mouse();
+
 	if (win->is_user)
 	{
 		for (int i = 0; i < get_win_page_amt(win); i++)
 			vmmngr_unmap_virt(vmmngr_get_directory(), (void *) TMP_WIN_BUF_VIRT + i*PAGE_SIZE); // MEMORY WILL LEAK SINCE WE ARE NOT FREEING THE PAGE TABLE!! thats fine though as it's only if its called from a kernel proc
 	}
-
-	winsys_paint_window_frame(win);
 
 }
 
@@ -443,8 +451,6 @@ void winsys_paint_window_section(PWINDOW win, int x, int y, int width, int heigh
 
 	if (!win)
 		return;
-
-	disable_mouse();
 
 	pdirectory *winDir;
 
@@ -469,6 +475,11 @@ void winsys_paint_window_section(PWINDOW win, int x, int y, int width, int heigh
 	buff += max_y*win->width/2;
 
 	uint8_t *vram = (uint8_t *)VIDEO_ADDRESS + (win->y+max_y) * PIXEL_WIDTH / PIXELS_PER_BYTE;
+
+	bool hide_mouse = winsys_check_collide_rect_rect(win->x+max_x,win->y+max_y,min_width,min_height,get_mouse_x(),get_mouse_y(),MOUSE_WIDTH,MOUSE_HEIGHT);
+
+	if (hide_mouse)
+		disable_mouse();
 
 	for (int i = max_y; i < max_y+min_height; i++)
 	{
@@ -589,7 +600,8 @@ void winsys_paint_window_section(PWINDOW win, int x, int y, int width, int heigh
 
 	}
 
-	enable_mouse();
+	if (hide_mouse)
+		enable_mouse();
 
 	if (win->is_user)
 	{
@@ -808,6 +820,34 @@ bool winsys_check_collide(PWINDOW w1, PWINDOW w2)
 	int w2_y = w2->y-TITLE_BAR_HEIGHT;
 	int w2_w = w2->width + WIN_FRAME_SIZE*2;
 	int w2_h = w2->height + TITLE_BAR_HEIGHT+WIN_FRAME_SIZE;
+
+	return w2_x + w2_w > w1_x &&
+		   w2_y + w2_h > w1_y &&
+		   w1_x + w1_w > w2_x &&
+		   w1_y + w1_h > w2_y;
+
+}
+
+bool winsys_check_collide_win_rect(PWINDOW w1, int w2_x, int w2_y, int w2_w, int w2_h)
+{
+
+	if (!w1)
+		return false;
+
+	int w1_x = w1->x-WIN_FRAME_SIZE;
+	int w1_y = w1->y-TITLE_BAR_HEIGHT;
+	int w1_w = w1->width + WIN_FRAME_SIZE*2;
+	int w1_h = w1->height + TITLE_BAR_HEIGHT+WIN_FRAME_SIZE;
+
+	return w2_x + w2_w > w1_x &&
+		   w2_y + w2_h > w1_y &&
+		   w1_x + w1_w > w2_x &&
+		   w1_y + w1_h > w2_y;
+
+}
+
+bool winsys_check_collide_rect_rect(int w1_x, int w1_y, int w1_w, int w1_h, int w2_x, int w2_y, int w2_w, int w2_h)
+{
 
 	return w2_x + w2_w > w1_x &&
 		   w2_y + w2_h > w1_y &&
@@ -1190,6 +1230,28 @@ void gfx_set_pixel(PWINDOW win,int x, int y,uint8_t color)
 		return;
 
 	uint8_t *buff = (uint8_t *)((uint32_t)win->w_buffer + (y*win->width + x)/2);
+
+	uint8_t color_mask = color;
+	uint8_t cancel_mask = 0xF0;
+
+	if (x % 2)
+	{
+		color_mask <<= 4;
+		cancel_mask >>= 4;
+	}
+
+	*buff &= cancel_mask;
+	*buff |= color_mask;
+
+}
+
+void gfx_set_pixel_at_linear_off(PWINDOW win,int x, int y, uint8_t *off, uint8_t color)
+{
+
+	if (x >= win->width || y >= win->height || !win)
+		return;
+
+	uint8_t *buff = off;
 
 	uint8_t color_mask = color;
 	uint8_t cancel_mask = 0xF0;
@@ -1616,6 +1678,7 @@ void gfx_open_bmp16(char *path, int wx, int wy)
 	uint8_t padding_bytes = 4-(width/2+width%2)%4;
 	uint32_t padding_buff;
 
+	uint8_t *buff = (uint8_t *)((uint32_t)win->w_buffer + ((height-1)*win->width)/2);
 	for (int i = 0; i < height; i++)
 	{
 		int pix_count = 0;
@@ -1629,7 +1692,8 @@ void gfx_open_bmp16(char *path, int wx, int wy)
 
 			uint8_t color = two_pixels & 0xF;
 
-			gfx_set_pixel(win,j,height-i-1,color);
+			gfx_set_pixel_at_linear_off(win,j,height-i-1,buff+j/2,color);
+			//gfx_set_pixel(win,j,height-i-1,color);
 
 			pix_count++;
 
@@ -1640,7 +1704,10 @@ void gfx_open_bmp16(char *path, int wx, int wy)
 			volReadFile(&bmp,(char *)&padding_buff,padding_bytes);
 		}
 
+		buff -= win->width/2;
+
 	}
+
 	winsys_display_window(win);
 	volCloseFile(&bmp);
 
@@ -1689,6 +1756,7 @@ void gfx_paint_bmp16(PWINDOW win, char *path, int x, int y)
 	uint8_t padding_bytes = 4-(width/2+width%2)%4;
 	uint32_t padding_buff;
 
+	uint8_t *buff = (uint8_t *)((uint32_t)win->w_buffer + ((y+height-1)*win->width)/2);
 	for (int i = 0; i < height; i++)
 	{
 		int pix_count = 0;
@@ -1702,7 +1770,8 @@ void gfx_paint_bmp16(PWINDOW win, char *path, int x, int y)
 
 			uint8_t color = two_pixels & 0xF;
 
-			gfx_set_pixel(win,x+j,y+height-i-1,color);
+			gfx_set_pixel_at_linear_off(win,x+j,y+height-i-1,buff+(x+j)/2,color);
+			//gfx_set_pixel(win,x+j,y+height-i-1,color);
 
 			pix_count++;
 
@@ -1712,6 +1781,8 @@ void gfx_paint_bmp16(PWINDOW win, char *path, int x, int y)
 		{
 			volReadFile(&bmp,(char *)&padding_buff,padding_bytes);
 		}
+
+		buff -= win->width/2;
 
 	}
 
