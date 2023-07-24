@@ -298,10 +298,15 @@ void winsys_paint_window(PWINDOW win)
 		winDir = getProcessByID(win->parent_pid)->pageDirectory;
 		#define TMP_WIN_BUF_VIRT 0xB0000000
 		for (int i = 0; i < get_win_page_amt(win); i++)
-			vmmngr_mmap_virt2virt(winDir, vmmngr_get_directory(), win->w_buffer, (void *)((uint32_t)TMP_WIN_BUF_VIRT + i*PAGE_SIZE), I86_PDE_WRITABLE, I86_PTE_WRITABLE);
+			vmmngr_mmap_virt2virt(winDir, vmmngr_get_directory(), win->w_buffer + i*PAGE_SIZE, (void *)((uint32_t)TMP_WIN_BUF_VIRT + i*PAGE_SIZE), I86_PDE_WRITABLE, I86_PTE_WRITABLE);
 	}
 
-	uint8_t *buff = (uint8_t *)win->w_buffer;
+	uint8_t *buff;
+	if (win->is_user)
+		buff = (uint8_t *)TMP_WIN_BUF_VIRT;
+	else
+		buff = (uint8_t *)win->w_buffer;
+
 	uint8_t *vram = (uint8_t *)VIDEO_ADDRESS + win->y * PIXEL_WIDTH / PIXELS_PER_BYTE;
 
 	for (int i = 0; i < win->height; i++)
@@ -446,7 +451,7 @@ void winsys_paint_window_section(PWINDOW win, int x, int y, int width, int heigh
 	if (win->is_user){
 		winDir = getProcessByID(win->parent_pid)->pageDirectory;
 		for (int i = 0; i < get_win_page_amt(win); i++)
-			vmmngr_mmap_virt2virt(winDir, vmmngr_get_directory(), win->w_buffer, (void *)((uint32_t)TMP_WIN_BUF_VIRT + i*PAGE_SIZE), I86_PDE_WRITABLE, I86_PTE_WRITABLE);
+			vmmngr_mmap_virt2virt(winDir, vmmngr_get_directory(), win->w_buffer + i*PAGE_SIZE, (void *)((uint32_t)TMP_WIN_BUF_VIRT + i*PAGE_SIZE), I86_PDE_WRITABLE, I86_PTE_WRITABLE);
 	}
 
 	uint32_t min_height = min(win->height,height);
@@ -455,7 +460,14 @@ void winsys_paint_window_section(PWINDOW win, int x, int y, int width, int heigh
 	int max_x = max(x,0);
 	int max_y = max(y,0);
 
-	uint8_t *buff = (uint8_t *)win->w_buffer + max_y*win->width/2;
+	uint8_t *buff;
+	if (win->is_user)
+		buff = (uint8_t *)TMP_WIN_BUF_VIRT;
+	else
+		buff = (uint8_t *)win->w_buffer;
+
+	buff += max_y*win->width/2;
+
 	uint8_t *vram = (uint8_t *)VIDEO_ADDRESS + (win->y+max_y) * PIXEL_WIDTH / PIXELS_PER_BYTE;
 
 	for (int i = max_y; i < max_y+min_height; i++)
@@ -954,7 +966,7 @@ void winsys_remove_window(PWINDOW win)
 	}
 
 
-	//winsys_display_collided_windows(win);
+	winsys_display_collided_windows(win);
 
 	kfree(win->w_buffer);
 	kfree(win->w_name);

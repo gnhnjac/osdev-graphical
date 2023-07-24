@@ -260,6 +260,7 @@ void vmmngr_map_page (pdirectory *dir, void* phys, void* virt, uint32_t pde_flag
    pt_entry_add_attrib ( page, I86_PTE_PRESENT);
 }
 
+// basically shared memory
 void vmmngr_mmap_virt2virt(pdirectory *orig, pdirectory *new, void* orig_virt, void* new_virt, uint32_t pde_flags, uint32_t pte_flags)
 {
 
