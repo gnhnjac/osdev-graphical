@@ -63,8 +63,13 @@ type help in the shell to get a list of commands, type "help COMMAND" to get hel
 ## VIRTUAL MEMORY STRUCTURE
 
 0MB-1MB -> KERNEL BOOT STACK,BIOS INTERRUPTS
+
 1MB-2MB -> REAL KERNEL + GDT + IDT + PMM
+
 4MB-3GB -> USER LAND SPACE
+
 3GB -> VIRTUAL KERNEL
+
 3GB + 2MB-3MB -> KHEAP
+
 3GB + 3MB-4MB -> RAM FS
