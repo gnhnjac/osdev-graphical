@@ -24,7 +24,9 @@ FILE volOpenFile (const char* fname) {
 		if (_FileSystems [device]) {
 
 			//! set volume specific information and return file
+			// need to put a spinlock here!!!
 			FILE file = _FileSystems[device]->Open (filename);
+
 			file.deviceID = device;
 			return file;
 		}

@@ -112,6 +112,7 @@ bool ToDosFileName(char *filename, char DosFileName[11 + 1])
 
 FILE fat12fsys_root_open (char* FileName) {
 
+
 	FILE file;
 	unsigned char* buf;
 	PDIRECTORY directory;
@@ -158,7 +159,6 @@ FILE fat12fsys_root_open (char* FileName) {
 				else
 					file.flags = FS_FILE;
 
-
 				//! return file
 				return file;
 			}
@@ -166,6 +166,8 @@ FILE fat12fsys_root_open (char* FileName) {
 			directory++;
 		}
 	}
+
+
 
 	//! unable to find file
 	file.flags = FS_INVALID;

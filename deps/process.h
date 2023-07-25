@@ -1,6 +1,7 @@
 #pragma once
 #include <stdint.h>
 #include "vmm.h"
+#include "vfs.h"
 #include "window_sys.h"
 
 #define PROCESS_STATE_SLEEP  0
@@ -73,6 +74,15 @@ struct _thread {
    bool isMain;
 };
 
+typedef struct _file_desc
+{
+
+   FILE file;
+   uint32_t fd;
+   struct _file_desc *next;
+
+} FILE_DESC, *PFILE_DESC;
+
 struct _process {
    pdirectory*    pageDirectory;
    int            id;
@@ -81,6 +91,7 @@ struct _process {
    uint32_t  imageBase;
    uint32_t  imageSize;
    uintptr_t brk;
+   PFILE_DESC file_descs;
    terminal term;
    process* next;
    thread* threadList;
@@ -95,6 +106,12 @@ process *getProcessByID(int id);
 int getFreeID();
 int createProcess (char* exec);
 uintptr_t inc_proc_brk(uintptr_t inc);
+PFILE get_file_by_fd(process *proc, uint32_t fd);
+uint32_t append_fd_to_process(process *proc, FILE f);
+void close_fd(process *proc, uint32_t fd);
+uint32_t fopen(char *path);
+void fread(uint32_t fd, unsigned char* Buffer, unsigned int Length);
+void fclose(uint32_t fd);
 void insert_process(process *proc);
 void insert_thread_to_proc(process *proc, thread *t);
 void terminateProcess ();

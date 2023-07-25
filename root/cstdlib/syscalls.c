@@ -105,3 +105,38 @@ uintptr_t sbrk(uintptr_t inc)
 	return ret;
 
 }
+
+uint32_t fopen(char *path)
+{
+
+    __asm__("mov $10, %eax");
+	__asm__("mov %0, %%ebx" : : "m" (path));
+	__asm__("int $0x80");
+
+	uintptr_t ret = 0;
+
+	__asm__("mov %%eax, %0" : "=m" (ret));
+
+	return ret;
+
+}
+
+void fread(uint32_t fd, unsigned char* Buffer, unsigned int Length)
+{
+
+    __asm__("mov $12, %eax");
+	__asm__("mov %0, %%ebx" : : "m" (fd));
+	__asm__("mov %0, %%ecx" : : "m" (Buffer));
+	__asm__("mov %0, %%edx" : : "m" (Length));
+	__asm__("int $0x80");
+
+}
+
+void fclose(uint32_t fd)
+{
+
+    __asm__("mov $11, %eax");
+	__asm__("mov %0, %%ebx" : : "m" (fd));
+	__asm__("int $0x80");
+
+}

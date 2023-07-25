@@ -6,12 +6,14 @@
 void _start()
 {
 	
-	char *hello = "hello world!\n";
-	char *lol = malloc(strlen(hello));
+	uint32_t fd = fopen("a:\\home\\hello.txt");
 
-	strcpy(lol,hello);
+	char *buff = malloc(100);
 
-	print(lol);
+	fread(fd,buff,100);
+
+	printf("%s\n",buff);
+
 	terminate();
 	__builtin_unreachable();
 }

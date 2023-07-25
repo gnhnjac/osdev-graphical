@@ -20,6 +20,16 @@ void removeProcessFromList(int id)
 {
 
     process *tmp = processList;
+
+    if (tmp->next == 0)
+    {
+
+        if (tmp->id == id)
+            processList = 0;
+        return;
+
+    }
+
     process *prev = 0;
 
     while (tmp)
@@ -102,7 +112,7 @@ int createProcess (char* exec) {
 
     /* create PCB */
 
-    process *proc = (process *)kmalloc(sizeof(process));
+    process *proc = (process *)kcalloc(sizeof(process));
 
     proc->id            = getFreeID();
     proc->pageDirectory = addressSpace;
@@ -112,6 +122,7 @@ int createProcess (char* exec) {
     proc->imageBase = imageInfo->ImageBase;
     proc->imageSize = imageInfo->ImageSize;
     proc->brk = imageInfo->ImageBase+imageInfo->ImageSize;
+    proc->file_descs = 0;
     proc->name = 0;
     proc->threadList = 0;
 
@@ -129,7 +140,7 @@ int createProcess (char* exec) {
     void *stack = create_user_stack(addressSpace);
 
     /* create thread descriptor */
-    thread *mainThread       = (thread *)kmalloc(sizeof(thread));
+    thread *mainThread       = (thread *)kcalloc(sizeof(thread));
     thread_create(mainThread,(void *)(imageInfo->EntryPointRVA + imageInfo->ImageBase),stack+PAGE_SIZE, false);
     vmmngr_switch_pdirectory(prevDir);
     enable_scheduling();
@@ -192,6 +203,140 @@ uintptr_t inc_proc_brk(uintptr_t inc)
 
 }
 
+PFILE get_file_by_fd(process *proc, uint32_t fd)
+{
+
+    if (!proc)
+        return 0;
+
+    PFILE_DESC tmp = proc->file_descs;
+
+    while(tmp)
+    {
+
+        if (tmp->fd == fd)
+            return &tmp->file;
+
+        tmp = tmp->next;
+
+    }
+
+    return 0;
+
+}
+
+uint32_t append_fd_to_process(process *proc, FILE f)
+{
+
+    if (!proc)
+        return 0;
+
+    PFILE_DESC container = (PFILE_DESC)kcalloc(sizeof(FILE_DESC));
+
+    container->file = f;
+    container->fd = 1;
+    container->next = 0;
+
+    if (!proc->file_descs)
+    {
+        proc->file_descs = container;
+        return container->fd;
+    }
+
+    PFILE_DESC tmp = proc->file_descs;
+    PFILE_DESC prev = 0;
+
+    while (tmp)
+    {
+        if (tmp->fd >= container->fd)
+                container->fd=tmp->fd+1;
+
+        prev = tmp;
+        tmp = tmp->next;
+
+    }
+
+    prev->next = container;
+
+    return container->fd;
+
+}
+
+void close_fd(process *proc, uint32_t fd)
+{
+
+    if (!proc)
+        return;
+
+    PFILE_DESC tmp = proc->file_descs;
+
+    if (tmp->next == 0)
+    {
+
+        if (tmp->fd == fd)
+        {
+            volCloseFile(&tmp->file);
+            kfree(tmp);
+            proc->file_descs = 0;
+        }
+        return;
+
+    }
+
+    while(tmp->next)
+    {
+
+        if (tmp->next->fd == fd)
+        {
+
+            PFILE_DESC nxt = tmp->next->next;
+
+            volCloseFile(&tmp->next->file);
+            kfree(tmp->next);
+
+            tmp->next = nxt;
+
+            return;
+
+        }
+
+        tmp = tmp->next;
+
+    }
+
+}
+
+uint32_t fopen(char *path)
+{
+
+    process *proc = get_running_process();
+
+    if (!proc)
+        return 0;
+
+    FILE f = volOpenFile(path);
+
+    if (f.flags != FS_FILE)
+        return 0;
+
+    return append_fd_to_process(proc,f);
+
+}
+
+void fread(uint32_t fd, unsigned char* Buffer, unsigned int Length)
+{
+
+    volReadFile(get_file_by_fd(get_running_process(), fd), Buffer, Length);
+
+}
+
+void fclose(uint32_t fd)
+{
+
+    close_fd(get_running_process(),fd);
+
+}
+
 void insert_process(process *proc)
 {
 
@@ -229,6 +374,8 @@ void insert_thread_to_proc(process *proc, thread *t)
 
 void terminateProcess () {
 
+    __asm__("cli");
+
     process *proc = get_running_process();
 
     if (!proc)
@@ -255,6 +402,23 @@ void terminateProcess () {
 
         /* unmap and release page */
         vmmngr_free_virt (proc->pageDirectory, (void *)virt);
+
+    }
+
+    // release all fds
+
+    PFILE_DESC tmp_fd = proc->file_descs;
+
+    while (tmp_fd)
+    {
+
+        PFILE_DESC tmp = tmp_fd->next;
+
+        volCloseFile(&tmp_fd->file);
+        kfree(tmp_fd);
+
+        tmp_fd = tmp;
+
     }
 
     while (pThread)

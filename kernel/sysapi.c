@@ -17,7 +17,10 @@ void* _syscalls[] = {
 	load_font_to_buffer,
 	thread_sleep,
 	winsys_dequeue_from_event_handler_user,
-	inc_proc_brk
+	inc_proc_brk,
+	fopen,
+	fclose,
+	fread
 };
 
 void install_syscalls()
