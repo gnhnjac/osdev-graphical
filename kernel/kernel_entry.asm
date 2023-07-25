@@ -24,7 +24,7 @@ _vmmngr_flush_tlb_entry:
    sti
 
    pop ebp
-   ret 4
+   ret
 
 global _pmmngr_paging_enable
 
@@ -47,7 +47,7 @@ disable:
 done:
    popad
    pop ebp
-   ret 4
+   ret
 
 global _pmmngr_load_PDBR
 
@@ -462,3 +462,38 @@ interrupt_return:
    popa
 
    jmp _irq0
+
+; lock operations
+
+global _acquireLock
+global _releaseLock
+
+
+_acquireLock:
+   %define locked [esp+4]
+   mov ebx, locked
+.try_acquire:
+   mov     eax, 1          ; Set the EAX register to 1.
+   xchg    eax, [ebx]   ; Atomically swap the EAX register with
+                             ;  the lock variable.
+                             ; This will always store 1 to the lock, leaving
+                             ;  the previous value in the EAX register.
+   test    eax, eax        ; Test EAX with itself. Among other things, this will
+                             ;  set the processor's Zero Flag if EAX is 0.
+                             ; If EAX is 0, then the lock was unlocked and
+                             ;  we just locked it.
+                             ; Otherwise, EAX is 1 and we didn't acquire the lock.
+   jnz     .try_acquire       ; Jump back to the MOV instruction if the Zero Flag is
+                             ;  not set; the lock was previously locked, and so
+                             ; we need to spin until it becomes unlocked.
+   ret                     ; The lock has been acquired, return to the calling
+                             ;  function.
+
+
+_releaseLock:
+   %define locked [esp+4]
+   mov ebx, locked
+   xor     eax, eax        ; Set the EAX register to 0.
+   xchg    eax, [ebx]   ; Atomically swap the EAX register with
+                             ;  the lock variable.
+   ret           

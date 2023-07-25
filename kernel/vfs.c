@@ -1,7 +1,10 @@
 #include "vfs.h"
+#include "lock.h"
 
 //! File system list
 PFILESYSTEM _FileSystems[DEVICE_MAX];
+
+// NEED TO ADD SPINLOCK TO REST OF API
 
 FILE volOpenFile (const char* fname) {
 
@@ -24,8 +27,14 @@ FILE volOpenFile (const char* fname) {
 		if (_FileSystems [device]) {
 
 			//! set volume specific information and return file
-			// need to put a spinlock here!!!
+
+			static lock_t vfs_open_spinlock = ATOMIC_LOCK_INIT;
+
+			acquireLock(&vfs_open_spinlock);
+
 			FILE file = _FileSystems[device]->Open (filename);
+
+			releaseLock(&vfs_open_spinlock);
 
 			file.deviceID = device;
 			return file;
@@ -88,7 +97,13 @@ void volReadFile (PFILE file, unsigned char* Buffer, unsigned int Length) {
 	if (file)
 	{
 		if (_FileSystems [file->deviceID])
+		{
+			static lock_t vfs_read_spinlock = ATOMIC_LOCK_INIT;
+
+			acquireLock(&vfs_read_spinlock);
 			_FileSystems[file->deviceID]->Read (file,Buffer,Length);
+			releaseLock(&vfs_read_spinlock);
+		}
 	}
 }
 

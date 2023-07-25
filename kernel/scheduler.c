@@ -446,17 +446,18 @@ void idle_task() {
 
   /* setup other things since this is the first task called */
 
+  // thread_sleep(1000);
+
   // for (int i = 0; i < 4; i++)
   // {
 
   //       thread *t = (thread *)kmalloc(sizeof(thread));
-  //       thread_create(t, color_thread, create_kernel_stack(), true);
+  //       thread_create(t, lock_test, create_kernel_stack(), true);
   //       t->parent = kernel_proc;
   //       t->isMain = false;
   //       t->priority = PRIORITY_LOW;
   //       queue_insert(*t);
   //       insert_thread_to_proc(kernel_proc,t);
-  //       thread_sleep(100);
 
   // }
 
@@ -474,26 +475,26 @@ void idle_task() {
   //while(1) __asm__ ("pause");
 }
 
-//int off = 0;
-//char akos[] = {'a','k','o','s'};
-// void color_thread()
+// #include "lock.h"
+
+// lock_t lock = ATOMIC_LOCK_INIT;
+// int asd = 0;
+// void lock_test()
 // {
 
-//         disable_scheduling();
-
-//         int own_off = off;
-//         off++;
-
-//         enable_scheduling();
-
-//         int cycler = 0;
-//         while(1)
+//         for(int i = 0; i < 10; i++)
 //         {
-//                 display_psf1_8x16_char_bg(akos[own_off], get_screen_x(own_off),0, 0xf, cycler);
-//                 cycler = (cycler + 1) % 15;
-//                 thread_sleep(100);
+//                 acquireLock(&lock);
+//                 int var = asd;
+//                 var++;
+//                 thread_sleep(10);
+//                 asd = var;
+//                 releaseLock(&lock);
 //         }
 
+//         printf("done my part, asd: %d\n",asd);
+
+//         while(1);
 // }
 
 /* execute idle thread. */
