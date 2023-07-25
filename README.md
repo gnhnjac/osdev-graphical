@@ -1,4 +1,3 @@
-```
 ### AKOS OPERATING SYSTEM
 
 _________________
@@ -81,4 +80,3 @@ _________________
 3GB -> VIRTUAL KERNEL
 3GB + 2MB-3MB -> KHEAP
 3GB + 3MB-4MB -> RAM FS
-```
