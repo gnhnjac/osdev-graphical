@@ -39,12 +39,12 @@ WinImage
 - Window system running in the kernel that supports events
 
 - int 0x80 maskable syscalls including some unix ones:
-	print
-	terminate process
-	fork (creates new thread, not new process with copied virt space)
-	window system operations (see examples in root/script)
-	file operations
-	dynamic memory allocation
+	- print
+	- terminate process
+	- fork (creates new thread, not new process with copied virt space)
+	- window system operations (see examples in root/script)
+	- file operations
+	- dynamic memory allocation
 
 - 16 color vga 640x480 mode graphics
 
