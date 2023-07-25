@@ -6,8 +6,6 @@ Compiled using windows and gcc.
 
 # PREREQUISITES
 
-_________________
-
 mingw32 -> make, ld, gcc
 nasm
 python 3.x
@@ -17,8 +15,6 @@ dd
 WinImage
 
 # CURRENTLY SUPPORTS
-
-_________________
 
 - Boot from virtualfloppy drive with fat12 fs minidriver
 
@@ -56,13 +52,9 @@ _________________
 
 # BUILD 
 
-_________________
-
 run ./make in the original folder.
 
 # RUN INSTRUCTIONS
-
-_________________
 
 to start, run "make runq" to run with QEMU or "make run" to run with BOCHS, change the parameter in the makefile accordingly.
 
@@ -71,8 +63,6 @@ to view fat12 filesystem run "make inspect", the filesystem builds from the fold
 type help in the shell to get a list of commands, type "help COMMAND" to get help for a specific command.
 
 # VIRTUAL MEMORY STRUCTURE
-
-_________________
 
 0MB-1MB -> KERNEL BOOT STACK,BIOS INTERRUPTS
 1MB-2MB -> REAL KERNEL + GDT + IDT + PMM
