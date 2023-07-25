@@ -137,7 +137,7 @@ void queue_insert_prioritized(thread t) {
         new->thread = t;
         if (tmp)
         {
-                while (tmp->next && tmp->next->thread.priority <= t.priority)
+                while (tmp->next && tmp->thread.priority <= t.priority)
                         tmp = tmp->next;
                 new->next = tmp->next;
                 tmp->next = new;
@@ -166,7 +166,7 @@ void queue_insert_prioritized_queueEntry(queueEntry *new) {
         //memcpy(&new->thread,&t,sizeof(thread));
         if (tmp)
         {
-                while (tmp->next && tmp->next->thread.priority <= new->thread.priority)
+                while (tmp->next && tmp->thread.priority <= new->thread.priority)
                         tmp = tmp->next;
                 new->next = tmp->next;
                 tmp->next = new;
@@ -809,7 +809,7 @@ int fork()
         th->priority = parent_task->priority;
 
         insert_thread_to_proc(parent_task->parent,th);
-        queue_insert_prioritized(*th);
+        queue_insert(*th);
 
         frame->eip = read_eip();
 
