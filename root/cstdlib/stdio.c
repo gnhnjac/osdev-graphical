@@ -89,3 +89,15 @@ void printf(const char *fmt, ...)
 	return;
 
 }
+
+char *memset(char *dest, unsigned char val, int count)
+{
+    /* set 'count' bytes in 'dest' to 'val'. */
+
+    for (int i = 0; i < count; i++)
+    {
+
+    	*(dest + i) = val;
+
+    }
+}

@@ -80,17 +80,21 @@ struct _process {
    int            state;
    uint32_t  imageBase;
    uint32_t  imageSize;
+   uintptr_t brk;
    terminal term;
    process* next;
    thread* threadList;
    char *name;
 };
 
+#define SBRK_LIM 0x40000000
+
 //refs
 void removeProcessFromList(int id);
 process *getProcessByID(int id);
 int getFreeID();
 int createProcess (char* exec);
+uintptr_t inc_proc_brk(uintptr_t inc);
 void insert_process(process *proc);
 void insert_thread_to_proc(process *proc, thread *t);
 void terminateProcess ();

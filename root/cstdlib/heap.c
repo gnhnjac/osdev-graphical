@@ -1,58 +1,36 @@
+#include "syscalls.h"
+#include "stdio.h"
 #include "heap.h"
-#include "memory.h"
-#include "screen.h"
-#include "process.h"
- 
+#include <stdint.h>
+
 //! number of blocks currently in use
 static uint32_t	_alloc_used_blocks=0;
  
 //! maximum number of available memory blocks
-static const uint32_t	_alloc_max_blocks=(HEAP_CEILING-HEAP_BASE)/HEAP_BLOCK_SIZE;
+static const uint32_t	_alloc_max_blocks=HEAP_LIM/HEAP_BLOCK_SIZE;
  
 //! memory map bit array. Each bit represents a memory block
-static uint32_t _alloc_memory_map[((HEAP_CEILING-HEAP_BASE)/HEAP_BLOCK_SIZE)/32];
-
-void *kmalloc(uint32_t size)
-{
+static uint32_t *_alloc_memory_map;
 	
-	size += BLOCK_AMT_DESC_SIZE;
+static uintptr_t _sbrk_top = 0;
 
-	if (size % HEAP_BLOCK_SIZE != 0)
-		size += HEAP_BLOCK_SIZE - size % HEAP_BLOCK_SIZE;
+static uintptr_t HEAP_BASE = 0;
 
-	uint32_t block_amt = size/HEAP_BLOCK_SIZE;
+static bool heap_initialized = false;
 
-	void *phys_addr = kmalloc_alloc_blocks(block_amt);
-
-	if (!phys_addr)
-		return 0;
-
-	*((uint32_t *)phys_addr) = block_amt;
-
-
-	return phys_addr+BLOCK_AMT_DESC_SIZE;
-
+static int alloc_get_block_count()
+{
+	return _alloc_max_blocks;
 }
 
-void *kcalloc(uint32_t size)
+static int alloc_get_used_blocks()
 {
-
-	void *ptr = kmalloc(size);
-
-	memset(ptr,0,size);
-
-	return ptr;
-
+	return _alloc_used_blocks;
 }
 
-void kfree(void *phys_addr)
+static int alloc_get_free_block_count()
 {
-	if (phys_addr)
-	{
-		uint32_t block_amt = *((uint32_t *)((uint32_t)phys_addr-BLOCK_AMT_DESC_SIZE));
-
-		kmalloc_free_blocks(phys_addr-BLOCK_AMT_DESC_SIZE, (uint32_t)block_amt);
-	}
+	return _alloc_max_blocks-_alloc_used_blocks;
 }
 
 // occupy a block
@@ -75,7 +53,7 @@ static inline bool _alloc_mmap_test(int bit) {
 }
 
 // returns the first free block we can use
-int _alloc_mmap_first_free() {
+static int _alloc_mmap_first_free() {
  
 	//! find the first free bit
 	for (uint32_t i=0; i< alloc_get_block_count() / 32; i++) {
@@ -94,7 +72,7 @@ int _alloc_mmap_first_free() {
 }
 
 // returns the first free block sequence we can use
-int _alloc_mmap_first_free_s(int seq_len) {
+static int _alloc_mmap_first_free_s(int seq_len) {
  	
  	int current_seq_len = 0;
  	int current_set_first_index = 0;
@@ -132,24 +110,27 @@ int _alloc_mmap_first_free_s(int seq_len) {
 	return -1;
 }
 
-int alloc_get_block_count()
+static void heap_init()
 {
-	return _alloc_max_blocks;
-}
 
-int alloc_get_used_blocks()
-{
-	return _alloc_used_blocks;
-}
+	_alloc_memory_map = (uint32_t *)sbrk((HEAP_LIM/HEAP_BLOCK_SIZE)/8);
 
-int alloc_get_free_block_count()
-{
-	return _alloc_max_blocks-_alloc_used_blocks;
+	memset((char *)_alloc_memory_map, 0, ((HEAP_LIM/HEAP_BLOCK_SIZE)/8));
+
+	HEAP_BASE = (uintptr_t)(((uint32_t)_alloc_memory_map)+(HEAP_LIM/HEAP_BLOCK_SIZE)/8);
+	_sbrk_top = HEAP_BASE;
+
+	heap_initialized = true;
+
+
 }
 
 // allocate a block of memory and get it's address
-void* kmalloc_alloc_block() {
- 
+void* malloc_alloc_block() {
+ 	
+	if (!heap_initialized)
+		heap_init();
+
 	if (alloc_get_free_block_count() <= 0)
 		return 0;	//out of memory
  
@@ -161,14 +142,22 @@ void* kmalloc_alloc_block() {
 	_alloc_mmap_set (frame);
  
 	uint32_t addr = HEAP_BASE + frame * HEAP_BLOCK_SIZE;
+	if (addr+HEAP_BLOCK_SIZE > _sbrk_top)
+	{
+		sbrk(HEAP_BLOCK_SIZE);
+		_sbrk_top += HEAP_BLOCK_SIZE;
+	}
 	_alloc_used_blocks++;
  
 	return (void*)addr;
 }
 
 // allocate a block of memory and get it's address
-void* kmalloc_alloc_blocks(int seq_len) {
- 
+void* malloc_alloc_blocks(int seq_len) {
+
+	if (!heap_initialized)
+		heap_init();
+
 	if (alloc_get_free_block_count() <= 0)
 		return 0;	//out of memory
  
@@ -178,6 +167,13 @@ void* kmalloc_alloc_blocks(int seq_len) {
 		return 0;	//out of memory
  
 	uint32_t addr = HEAP_BASE + frame * HEAP_BLOCK_SIZE;
+
+	if (addr+seq_len*HEAP_BLOCK_SIZE > _sbrk_top)
+	{
+		uint32_t inc = addr+seq_len*HEAP_BLOCK_SIZE-_sbrk_top;
+		sbrk(inc);
+		_sbrk_top += inc;
+	}
 
 	for(; seq_len > 0; seq_len--)
 	{
@@ -189,7 +185,7 @@ void* kmalloc_alloc_blocks(int seq_len) {
 }
 
 
-void kmalloc_free_block(void* p) {
+void malloc_free_block(void* p) {
  
 	uint32_t addr = (uint32_t)p;
 	int frame = (addr-HEAP_BASE) / HEAP_BLOCK_SIZE;
@@ -199,7 +195,7 @@ void kmalloc_free_block(void* p) {
 	_alloc_used_blocks--;
 }
 
-void kmalloc_free_blocks(void* p, int seq_len) {
+void malloc_free_blocks(void* p, int seq_len) {
  
 	uint32_t addr = (uint32_t)p;
 	int frame = (addr-HEAP_BASE) / HEAP_BLOCK_SIZE;
@@ -210,36 +206,4 @@ void kmalloc_free_blocks(void* p, int seq_len) {
 		_alloc_used_blocks--;
 	}
  
-}
-
-void heap_init()
-{
-
-	memset((char *)_alloc_memory_map, 0, (((HEAP_CEILING-HEAP_BASE)/HEAP_BLOCK_SIZE)/32));
-
-}
-
-void print_heap_stats()
-{
-
-	printf("available blocks: %d\nused blocks: %d\n",_alloc_max_blocks,_alloc_used_blocks);
-	print("heap image:\n");
-
-	for (int i = 0; i < alloc_get_block_count()/128; i++)
-	{
-
-			if (i % 50 == 0)
-				print("\n");
-
-			uint32_t avg = 0;
-			for(int j = 0; j < 128; j++)
-			{
-				avg += _alloc_mmap_test(i*128+j);
-			}
-
-			putchar((avg > 128) ? 'O' : 'F');
-
-
-	}
-
 }

@@ -90,3 +90,18 @@ void get_window_event(PWINDOW win, PEVENT event_buff)
 	__asm__("int $0x80");
 
 }
+
+uintptr_t sbrk(uintptr_t inc)
+{
+
+	__asm__("mov $9, %eax");
+	__asm__("mov %0, %%ebx" : : "m" (inc));
+	__asm__("int $0x80");
+
+	uintptr_t ret = 0;
+
+	__asm__("mov %%eax, %0" : "=m" (ret));
+
+	return ret;
+
+}

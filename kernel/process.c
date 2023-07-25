@@ -111,6 +111,7 @@ int createProcess (char* exec) {
     proc->next = 0;
     proc->imageBase = imageInfo->ImageBase;
     proc->imageSize = imageInfo->ImageSize;
+    proc->brk = imageInfo->ImageBase+imageInfo->ImageSize;
     proc->name = 0;
     proc->threadList = 0;
 
@@ -149,6 +150,46 @@ int createProcess (char* exec) {
     insert_thread_to_proc(proc,mainThread);
 
     return proc->id;
+}
+
+uintptr_t inc_proc_brk(uintptr_t inc)
+{
+
+    process *proc = get_running_process();
+
+    if (proc == 0)
+        return 0;
+
+    if (proc->brk == 0)
+        return 0;
+
+    pdirectory *pdir = vmmngr_get_directory();
+
+    uintptr_t old_brk = proc->brk;
+
+    if (old_brk+inc > proc->imageBase+proc->imageSize+SBRK_LIM)
+        return 0;
+
+    proc->brk = old_brk+inc;
+
+    if (old_brk%PAGE_SIZE + inc >= PAGE_SIZE || old_brk%PAGE_SIZE == 0)
+    {
+        uintptr_t page_aligned = old_brk;
+        page_aligned -= page_aligned%PAGE_SIZE;
+
+        while(page_aligned < proc->brk)
+        {
+
+            vmmngr_alloc_virt(pdir, (void *)page_aligned, I86_PDE_WRITABLE|I86_PDE_USER,I86_PTE_WRITABLE|I86_PTE_USER);
+
+            page_aligned += PAGE_SIZE;
+
+        }
+
+    }
+
+    return old_brk;
+
 }
 
 void insert_process(process *proc)
@@ -204,6 +245,13 @@ void terminateProcess () {
 
     /* unmap and release image memory */
     for (uint32_t virt = proc->imageBase; virt < proc->imageBase+fileSize; virt+=4096) {
+
+        /* unmap and release page */
+        vmmngr_free_virt (proc->pageDirectory, (void *)virt);
+    }
+
+    /* unmap and release sbrked memory */
+    for (uint32_t virt = proc->imageBase+fileSize; virt < proc->imageBase+fileSize+SBRK_LIM; virt+=4096) {
 
         /* unmap and release page */
         vmmngr_free_virt (proc->pageDirectory, (void *)virt);
