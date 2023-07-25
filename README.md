@@ -1,10 +1,8 @@
-### AKOS OPERATING SYSTEM
-
-_________________
+# AKOS OPERATING SYSTEM
 
 Compiled using windows and gcc.
 
-**PREREQUISITES**
+## PREREQUISITES
 
 _________________
 
@@ -16,7 +14,7 @@ qemu emulator/bochs emulator (bochs is much slower)
 dd
 WinImage
 
-**CURRENTLY SUPPORTS**
+## CURRENTLY SUPPORTS
 
 _________________
 
@@ -54,13 +52,13 @@ _________________
 
 - 16 color vga 640x480 mode graphics
 
-**BUILD**
+## BUILD
 
 _________________
 
 run ./make in the original folder.
 
-**RUN INSTRUCTIONS**
+## RUN INSTRUCTIONS
 
 _________________
 
@@ -70,7 +68,7 @@ to view fat12 filesystem run "make inspect", the filesystem builds from the fold
 
 type help in the shell to get a list of commands, type "help COMMAND" to get help for a specific command.
 
-**VIRTUAL MEMORY STRUCTURE**
+## VIRTUAL MEMORY STRUCTURE
 
 _________________
 
