@@ -438,44 +438,55 @@ void idle_task() {
 
   /* setup other things since this is the first task called */
 
-  for (int i = 0; i < 4; i++)
+  // for (int i = 0; i < 4; i++)
+  // {
+
+  //       thread *t = (thread *)kmalloc(sizeof(thread));
+  //       thread_create(t, color_thread, create_kernel_stack(), true);
+  //       t->parent = kernel_proc;
+  //       t->isMain = false;
+  //       t->priority = PRIORITY_LOW;
+  //       queue_insert(*t);
+  //       insert_thread_to_proc(kernel_proc,t);
+  //       thread_sleep(100);
+
+  // }
+
+  int cycler = 0;
+  while(1)
   {
-
-        thread *t = (thread *)kmalloc(sizeof(thread));
-        thread_create(t, color_thread, create_kernel_stack(), true);
-        t->parent = kernel_proc;
-        t->isMain = false;
-        t->priority = PRIORITY_LOW;
-        queue_insert(*t);
-        insert_thread_to_proc(kernel_proc,t);
-        thread_sleep(100);
-
+          display_psf1_8x16_char_bg('a', get_screen_x(0),0, 0xf, (cycler+3)%15);
+          display_psf1_8x16_char_bg('k', get_screen_x(1),0, 0xf, (cycler+2)%15);
+          display_psf1_8x16_char_bg('o', get_screen_x(2),0, 0xf, (cycler+1)%15);
+          display_psf1_8x16_char_bg('s', get_screen_x(3),0, 0xf, cycler);
+          cycler = (cycler + 1) % 15;
+          thread_sleep(300);
   }
 
-  while(1) __asm__ ("pause");
+  //while(1) __asm__ ("pause");
 }
 
-int off = 0;
-char akos[] = {'a','k','o','s'};
-void color_thread()
-{
+//int off = 0;
+//char akos[] = {'a','k','o','s'};
+// void color_thread()
+// {
 
-        disable_scheduling();
+//         disable_scheduling();
 
-        int own_off = off;
-        off++;
+//         int own_off = off;
+//         off++;
 
-        enable_scheduling();
+//         enable_scheduling();
 
-        int cycler = 0;
-        while(1)
-        {
-                display_psf1_8x16_char_bg(akos[own_off], get_screen_x(own_off),0, 0xf, cycler);
-                cycler = (cycler + 1) % 15;
-                thread_sleep(100);
-        }
+//         int cycler = 0;
+//         while(1)
+//         {
+//                 display_psf1_8x16_char_bg(akos[own_off], get_screen_x(own_off),0, 0xf, cycler);
+//                 cycler = (cycler + 1) % 15;
+//                 thread_sleep(100);
+//         }
 
-}
+// }
 
 /* execute idle thread. */
 void execute_idle() {
