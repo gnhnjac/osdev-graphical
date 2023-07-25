@@ -124,10 +124,10 @@ void queue_insert(thread t) {
 /* insert thread by priority. */
 void queue_insert_prioritized(thread t) {
 
-        bool scheduling_enabled = (_currentTask != 0);
+        //bool scheduling_enabled = (_currentTask != 0);
 
-        if (scheduling_enabled)
-                disable_scheduling();
+        //if (scheduling_enabled)
+        //        disable_scheduling();
 
         queueEntry *tmp = _readyQueue;
 
@@ -147,8 +147,37 @@ void queue_insert_prioritized(thread t) {
                 _readyQueue = new;
         }
 
-        if (scheduling_enabled)
-                enable_scheduling();
+        //if (scheduling_enabled)
+        //        enable_scheduling();
+
+}
+
+/* insert queue entry by priority. */
+void queue_insert_prioritized_queueEntry(queueEntry *new) {
+
+        //bool scheduling_enabled = (_currentTask != 0);
+
+        //if (scheduling_enabled)
+        //        disable_scheduling();
+
+        queueEntry *tmp = _readyQueue;
+
+        new->next = 0;
+        //memcpy(&new->thread,&t,sizeof(thread));
+        if (tmp)
+        {
+                while (tmp->next && tmp->thread.priority <= new->thread.priority)
+                        tmp = tmp->next;
+                new->next = tmp->next;
+                tmp->next = new;
+        }
+        else
+        {
+                _readyQueue = new;
+        }
+
+        //if (scheduling_enabled)
+        //        enable_scheduling();
 
 }
 
@@ -307,8 +336,7 @@ void scheduler_dispatch () {
         do
         {       
                 queueEntry *tmp = queue_remove();
-                queue_insert_prioritized(tmp->thread);
-                kfree(tmp);
+                queue_insert_prioritized_queueEntry(tmp);
                 _currentTask = queue_get();
 
                 is_terminate = false;

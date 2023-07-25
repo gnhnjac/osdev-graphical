@@ -427,6 +427,11 @@ _scheduler_isr:
    ; restore page directory
    mov ebx, [eax+16] ; the parent process pointer
    mov ecx, [ebx] ; page directory is right at the start of the process struct
+
+   mov ebx, cr3
+   cmp ecx, ebx
+   je same_pdir ; not need to switch pdirectory if it's the same
+
    mov cr3, ecx
 
    ; officially restore page directory now that the stack can be used
@@ -434,9 +439,9 @@ _scheduler_isr:
    call _vmmngr_set_pdirectory_ptr
    add esp, 4
 
+same_pdir:
    ;
    ; Call tss_set_stack (kernelSS, kernelESP).
-   ; This code will be needed later for user tasks.
    ;
    mov eax, [__currentTask]
    push dword [eax+8]

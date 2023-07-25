@@ -30,6 +30,7 @@ void thread_wake();
 void clear_queue();
 void queue_insert(thread t);
 void queue_insert_prioritized(thread t);
+void queue_insert_prioritized_queueEntry(queueEntry *new);
 queueEntry *queue_remove();
 thread *queue_get();
 thread *queue_get_last();
