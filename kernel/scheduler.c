@@ -252,7 +252,10 @@ void queue_delete_first()
 thread get_thread_by_tid(int tid)
 {
 
-        disable_scheduling();
+        bool scheduling_enabled = (_currentTask != 0);
+
+        if (scheduling_enabled)
+                disable_scheduling();
 
         thread t;
         t.tid = -1;
@@ -272,7 +275,8 @@ thread get_thread_by_tid(int tid)
 
         }
 
-        enable_scheduling();
+        if (scheduling_enabled)
+                enable_scheduling();
 
         return t;
 
@@ -281,7 +285,10 @@ thread get_thread_by_tid(int tid)
 void remove_by_tid(int tid)
 {
 
-        disable_scheduling();
+        bool scheduling_enabled = (_currentTask != 0);
+
+        if (scheduling_enabled)
+                disable_scheduling();
 
         queueEntry *tmp = _readyQueue;
         queueEntry *prev = 0;
@@ -301,8 +308,9 @@ void remove_by_tid(int tid)
                 tmp = tmp->next;
 
         }
-
-        enable_scheduling();
+        
+        if (scheduling_enabled)
+                enable_scheduling();
 
 }
 
