@@ -714,8 +714,6 @@ void *insert_argv_to_process_stack(char *args, void *esp)
         else
                 arg_count = count_substrings(args, ' '); // including cmd
 
-        printf("got %d args\n",arg_count);
-
         char **argv = (char **)kmalloc((arg_count+1)*sizeof(int)); // +1 for null terminator
 
         for (int i = 0; i < arg_count; i++)
