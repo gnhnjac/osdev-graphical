@@ -114,6 +114,8 @@ PWINDOW winsys_create_win(int x, int y, int width, int height, char *w_name, boo
 
 	win->next = 0;
 
+	PWINDOW old_working = working_window;
+
 	working_window = win;
 
 	if (win_list)
@@ -128,6 +130,8 @@ PWINDOW winsys_create_win(int x, int y, int width, int height, char *w_name, boo
 	else
 		win_list = win;
 
+	if (old_working)
+		winsys_display_window(old_working);
 	winsys_display_window(win);
 
 	return win;
@@ -164,6 +168,8 @@ void winsys_create_win_user(PWINDOW local_win, int x, int y, int width, int heig
 
 	win->next = 0;
 
+	PWINDOW old_working = working_window;
+
 	working_window = win;
 
 	if (win_list)
@@ -181,6 +187,8 @@ void winsys_create_win_user(PWINDOW local_win, int x, int y, int width, int heig
 	win->w_name = (char *)kcalloc(strlen(local_win->w_name)+1);
 	strcpy(win->w_name,local_win->w_name);
 
+	if (old_working)
+		winsys_display_window(old_working);
 	winsys_display_window(win);
 
 	memcpy((char *)local_win,(char *)win,sizeof(WINDOW));
@@ -197,7 +205,12 @@ int winsys_set_working_window(int wid)
 		if (tmp->id == wid)
 		{
 
+			PWINDOW old_working = working_window;
+
 			working_window = tmp;
+
+			if (working_window == old_working)
+				return 1;
 
 			PWINDOW tmp2 = win_list;
 
@@ -224,10 +237,14 @@ int winsys_set_working_window(int wid)
 			tmp2->next = tmp;
 			tmp->next = 0;
 
+			if (winsys_get_window_by_id(old_working->id))
+				winsys_display_window(old_working);
+
 			winsys_display_window(working_window);
 
 			return 1;
 		}
+
 		tmp = tmp->next;
 	}
 
@@ -241,9 +258,20 @@ void winsys_paint_window_frame(PWINDOW win)
 	if (!win)
 		return;
 
-	fill_rect(win->x-WIN_FRAME_SIZE,win->y-TITLE_BAR_HEIGHT,win->width+WIN_FRAME_SIZE*2,TITLE_BAR_HEIGHT,WIN_FRAME_COLOR);
-	fill_rect(win->x-WIN_FRAME_SIZE,win->y,WIN_FRAME_SIZE,win->height,WIN_FRAME_COLOR);
-	fill_rect(win->x+win->width,win->y,WIN_FRAME_SIZE,win->height,WIN_FRAME_COLOR);
+	if (win == working_window)
+	{
+		fill_rect(win->x,win->y-TITLE_BAR_HEIGHT+WIN_FRAME_SIZE,win->width,TITLE_BAR_HEIGHT-WIN_FRAME_SIZE,WORKING_TITLE_COLOR);
+		fill_rect(win->x,win->y-WIN_FRAME_SIZE,win->width,WIN_FRAME_SIZE,WIN_FRAME_COLOR);
+		fill_rect(win->x-WIN_FRAME_SIZE,win->y-TITLE_BAR_HEIGHT,WIN_FRAME_SIZE,win->height+TITLE_BAR_HEIGHT,WIN_FRAME_COLOR);
+		fill_rect(win->x+win->width,win->y-TITLE_BAR_HEIGHT,WIN_FRAME_SIZE,win->height+TITLE_BAR_HEIGHT,WIN_FRAME_COLOR);
+	}
+	else
+	{
+		fill_rect(win->x-WIN_FRAME_SIZE,win->y-TITLE_BAR_HEIGHT,win->width+WIN_FRAME_SIZE*2,TITLE_BAR_HEIGHT,WIN_FRAME_COLOR);
+		fill_rect(win->x-WIN_FRAME_SIZE,win->y,WIN_FRAME_SIZE,win->height,WIN_FRAME_COLOR);
+		fill_rect(win->x+win->width,win->y,WIN_FRAME_SIZE,win->height,WIN_FRAME_COLOR);
+	}
+
 	fill_rect(win->x-WIN_FRAME_SIZE,win->y+win->height,win->width+WIN_FRAME_SIZE*2,WIN_FRAME_SIZE,WIN_FRAME_COLOR);
 
 	char *tmp = win->w_name;
@@ -326,6 +354,8 @@ void winsys_paint_window(PWINDOW win)
 			if (x >= PIXEL_WIDTH || y >= PIXEL_HEIGHT)
 				continue;
 
+			uint32_t vram_off = x/PIXELS_PER_BYTE;
+
 			if (x % 8 == 0 && j < win->width-8 && x < PIXEL_WIDTH-8)
 			{
 
@@ -350,13 +380,13 @@ void winsys_paint_window(PWINDOW win)
 						{
 							outb(0x3C5, 0xF);
 
-							vram[x/PIXELS_PER_BYTE] = 0;
+							vram[vram_off] = 0;
 						}
 						if (color != 0)
 						{
 							outb(0x3C5, color);
 
-							vram[x/PIXELS_PER_BYTE] = 0xFF;
+							vram[vram_off] = 0xFF;
 						}
 						break;
 
@@ -385,13 +415,13 @@ void winsys_paint_window(PWINDOW win)
 					{
 						outb(0x3C5, 0xF);
 
-						vram[x/PIXELS_PER_BYTE] &= ~mask;
+						vram[vram_off] &= ~mask;
 					}
 					if (color != 0)
 					{
 						outb(0x3C5, color);
 
-						vram[x/PIXELS_PER_BYTE] |= mask;
+						vram[vram_off] |= mask;
 					}
 
 				}
@@ -417,13 +447,13 @@ void winsys_paint_window(PWINDOW win)
 			{
 				outb(0x3C5, 0xF);
 
-				vram[x/PIXELS_PER_BYTE] &= ~mask;
+				vram[vram_off] &= ~mask;
 			}
 			if (color != 0)
 			{
 				outb(0x3C5, color);
 
-				vram[x/PIXELS_PER_BYTE] |= mask;
+				vram[vram_off] |= mask;
 			}
 
 		}
@@ -493,6 +523,8 @@ void winsys_paint_window_section(PWINDOW win, int x, int y, int width, int heigh
 			if (x >= PIXEL_WIDTH || y >= PIXEL_HEIGHT)
 				continue;
 
+			uint32_t vram_off = x/PIXELS_PER_BYTE;
+
 			if (x % 8 == 0 && j < max_x+min_width-8 && x < PIXEL_WIDTH-8)
 			{
 
@@ -517,13 +549,13 @@ void winsys_paint_window_section(PWINDOW win, int x, int y, int width, int heigh
 						{
 							outb(0x3C5, 0xF);
 
-							vram[x/PIXELS_PER_BYTE] = 0;
+							vram[vram_off] = 0;
 						}
 						if (color != 0)
 						{
 							outb(0x3C5, color);
 
-							vram[x/PIXELS_PER_BYTE] = 0xFF;
+							vram[vram_off] = 0xFF;
 						}
 						break;
 
@@ -552,13 +584,13 @@ void winsys_paint_window_section(PWINDOW win, int x, int y, int width, int heigh
 					{
 						outb(0x3C5, 0xF);
 
-						vram[x/PIXELS_PER_BYTE] &= ~mask;
+						vram[vram_off] &= ~mask;
 					}
 					if (color != 0)
 					{
 						outb(0x3C5, color);
 
-						vram[x/PIXELS_PER_BYTE] |= mask;
+						vram[vram_off] |= mask;
 					}
 
 				}
@@ -584,13 +616,13 @@ void winsys_paint_window_section(PWINDOW win, int x, int y, int width, int heigh
 			{
 				outb(0x3C5, 0xF);
 
-				vram[x/PIXELS_PER_BYTE] &= ~mask;
+				vram[vram_off] &= ~mask;
 			}
 			if (color != 0)
 			{
 				outb(0x3C5, color);
 
-				vram[x/PIXELS_PER_BYTE] |= mask;
+				vram[vram_off] |= mask;
 			}
 
 		}
@@ -681,15 +713,24 @@ void winsys_display_window_section_exclude_original(PWINDOW win, PWINDOW orig, i
 	{
 		if (winsys_check_collide(win,tmp) && tmp != orig)
 		{
+
 			int overlap_x = max(win->x, tmp->x);
-
 			int overlap_y = max(win->y, tmp->y);
-
 			int overlap_w = min(win->x+win->width,tmp->x+tmp->width)-overlap_x;
-
 			int overlap_h = min(win->y+win->height, tmp->y+tmp->height)-overlap_y;
 
-			winsys_display_window_section(tmp,overlap_x-tmp->x,overlap_y-tmp->y,overlap_w,overlap_h);
+			int sect_x = win->x+max(x,0);
+			int sect_y = win->y+max(y,0);
+			int sect_w = min(win->width,width);
+			int sect_h = min(win->height,height);
+
+			int overlap_sect_x = max(overlap_x,sect_x);
+			int overlap_sect_y = max(overlap_y,sect_y);
+			int overlap_sect_w = min(overlap_x+overlap_w,sect_x+sect_w)-overlap_sect_x;
+			int overlap_sect_h = min(overlap_y+overlap_h, sect_y+sect_h)-overlap_sect_y;
+
+			if (overlap_sect_w > 0 && overlap_sect_h > 0)
+				winsys_display_window_section_exclude_original(tmp,orig,overlap_sect_x-tmp->x,overlap_sect_y-tmp->y,overlap_sect_w,overlap_sect_h);
 
 		}
 

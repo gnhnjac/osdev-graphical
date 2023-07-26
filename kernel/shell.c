@@ -238,8 +238,8 @@ void handle_stats()
 {
 	printf("PMM:\nTotal memory: %dKb\nTotal Blocks: %d\nUsed Blocks: %d\nFree Blocks: %d\n",pmmngr_get_memory_size(),pmmngr_get_block_count(),pmmngr_get_used_blocks(),pmmngr_get_free_block_count());
 	//print_mem_map();
-	//printf("\nHEAP:\n");
-	//print_heap_stats();
+	printf("\nHEAP:\n");
+	print_heap_stats();
 }
 
 void handle_exec(char *cmd_buff)

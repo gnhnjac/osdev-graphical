@@ -1,1 +1,0 @@
-gcc -fno-builtin -m32 -nostdlib -I ./root/cstdlib YOURPROGRAM ./root/cstdlib/stdio.c ./root/cstdlib/gfx.c ./root/cstdlib/heap.c ./root/cstdlib/stdlib.c ./root/cstdlib/string.c ./root/cstdlib/syscalls.c -o pong.exe
