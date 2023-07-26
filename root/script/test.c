@@ -3,16 +3,19 @@
 #include "stdlib.h"
 #include "string.h"
 
-WINDOW win;
-
-void _start()
+void _start(int argc, char **argv)
 {
-	win.w_name = "party";
-	create_window(&win,100,100,300,300);
-	gfx_paint_bmp16(&win,"a:\\pepe.bmp",0,0);
-	display_window_section(&win,0,0,win.width,win.height);
+	printf("\nreceived argc: %U\n",argc);
 
-	while(1);
+	while(*argv)
+	{
+
+		printf("%s\n",*argv);
+
+		argv++;
+
+	}
+	
 
 	terminate();
 	__builtin_unreachable();

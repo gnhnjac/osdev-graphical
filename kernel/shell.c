@@ -245,7 +245,7 @@ void handle_stats()
 void handle_exec(char *cmd_buff)
 {
 	int param_count = count_substrings(cmd_buff, ' '); // including cmd
-	if (param_count != 2)
+	if (param_count < 2)
 		return;
 
 	char *param = seperate_and_take(cmd_buff, ' ', 1);
@@ -253,7 +253,18 @@ void handle_exec(char *cmd_buff)
 	strip_from_end(param, ' ');
 	char *new_path = join_path(path,param);
 
-	int pid = createProcess(new_path);
+	char *args = cmd_buff;
+
+	while(*args && *args != ' ')
+		args++;
+
+	if (!(*args))
+		args = 0;
+	else
+		args++;
+
+
+	int pid = createProcess(new_path,args);
 
 	kfree(new_path);
 	kfree(param);

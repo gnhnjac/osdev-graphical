@@ -8,6 +8,7 @@
 #include "timer.h"
 #include "screen.h"
 #include "graphics.h"
+#include "strings.h"
 
 queueEntry  *_readyQueue;
 thread   _idleThread;
@@ -701,6 +702,59 @@ void  thread_create (thread *t, void *entry, void *esp, bool is_kernel) {
         t->sleepTimeDelta = 0;
         t->tid = get_free_tid();
         t->next = 0;
+}
+
+void *insert_argv_to_process_stack(char *args, void *esp)
+{
+
+        int arg_count;
+
+        if (!args)
+                arg_count = 0;
+        else
+                arg_count = count_substrings(args, ' '); // including cmd
+
+        printf("got %d args\n",arg_count);
+
+        char **argv = (char **)kmalloc((arg_count+1)*sizeof(int)); // +1 for null terminator
+
+        for (int i = 0; i < arg_count; i++)
+        {
+                char *arg = seperate_and_take(args, ' ', i);
+
+                uint32_t int_aligned_len = strlen(arg)+1;
+
+                if (int_aligned_len % 4 != 0)
+                        int_aligned_len += 4 - int_aligned_len%4;
+
+                esp -= int_aligned_len; // make place for the argument
+
+                strcpy((char *)esp,arg);
+
+                argv[i] = (char *)esp;
+
+                kfree(arg);
+        }
+
+        argv[arg_count] = 0;
+
+        esp -= (arg_count+1)*sizeof(int);
+
+        memcpy((char *)esp,(char *)argv,(arg_count+1)*sizeof(int));
+
+        esp -= sizeof(int);
+
+        *(char ***)esp = (char **)(esp+sizeof(int));
+
+        esp -= sizeof(int);
+
+        *(int *)esp = arg_count;
+
+        esp -= sizeof(int);
+
+        kfree(argv);
+
+        return esp;
 }
 
 extern uint32_t read_eip();

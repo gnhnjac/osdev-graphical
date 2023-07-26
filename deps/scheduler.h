@@ -52,4 +52,5 @@ void *create_user_kernel_stack();
 void *create_user_stack(pdirectory *addressSpace);
 void *allocate_user_space_pages(int page_amt);
 void  thread_create (thread *t, void *entry, void *esp, bool is_kernel);
+void *insert_argv_to_process_stack(char *args, void *esp);
 int fork();

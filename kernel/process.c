@@ -90,7 +90,7 @@ int getFreeID()
 
 }
 
-int createProcess (char* exec) {
+int createProcess (char* exec, char *args) {
 
     pdirectory *prevDir = vmmngr_get_directory();
 
@@ -138,10 +138,11 @@ int createProcess (char* exec) {
     // I86_PTE_WRITABLE|I86_PTE_USER);
 
     void *stack = create_user_stack(addressSpace);
+    void *esp = insert_argv_to_process_stack(args, stack+PAGE_SIZE);
 
     /* create thread descriptor */
     thread *mainThread       = (thread *)kcalloc(sizeof(thread));
-    thread_create(mainThread,(void *)(imageInfo->EntryPointRVA + imageInfo->ImageBase),stack+PAGE_SIZE, false);
+    thread_create(mainThread,(void *)(imageInfo->EntryPointRVA + imageInfo->ImageBase),esp, false);
     vmmngr_switch_pdirectory(prevDir);
     enable_scheduling();
 
