@@ -1682,6 +1682,14 @@ void gfx_open_bmp16(char *path, int wx, int wy)
 
 	FILE bmp = volOpenFile(path);
 
+	if (bmp.flags != FS_FILE)
+	{
+
+		printf("\nFile not found.\n");
+		return;
+
+	}
+
 	BITMAPFILEHEADER bmp_header;
 
 	volReadFile(&bmp,(char *)&bmp_header,sizeof(BITMAPFILEHEADER));
