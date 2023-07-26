@@ -3,16 +3,16 @@
 #include "stdlib.h"
 #include "string.h"
 
+WINDOW win;
+
 void _start()
 {
-	
-	uint32_t fd = fopen("a:\\home\\hello.txt");
+	win.w_name = "party";
+	create_window(&win,100,100,300,300);
+	gfx_paint_bmp16(&win,"a:\\pepe.bmp",0,0);
+	display_window_section(&win,0,0,win.width,win.height);
 
-	char *buff = malloc(100);
-
-	fread(fd,buff,100);
-
-	printf("%s\n",buff);
+	while(1);
 
 	terminate();
 	__builtin_unreachable();

@@ -1,5 +1,6 @@
 #include "gfx.h"
 #include "syscalls.h"
+#include "stdio.h"
 
 void gfx_paint_char(PWINDOW win, char c, int x, int y, uint8_t fgcolor, void *font_buff)
 {
@@ -148,5 +149,81 @@ void gfx_clear_win(PWINDOW win)
 {
 
 	gfx_fill_rect(win,0,0,win->width,win->height,0);
+
+}
+
+void gfx_paint_bmp16(PWINDOW win, char *path, int x, int y)
+{
+
+	if (!win || x >= win->width || y >= win->height)
+		return;
+
+	uint32_t fd = fopen(path);
+
+	BITMAPFILEHEADER bmp_header;
+
+	fread(fd,(char *)&bmp_header,sizeof(BITMAPFILEHEADER));
+
+	if (bmp_header.Signature != BMP_SIGNATURE)
+	{
+		printf("File is not a bmp.\n");
+		fclose(fd);
+		return;
+	}
+
+	BITMAPINFOHEADER bmp_info;
+
+	fread(fd,(char *)&bmp_info,sizeof(BITMAPINFOHEADER));
+
+	if (bmp_info.BPP != 4)
+	{
+		printf("File is not a 16 color bmp.\n");
+		fclose(fd);
+		return;
+	}
+
+	uint32_t width = bmp_info.Width;
+	uint32_t height = bmp_info.Height;
+
+	uint32_t color_buff;
+
+	// read 16 color palette
+	for (int i = 0; i < 16; i++)
+		fread(fd,(char *)&color_buff,4);
+
+	uint8_t two_pixels;
+	uint8_t padding_bytes = 4-(width/2+width%2)%4;
+	uint32_t padding_buff;
+
+	uint8_t *buff = (uint8_t *)((uint32_t)win->w_buffer + ((y+height-1)*win->width)/2);
+	for (int i = 0; i < height; i++)
+	{
+		int pix_count = 0;
+		for (int j = 0; j < width; j++)
+		{
+
+			if (pix_count % 2 == 0)
+				fread(fd,(char *)&two_pixels,1);
+			else
+				two_pixels >>= 4;
+
+			uint8_t color = two_pixels & 0xF;
+
+			gfx_set_pixel(win,x+j,y+height-i-1,color);
+
+			pix_count++;
+
+		}
+
+		if (padding_bytes != 4)
+		{
+			fread(fd,(char *)&padding_buff,padding_bytes);
+		}
+
+		buff -= win->width/2;
+
+	}
+
+	fclose(fd);
 
 }

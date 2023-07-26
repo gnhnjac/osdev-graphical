@@ -147,7 +147,7 @@ void winsys_create_win_user(PWINDOW local_win, int x, int y, int width, int heig
 	win->closable = false;
 	win->parent_pid = parent_proc->id;
 	win->is_user = true;
-	win->event_handler.event_mask = GENERAL_EVENT_KBD|GENERAL_EVENT_MOUSE;
+	win->event_handler.event_mask = local_win->event_handler.event_mask;
 
 	for (int i = 0; i < EVENT_HANDLER_QUEUE_SIZE; i++)
 	{

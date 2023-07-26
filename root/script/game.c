@@ -18,6 +18,7 @@ void _start()
 	load_font((void *)font_buff);
 
 	win.w_name = "tictactoe";
+	win.event_handler.event_mask = GENERAL_EVENT_MOUSE;
 	create_window(&win,100,100,BLOCK_SIZE*3,BLOCK_SIZE*3);
 	init_win();
 	display_window_section(&win,0,0,win.width,win.height);
