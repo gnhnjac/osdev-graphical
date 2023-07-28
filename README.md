@@ -70,8 +70,8 @@ type help in the shell to get a list of commands, type "help COMMAND" to get hel
 
 3GB -> VIRTUAL KERNEL
 
-3GB + 2MB-3MB -> KHEAP
+3GB + 3MB-5MB -> KHEAP
 
-3GB + 3MB-4MB -> RAM FS
+3GB + 5MB-6MB -> RAM FS
 
 ![Screenshot of the operating system](screenshot.png "The AKOS Operating System")

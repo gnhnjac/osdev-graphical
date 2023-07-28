@@ -13,8 +13,8 @@
 #include "scheduler.h"
 #include "mouse.h"
 
-static PWINDOW win_list;
-static PWINDOW working_window;
+static PWINDOW win_list = 0;
+static PWINDOW working_window = 0;
 
 PWINDOW winsys_get_working_window()
 {

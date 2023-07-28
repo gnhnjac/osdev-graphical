@@ -19,6 +19,8 @@ emu = QEMU
 
 DEPS := $(OBJ:.o=.d)
 
+CFLAGS = -m32 -ffreestanding -MMD -c $< -I ./deps
+
 # Default make target .
 all: pre-build os-image
 
@@ -57,7 +59,7 @@ kernel.sys: kernel/kernel_entry.o ${OBJ}
 
 # Generic rule for building ’somefile.o’ from ’somefile.c’
 %.o: %.c
-	@gcc -m32 -ffreestanding -MMD -c $< -I ./deps -o $@ -D $(emu)
+	gcc $(CFLAGS) -o $@ -D $(emu)
 
 # Rule for building root c files
 %.exe: %.c ${ROOT_C_LIB}
