@@ -373,9 +373,16 @@ void insert_thread_to_proc(process *proc, thread *t)
 
 }
 
-void terminateProcess () {
+void waitForProcessToFinish(int pid)
+{
 
-    __asm__("cli");
+    while(getProcessByID(pid))
+        thread_sleep(500);
+
+}
+
+void terminateProcess()
+{
 
     process *proc = get_running_process();
 
@@ -383,6 +390,19 @@ void terminateProcess () {
             return;
     if (proc->id==PROC_INVALID_ID)
             return;
+
+    terminateProcessById(proc->id);
+
+}
+
+void terminateProcessById (int pid) {
+
+    process *proc = getProcessByID(pid);
+
+    if (!proc)
+        return;
+
+    __asm__("cli");
 
     /* release threads */
     thread* pThread = proc->threadList;
@@ -443,6 +463,7 @@ void terminateProcess () {
 
    __asm__("sti");
 
+   // unecessary if pid != current pid
    schedule(); // force task switch.
 
 }

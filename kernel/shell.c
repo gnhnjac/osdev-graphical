@@ -174,6 +174,10 @@ void handle_command(char *cmd_buff)
 	{
 		handle_exec(cmd_buff);
 	}
+	else if(strcmp(cmd,"execbg"))
+	{
+		handle_execbg(cmd_buff);
+	}
 	else if(strcmp(cmd, "ps"))
 	{
 		print_processes();
@@ -181,6 +185,10 @@ void handle_command(char *cmd_buff)
 	else if(strcmp(cmd,"img"))
 	{
 		handle_img(cmd_buff);
+	}
+	else if(strcmp(cmd,"kill"))
+	{
+		handle_kill(cmd_buff);
 	}
 	else
 	{
@@ -190,6 +198,24 @@ void handle_command(char *cmd_buff)
 	}
 
 	kfree(cmd);
+
+}
+
+void handle_kill(char *cmd_buff)
+{
+
+	int param_count = count_substrings(cmd_buff, ' '); // including cmd
+	if (param_count != 2)
+		return;
+
+	char *param = seperate_and_take(cmd_buff, ' ', 1);
+	strip_from_start(param, ' ');
+	strip_from_end(param, ' ');
+	
+	uint32_t pid = decimal_to_uint(param);
+	terminateProcessById(pid);
+
+	kfree(param);
 
 }
 
@@ -268,6 +294,37 @@ void handle_exec(char *cmd_buff)
 
 	kfree(new_path);
 	kfree(param);
+
+	waitForProcessToFinish(pid);
+}
+
+void handle_execbg(char *cmd_buff)
+{
+	int param_count = count_substrings(cmd_buff, ' '); // including cmd
+	if (param_count < 2)
+		return;
+
+	char *param = seperate_and_take(cmd_buff, ' ', 1);
+	strip_from_start(param, ' ');
+	strip_from_end(param, ' ');
+	char *new_path = join_path(path,param);
+
+	char *args = cmd_buff;
+
+	while(*args && *args != ' ')
+		args++;
+
+	if (!(*args))
+		args = 0;
+	else
+		args++;
+
+
+	int pid = createProcess(new_path,args);
+
+	kfree(new_path);
+	kfree(param);
+	
 }
 
 void handle_ls()
@@ -614,22 +671,27 @@ void handle_size(char *cmd_buff)
 	
 }
 
-char *help_strings[15] = {
+char *help_strings[] = {
 
 	"Provides help for a certain command\nUsage: help CMD",
 	"Reboots the computer.\nUsage: reboot",
 	"Shuts down the computer\nUsage: shutdown",
 	"Lists the files in the current directory\nUsage: ls",
 	"Changes directory to the specified directory\nUsage: cd DIR",
-	"Creates a new directory in the current directory with the specified name\nUsage: mkdir NAME",
-	"Makes a new file in the current directory with the specified name\nUsage: touch NAME",
-	"Opens a text editor to write text to a file with the specified name, press esc to exit it\nUsage: write NAME\n2nd optional parameter is -o to override the previous contents of the file.",
-	"Prints out the contents of a file\nUsage: cat NAME",
+	"Creates a new directory in the current directory with the specified name\nUsage: mkdir PATH",
+	"Makes a new file in the current directory with the specified name\nUsage: touch PATH",
+	"Opens a text editor to write text to a file with the specified name, press esc to exit it\nUsage: write PATH\n2nd optional parameter is -o to override the previous contents of the file.",
+	"Prints out the contents of a file\nUsage: cat PATH",
 	"Clears the screen\nUsage: cls",
-	"Removes a file or directory within the current directory with the specified name\nUsage: rm NAME",
-	"Gives the size of the specified file in bytes\nUsage: size NAME",
+	"Removes a file or directory within the current directory with the specified name\nUsage: rm PATH",
+	"Gives the size of the specified file in bytes\nUsage: size PATH",
 	"Concatenates 2 files and stores them in a destination file\nUsage: concat DEST F1 F2",
 	"Displays various stats\nUsage: stats",
+	"Executes a PE program\nUsage: exec PATH",
+	"Executes a PE program in the background\nUsage: execbg PATH",
+	"Prints out the list of processes\nUsage: ps",
+	"Opens a 16 color bmp image for viewing\nUsage: img PATH",
+	"Kills the process with id PID\nUsage: kill PID",
 };
 
 void handle_help(char *cmd_buff)
@@ -644,7 +706,7 @@ void handle_help(char *cmd_buff)
 	}
 	else if (param_count == 1)
 	{
-		print("Available commands:\nhelp\nreboot\nshutdown\nls\ncd\nmkdir\ntouch\nwrite\ncat\ncls\nrm\nsize\nconcat\nstats");
+		print("Available commands:\nhelp\nreboot\nshutdown\nls\ncd\nmkdir\ntouch\nwrite\ncat\ncls\nrm\nsize\nconcat\nstats\nexec\nexecbg\nps\nimg\nkill");
 	}
 	else
 	{
@@ -697,6 +759,16 @@ int get_help_index(char *cmd)
 		return 12;
 	if(strcmp(cmd,"stats"))
 		return 13;
+	if(strcmp(cmd,"exec"))
+		return 14;
+	if(strcmp(cmd,"execbg"))
+		return 15;
+	if(strcmp(cmd,"ps"))
+		return 16;
+	if(strcmp(cmd,"img"))
+		return 17;
+	if(strcmp(cmd,"kill"))
+		return 18;
 
 	return -1;
 

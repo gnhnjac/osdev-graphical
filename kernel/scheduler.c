@@ -62,6 +62,35 @@ void thread_remove_state(thread* t, uint32_t flags) {
         t->state &= ~flags;
 }
 
+void thread_set_state_by_id(int tid, uint32_t state)
+{
+
+        bool scheduling_enabled = (_currentTask != 0);
+
+        if (scheduling_enabled)
+                disable_scheduling();
+
+        queueEntry *tmp = _readyQueue;
+
+        while (tmp)
+        {
+                if (tmp->thread.tid == tid)
+                {       
+                        thread_set_state(&tmp->thread, state);
+                        if (scheduling_enabled)
+                                enable_scheduling();
+                        return;
+                }
+
+                tmp = tmp->next;
+
+        }
+
+        if (scheduling_enabled)
+                enable_scheduling();
+
+}
+
 void thread_sleep(uint32_t ms) {
 
         /* go to sleep. */
@@ -268,7 +297,8 @@ thread get_thread_by_tid(int tid)
                 if (tmp->thread.tid == tid)
                 {       
                         t = tmp->thread;
-                        enable_scheduling();
+                        if (scheduling_enabled)
+                                enable_scheduling();
                         return t;
                 }
 
@@ -286,32 +316,7 @@ thread get_thread_by_tid(int tid)
 void remove_by_tid(int tid)
 {
 
-        bool scheduling_enabled = (_currentTask != 0);
-
-        if (scheduling_enabled)
-                disable_scheduling();
-
-        queueEntry *tmp = _readyQueue;
-        queueEntry *prev = 0;
-
-        while (tmp)
-        {
-
-                if (tmp->thread.tid == tid)
-                {
-                        tmp->thread.state = THREAD_TERMINATE;
-
-                        enable_scheduling();
-                        return;
-                }
-
-                prev = tmp;
-                tmp = tmp->next;
-
-        }
-        
-        if (scheduling_enabled)
-                enable_scheduling();
+        thread_set_state_by_id(tid,THREAD_TERMINATE);
 
 }
 
@@ -897,3 +902,81 @@ int fork()
         }
 
 }
+
+// int pthread_create(thread *user_thread, void *start_routine, uint32_t arg)
+// {
+
+//         disable_scheduling();
+
+//         thread *parent_task = queue_get();
+
+//         /* create thread descriptor */
+//         thread *th = (thread *)kmalloc(sizeof(thread));
+
+//         /* Create userspace stack (4k size) */
+//         //void* stack = parent_task->initialStack;
+
+//         pdirectory *addressSpace = vmmngr_get_directory();
+
+//         void *stack = create_user_stack(addressSpace);
+//         *(stack-4) = arg;
+
+//         // while(vmmngr_check_virt_present(addressSpace,stack))
+//         //         stack += PAGE_SIZE;
+
+//         // /* map user process stack space */
+//         // vmmngr_alloc_virt (addressSpace, stack,
+//         // I86_PDE_WRITABLE|I86_PDE_USER,
+//         // I86_PTE_WRITABLE|I86_PTE_USER);
+
+//         void *kernel_esp = create_user_kernel_stack();
+//         t->kernelESP = (uint32_t)kernel_esp;
+//         t->kernelSS = KERNEL_DATA;
+
+//         /* adjust stack. We are about to push data on it. */
+//         kernel_esp -= sizeof (userTrapFrame);
+
+//         /* initialize task frame. */
+//         userTrapFrame* frame = (userTrapFrame*) kernel_esp;
+//         frame->flags = 0x202;
+//         frame->eip   = (uint32_t)start_routine;
+//         frame->ebp   = 0;
+//         frame->esp   = 0;
+//         frame->edi   = 0;
+//         frame->esi   = 0;
+//         frame->edx   = 0;
+//         frame->ecx   = 0;
+//         frame->ebx   = 0;
+//         frame->eax   = 0;
+
+//         frame->cs    = USER_CODE;
+//         frame->ds    = USER_DATA;
+//         frame->es    = USER_DATA;
+//         frame->fs    = USER_DATA;
+//         frame->gs    = USER_DATA;
+//         t->SS        = USER_DATA;
+//         frame->user_stack = (uint32_t)(stack-8);
+//         frame->user_ss = USER_DATA;
+
+//         /* set stack. */
+//         t->ESP = (uint32_t)kernel_esp;
+        
+//         th->state    = THREAD_RUN;
+//         th->sleepTimeDelta = 0;
+//         uint32_t child_tid = get_free_tid();
+//         th->tid = child_tid;
+//         th->next = 0;
+//         th->parent = parent_task->parent;
+//         th->initialStack = stack+PAGE_SIZE;
+//         th->isMain = false;
+//         th->priority = parent_task->priority;
+
+//         memcpy(user_thread,th,sizeof(thread));
+
+//         insert_thread_to_proc(parent_task->parent,th);
+//         queue_insert(*th);
+
+//         enable_scheduling();
+//         return child_tid;
+
+// }

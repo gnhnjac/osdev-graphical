@@ -19,10 +19,12 @@
 void get_shell_input(char *buff, int buff_size);
 void shell_main();
 void handle_command(char *cmd_buff);
+void handle_kill(char *cmd_buff);
 void handle_img(char *cmd_buff);
 char *join_path(char* p, char* ext);
 void handle_stats();
 void handle_exec(char *cmd_buff);
+void handle_execbg(char *cmd_buff);
 void handle_ls();
 void handle_cd(char *cmd_buff);
 void handle_mkdir(char *cmd_buff);
