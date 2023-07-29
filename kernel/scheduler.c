@@ -359,8 +359,11 @@ void scheduler_dispatch () {
                 {
 
                         if (_currentTask->kernelESP != 0)
+                        {
                                 vmmngr_free_virt(_currentTask->parent->pageDirectory, (void *)(_currentTask->kernelESP-PAGE_SIZE));
-                        if (_currentTask->isMain) // bad because main might execute before others thus the prev line will throw an error
+                                _currentTask->parent->livingThreads--;
+                        }
+                        if (_currentTask->parent->livingThreads == 0) // bad because main might execute before others thus the prev line will throw an error
                         {
                                 clear_kernel_space(_currentTask->parent->pageDirectory);
                                 clear_kernel_stacks(_currentTask->parent->pageDirectory);
@@ -452,20 +455,19 @@ void idle_task() {
 
   /* setup other things since this is the first task called */
 
-  // thread_sleep(1000);
+  thread *t = (thread *)kmalloc(sizeof(thread));
+  thread_create(t, cycle_colors, create_kernel_stack(), true);
+  t->parent = kernel_proc;
+  t->isMain = false;
+  t->priority = PRIORITY_LOW;
+  queue_insert(*t);
+  insert_thread_to_proc(kernel_proc,t);
 
-  // for (int i = 0; i < 4; i++)
-  // {
+  while(1) __asm__ ("pause");
+}
 
-  //       thread *t = (thread *)kmalloc(sizeof(thread));
-  //       thread_create(t, lock_test, create_kernel_stack(), true);
-  //       t->parent = kernel_proc;
-  //       t->isMain = false;
-  //       t->priority = PRIORITY_LOW;
-  //       queue_insert(*t);
-  //       insert_thread_to_proc(kernel_proc,t);
-
-  // }
+void cycle_colors()
+{
 
   int cycler = 0;
   while(1)
@@ -476,9 +478,8 @@ void idle_task() {
           display_psf1_8x16_char_bg('s', get_screen_x(3),0, 0xf, cycler);
           cycler = (cycler + 1) % 15;
           thread_sleep(300);
-  }
+  } 
 
-  //while(1) __asm__ ("pause");
 }
 
 // #include "lock.h"
@@ -617,6 +618,41 @@ void *allocate_user_space_pages(int page_amt)
 
         for (i = 0; i < page_amt; i++)
                 vmmngr_alloc_virt(pdir, loc+i*PAGE_SIZE, I86_PDE_WRITABLE|I86_PDE_USER, I86_PTE_WRITABLE|I86_PTE_USER);
+
+        return loc;
+
+}
+
+/* find free user space pages for user mode thread. */
+void *find_user_space_pages(void *base, int page_amt)
+{
+
+        void *loc;
+
+        pdirectory *pdir = vmmngr_get_directory();
+
+        int count = 0;
+        int i = 0;
+        while(1)
+        {
+
+                if ((uint32_t)base+i*PAGE_SIZE >= 0xC0000000)
+                        return 0;
+
+                if (!vmmngr_check_virt_present(pdir, (void *)base+i*PAGE_SIZE))
+                {
+                        if (count == 0)
+                                loc = (void *)((uint32_t)base+i*PAGE_SIZE);
+                        count++;
+                }
+                else
+                        count = 0;
+
+                if (count == page_amt)
+                        break;
+
+                i++;
+        }
 
         return loc;
 

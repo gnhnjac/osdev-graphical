@@ -24,13 +24,13 @@ void _start()
 		if(pid == 0)
 			cycle(off, cycler_start%26);
 
-		sleep(100);
+		sleep(1000);
 		off++;
 		cycler_start*=123;
 
 	}
 
-	sleep(1000);
+	sleep(10000);
 
 	terminate();
 	__builtin_unreachable();
@@ -44,7 +44,7 @@ void cycle(int col, int cycler_start)
 	{
 		gfx_paint_char_bg(&win,'a'+cycler,col*CHAR_WIDTH,0,cycler%16,(cycler+5)%16,font_buff);
 		display_window_section(&win,col*CHAR_WIDTH,0,CHAR_WIDTH,CHAR_HEIGHT);
-		sleep(100);
+		sleep(1000);
 		cycler = (cycler + 1)%26;
 
 	}

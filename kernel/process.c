@@ -125,6 +125,7 @@ int createProcess (char* exec, char *args) {
     proc->file_descs = 0;
     proc->name = 0;
     proc->threadList = 0;
+    proc->livingThreads = 0;
 
     /* Create userspace stack (4k size) */
     // void* stack = (void*) (imageInfo->ImageBase + imageInfo->ImageSize + PAGE_SIZE);
@@ -371,6 +372,8 @@ void insert_thread_to_proc(process *proc, thread *t)
     else
         proc->threadList = t;
 
+    proc->livingThreads++;
+
 }
 
 void waitForProcessToFinish(int pid)
@@ -402,7 +405,7 @@ void terminateProcessById (int pid) {
     if (!proc)
         return;
 
-    __asm__("cli");
+    disable_scheduling();
 
     /* release threads */
     thread* pThread = proc->threadList;
@@ -457,14 +460,14 @@ void terminateProcessById (int pid) {
     // release windows created by process
     winsys_remove_windows_by_pid(proc->id);
 
-   printf("\nProcess %d terminated.\n",proc->id);
+    removeProcessFromList(proc->id);
 
-   removeProcessFromList(proc->id);
+    printf_term(proc->term,"\nProcess %d terminated.\n",proc->id);
 
-   __asm__("sti");
+    enable_scheduling();
 
-   // unecessary if pid != current pid
-   schedule(); // force task switch.
+    // unecessary if pid != current pid
+    schedule(); // force task switch.
 
 }
 
@@ -600,6 +603,28 @@ void printf(char *fmt,...)
     }
     else
         screen_vprintf(fmt,valist);
+
+}
+
+void printf_term(terminal term, char *fmt,...)
+{
+
+    va_list valist;
+    va_start(valist,fmt);
+
+    if (term.term_win && term.term_inp_info)
+    {
+        int pre_y = gfx_get_win_y(term.term_inp_info->cursor_offset_y);
+        gfx_vprintf(term.term_win, term.term_inp_info, fmt,valist);
+        int post_y = gfx_get_win_y(term.term_inp_info->cursor_offset_y);
+        if (!term.term_inp_info->did_scroll)
+            winsys_display_window_section(term.term_win,0,min(pre_y,post_y),term.term_win->width,abs(post_y-pre_y)+CHAR_HEIGHT);
+        else
+        {
+            winsys_display_window(term.term_win);
+            term.term_inp_info->did_scroll = false;
+        }
+    }
 
 }
 

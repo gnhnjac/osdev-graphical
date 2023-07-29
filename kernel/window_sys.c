@@ -321,12 +321,14 @@ void winsys_paint_window(PWINDOW win)
 		return;
 
 	pdirectory *winDir;
+	void *tmp_win_buf_base;
 
 	if (win->is_user){
 		winDir = getProcessByID(win->parent_pid)->pageDirectory;
 		#define TMP_WIN_BUF_VIRT 0xB0000000
+		tmp_win_buf_base = find_user_space_pages((void *)TMP_WIN_BUF_VIRT,get_win_page_amt(win));
 		for (int i = 0; i < get_win_page_amt(win); i++)
-			vmmngr_mmap_virt2virt(winDir, vmmngr_get_directory(), win->w_buffer + i*PAGE_SIZE, (void *)((uint32_t)TMP_WIN_BUF_VIRT + i*PAGE_SIZE), I86_PDE_WRITABLE, I86_PTE_WRITABLE);
+			vmmngr_mmap_virt2virt(winDir, vmmngr_get_directory(), win->w_buffer + i*PAGE_SIZE, (void *)((uint32_t)tmp_win_buf_base + i*PAGE_SIZE), I86_PDE_WRITABLE, I86_PTE_WRITABLE);
 	}
 
 	uint8_t *buff;
@@ -471,7 +473,7 @@ void winsys_paint_window(PWINDOW win)
 	if (win->is_user)
 	{
 		for (int i = 0; i < get_win_page_amt(win); i++)
-			vmmngr_unmap_virt(vmmngr_get_directory(), (void *) TMP_WIN_BUF_VIRT + i*PAGE_SIZE); // MEMORY WILL LEAK SINCE WE ARE NOT FREEING THE PAGE TABLE!! thats fine though as it's only if its called from a kernel proc
+			vmmngr_unmap_virt(vmmngr_get_directory(), (void *) tmp_win_buf_base + i*PAGE_SIZE); // MEMORY WILL LEAK SINCE WE ARE NOT FREEING THE PAGE TABLE!! thats fine though as it's only if its called from a kernel proc
 	}
 
 }
@@ -483,11 +485,13 @@ void winsys_paint_window_section(PWINDOW win, int x, int y, int width, int heigh
 		return;
 
 	pdirectory *winDir;
+	void *tmp_win_buf_base;
 
 	if (win->is_user){
 		winDir = getProcessByID(win->parent_pid)->pageDirectory;
+		tmp_win_buf_base = find_user_space_pages((void *)TMP_WIN_BUF_VIRT,get_win_page_amt(win));
 		for (int i = 0; i < get_win_page_amt(win); i++)
-			vmmngr_mmap_virt2virt(winDir, vmmngr_get_directory(), win->w_buffer + i*PAGE_SIZE, (void *)((uint32_t)TMP_WIN_BUF_VIRT + i*PAGE_SIZE), I86_PDE_WRITABLE, I86_PTE_WRITABLE);
+			vmmngr_mmap_virt2virt(winDir, vmmngr_get_directory(), win->w_buffer + i*PAGE_SIZE, (void *)((uint32_t)tmp_win_buf_base + i*PAGE_SIZE), I86_PDE_WRITABLE, I86_PTE_WRITABLE);
 	}
 
 	uint32_t min_height = min(win->height,height);
@@ -638,7 +642,7 @@ void winsys_paint_window_section(PWINDOW win, int x, int y, int width, int heigh
 	if (win->is_user)
 	{
 		for (int i = 0; i < get_win_page_amt(win); i++)
-			vmmngr_unmap_virt(vmmngr_get_directory(), (void *) TMP_WIN_BUF_VIRT + i*PAGE_SIZE); // MEMORY WILL LEAK SINCE WE ARE NOT FREEING THE PAGE TABLE!! thats fine though
+			vmmngr_unmap_virt(vmmngr_get_directory(), (void *) tmp_win_buf_base + i*PAGE_SIZE); // MEMORY WILL LEAK SINCE WE ARE NOT FREEING THE PAGE TABLE!! thats fine though as it's only if its called from a kernel proc
 	}
 
 	//winsys_paint_window_frame(win);
@@ -1651,7 +1655,7 @@ int gfx_handle_scrolling(PWINDOW win, PINPINFO inp_info, int offset_y)
 	{
 		return offset_y;
 	}
-
+	
 	gfx_paint_char_bg(win,'.',gfx_get_win_x(0),gfx_get_win_y(offset_y),0,0x4);
 	gfx_paint_char_bg(win,'.',gfx_get_win_x(1),gfx_get_win_y(offset_y),0,0x4);
 	gfx_paint_char_bg(win,'.',gfx_get_win_x(2),gfx_get_win_y(offset_y),0,0x4);

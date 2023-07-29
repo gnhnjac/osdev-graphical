@@ -95,6 +95,7 @@ struct _process {
    terminal term;
    process* next;
    thread* threadList;
+   uint32_t livingThreads;
    char *name;
 };
 
@@ -125,5 +126,6 @@ pdirectory* create_address_space ();
 void print_processes();
 bool does_process_own_term(process *p);
 void printf(char *fmt,...);
+void printf_term(terminal term, char *fmt,...);
 void putchar(char c);
 void print(char *msg);
