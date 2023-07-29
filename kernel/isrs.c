@@ -138,6 +138,15 @@ void fault_handler(struct regs *r)
         *  In this tutorial, we will simply halt the system using an
         *  infinite loop */
         //clear_screen();
+
+        if (get_running_process())
+        {
+
+            if (get_running_process()->id != 1)
+                __asm__("sti");
+
+        }
+
         if (r->int_no > 18)
             print("Reserved");
         else
