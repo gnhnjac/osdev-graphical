@@ -13,6 +13,8 @@
 #include "scheduler.h"
 #include "mouse.h"
 
+// ** NEED TO MAKE IT IT'S OWN PROCESS WITH A DISPLAY STACK THEN THERE WILL BE NO DRAWING FRAGMENTS
+
 static PWINDOW win_list = 0;
 static PWINDOW working_window = 0;
 

@@ -41,7 +41,7 @@ void get_shell_input(char *buff, int buff_size)
 
 	while(window_input_info->is_taking_input)
 	{
-		while(main_window->event_handler.events[0].event_type & EVENT_INVALID)
+		if(main_window->event_handler.events[0].event_type & EVENT_INVALID)
 			thread_suspend();
 
 		EVENT e = winsys_dequeue_from_event_handler(&main_window->event_handler);
@@ -225,8 +225,15 @@ void handle_kill(char *cmd_buff)
 	strip_from_end(param, ' ');
 	
 	uint32_t pid = decimal_to_uint(param);
-	terminateProcessById(pid);
+	process *proc = getProcessByID(pid);
 
+	if (proc)
+	{
+		if (proc->is_kernel)
+			terminateKernelProcessById(pid);
+		else
+			terminateProcessById(pid);
+	}
 	kfree(param);
 
 }

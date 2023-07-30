@@ -164,7 +164,9 @@ void unsuspend_suspended_threads(process *proc)
     {
 
         if (tmp->thread.parent->id == proc->id)
+        {
                 thread_remove_state(&tmp->thread,THREAD_SUSPENDED);
+        }
 
         tmp = tmp->next;
 
@@ -560,6 +562,8 @@ void app_launcher()
         gfx_paint_bmp16(main_window,"a:\\rsrc\\terminal.bmp",0,0);
         winsys_display_window(main_window);
 
+        int shell_pid = 0;
+
         while(1)
         {
 
@@ -574,9 +578,18 @@ void app_launcher()
                         int16_t mx = e.event_data&0xFFFF;
                         int16_t my = (e.event_data&(0xFFFF<<16))>>16;
 
-                        if (0 <= mx && mx < 50 && 0 <= my && my < 50)
+                        process *shell_proc = getProcessByID(shell_pid);
+
+                        bool is_shell_alive = false;
+
+                        if (shell_proc && shell_proc->is_kernel)
+                                is_shell_alive = true;
+                        else
+                                shell_pid = 0;
+
+                        if (0 <= mx && mx < 50 && 0 <= my && my < 50 && !is_shell_alive)
                         {
-                                createKernelProcess(shell_main);
+                                shell_pid = createKernelProcess(shell_main);
                                 thread_sleep(100);
                         }
                 }

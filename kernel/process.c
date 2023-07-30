@@ -127,6 +127,8 @@ int createKernelProcess(void *entry)
     queue_insert(*main_thread);
     insert_thread_to_proc(kernel_proc,main_thread);
 
+    return kernel_proc->id;
+
 }
 
 void terminateKernelProcessById (int pid) {
