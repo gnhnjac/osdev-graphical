@@ -379,7 +379,7 @@ void scheduler_dispatch () {
 
         } while (_currentTask->state & THREAD_BLOCK_SLEEP || is_terminate);
 
-        // adjust time delta
+        // adjust time delta (this is kinda faulty because when you call schedule it isn't necessarily on a PHASE irq call, it can be int 0x81)
         queueEntry *tmp = _readyQueue;
 
         while(tmp)
@@ -397,6 +397,31 @@ void scheduler_dispatch () {
                 }
                 tmp = tmp->next;
 
+        }
+
+        static uint32_t idle_task_ticks = 0;
+        static uint32_t total_ticks = 0;
+
+        if (_currentTask->tid == 1)
+                idle_task_ticks++;
+        total_ticks++;
+
+        if (total_ticks == PHASE)
+        {
+                char cpu_percentage_str[3 + 1];
+                int_to_str_padding(100-idle_task_ticks*100/total_ticks,cpu_percentage_str,10,2);
+                cpu_percentage_str[2] = '%';
+                cpu_percentage_str[3] = 0;
+
+                int i = 0;
+                while(i < 3)
+                {
+                    display_psf1_8x16_char_bg(cpu_percentage_str[i],get_screen_x(i+5),0,0xF,0);
+                    i++;
+                }
+
+                idle_task_ticks = 0;
+                total_ticks = 0;
         }
 }
 
