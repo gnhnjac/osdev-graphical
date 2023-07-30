@@ -17,6 +17,7 @@
 
 //refs
 void get_shell_input(char *buff, int buff_size);
+void free_path();
 void shell_main();
 void handle_command(char *cmd_buff);
 void handle_kill(char *cmd_buff);

@@ -20,6 +20,7 @@
 char *path = 0; // current path
 
 PWINDOW main_window = 0;
+INPINFO window_input_info_struct;
 PINPINFO window_input_info = 0;
 
 #define SHELL_ROWS 25
@@ -76,17 +77,28 @@ void get_shell_input(char *buff, int buff_size)
 
 }
 
+void free_path()
+{
+
+	kfree(path);
+
+}
+
 void shell_main()
 {
 
-	main_window = winsys_create_win(0,50,SHELL_COLS*CHAR_WIDTH,SHELL_ROWS*CHAR_HEIGHT, "shell", false);
+	main_window = winsys_create_win(0,50,SHELL_COLS*CHAR_WIDTH,SHELL_ROWS*CHAR_HEIGHT, "shell", true);
 	main_window->event_handler.event_mask |= GENERAL_EVENT_KBD;
-	window_input_info = (PINPINFO)kcalloc(sizeof(INPINFO));
+	memset((char *)&window_input_info_struct,0,sizeof(INPINFO));
+	window_input_info = &window_input_info_struct;
 
 	process *proc = get_running_process();
 	proc->term.term_win = main_window;
 	proc->term.term_inp_info = window_input_info;
 
+	proc->on_terminate = free_path;
+
+	// (need signals and sigterm to handle that stuff instead of temporary on_terminate solution)
 	path = kmalloc(3+1);
 
 	strcpy(path,"a:\\");

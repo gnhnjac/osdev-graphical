@@ -48,6 +48,7 @@ int get_free_tid();
 void scheduler_dispatch ();
 void scheduler_tick(void);
 void scheduler_initialize(void);
+void app_launcher();
 void idle_task();
 void cycle_colors();
 // void lock_test();

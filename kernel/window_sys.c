@@ -855,7 +855,7 @@ PWINDOW winsys_get_window_from_title_collision(int x, int y)
 		if (top_collision->is_user)
 				terminateProcessById(top_collision->parent_pid);
 			else
-				winsys_remove_window(top_collision);
+				terminateKernelProcessById(top_collision->parent_pid);
 		return 0;
 	}
 
@@ -900,12 +900,16 @@ void winsys_remove_window(PWINDOW win)
 	if (working_window->id == win->id)
 	{
 		tmp = win_list;
-		while(tmp->next)
-			tmp = tmp->next;
-		working_window = 0;
-		winsys_set_working_window(tmp->id);
+		if (tmp)
+		{
+			while(tmp->next)
+				tmp = tmp->next;
+			working_window = 0;
+			winsys_set_working_window(tmp->id);
+		}
+		else
+			working_window = 0;
 	}
-
 
 	winsys_display_collided_windows(win);
 

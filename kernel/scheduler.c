@@ -440,7 +440,6 @@ void scheduler_dispatch () {
                         if (_currentTask->parent->livingThreads == 0) // bad because main might execute before others thus the prev line will throw an error
                         {
                                 clear_kernel_space(_currentTask->parent->pageDirectory);
-                                clear_kernel_stacks(_currentTask->parent->pageDirectory);
                                 vmmngr_free_pdir(_currentTask->parent->pageDirectory);
                                 kfree(_currentTask->parent);
                         }
@@ -530,6 +529,7 @@ void scheduler_initialize(void) {
         kernel_proc->state         = PROCESS_STATE_ACTIVE;
         kernel_proc->next = 0;
         kernel_proc->threadList = 0;
+        kernel_proc->is_kernel = true;
         kernel_proc->name = (char *)kmalloc(6 + 1);
         strcpy(kernel_proc->name,"kernel");
         insert_process(kernel_proc);
@@ -542,18 +542,49 @@ void scheduler_initialize(void) {
         queue_insert(_idleThread);
         insert_thread_to_proc(kernel_proc,&_idleThread);
 
-        /* create shell thread and add it. */
-        thread *shellThread = (thread *)kmalloc(sizeof(thread));
-        thread_create(shellThread, shell_main, create_kernel_stack(), true);
-        shellThread->parent = kernel_proc;
-        shellThread->isMain = false;
-        shellThread->priority = PRIORITY_HIGH;
-        queue_insert(*shellThread);
-        insert_thread_to_proc(kernel_proc,shellThread);
+        /* create app launcher process */
+        createKernelProcess(app_launcher);
+
 
         /* register isr */
         idt_set_gate(32, (void *)scheduler_isr, 0x8E|0x60);
         idt_set_gate(0x81, (void *)scheduler_raw, 0x8E|0x60); // present|32 bit interrupt gate|dpl 3
+
+}
+
+void app_launcher()
+{
+
+        PWINDOW main_window = winsys_create_win(PIXEL_WIDTH/4,PIXEL_HEIGHT-50,PIXEL_WIDTH/2,50, "app launcher", false);
+        main_window->event_handler.event_mask |= GENERAL_EVENT_MOUSE;
+        gfx_paint_bmp16(main_window,"a:\\rsrc\\terminal.bmp",0,0);
+        winsys_display_window(main_window);
+
+        while(1)
+        {
+
+                EVENT e = winsys_dequeue_from_event_handler(&main_window->event_handler);
+
+                if (e.event_type == EVENT_INVALID)
+                        thread_suspend();
+
+                if (e.event_type == EVENT_MOUSE_LEFT_CLICK)
+                {
+
+                        int16_t mx = e.event_data&0xFFFF;
+                        int16_t my = (e.event_data&(0xFFFF<<16))>>16;
+
+                        if (mx < 0 || my < 0)
+                                continue;
+
+                        if (0 <= mx < 100 && 0 <= my < 100)
+                        {
+                                createKernelProcess(shell_main);
+                                thread_sleep(100);
+                        }
+                }
+
+        }
 
 }
 
@@ -633,21 +664,21 @@ void thread_execute(thread t) {
         );
 }
 
-int _kernel_stack_index = 0;
 /* create a new kernel space stack. */
 void* create_kernel_stack() {
 
         /* we are reserving this area for 4k kernel stacks. */
 #define KERNEL_STACK_ALLOC_BASE 0xe0000000
 
-        uint32_t loc = KERNEL_STACK_ALLOC_BASE + _kernel_stack_index * PAGE_SIZE;
+        uint32_t loc = KERNEL_STACK_ALLOC_BASE;
+
+        while(vmmngr_check_virt_present(vmmngr_get_directory(), (void *)loc))
+                loc += PAGE_SIZE;
 
         vmmngr_alloc_virt(vmmngr_get_directory(), (void *)loc, I86_PDE_WRITABLE, I86_PTE_WRITABLE);
 
         /* we are returning top of stack. */
         void *ret = (void*) (loc + PAGE_SIZE);
-
-        _kernel_stack_index++;
 
         /* and return top of stack. */
         return ret;
@@ -780,7 +811,8 @@ void  thread_create (thread *t, void *entry, void *esp, bool is_kernel) {
         /* set up segment selectors. */
         if (is_kernel)
         {
-
+                t->kernelESP = (uint32_t)esp;
+                t->initialStack = esp;
                 /* adjust stack. We are about to push data on it. */
                 esp -= sizeof (trapFrame);
 
@@ -803,7 +835,6 @@ void  thread_create (thread *t, void *entry, void *esp, bool is_kernel) {
                 frame->fs    = KERNEL_DATA;
                 frame->gs    = KERNEL_DATA;
                 t->SS        = KERNEL_DATA;
-                t->kernelESP = 0;
                 t->kernelSS = 0;
 
                 /* set stack. */

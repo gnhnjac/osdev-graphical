@@ -90,7 +90,89 @@ int getFreeID()
 
 }
 
-int createProcess (char* exec, char *args) {
+int createKernelProcess(void *entry)
+{
+
+    pdirectory *prevDir = vmmngr_get_directory();
+
+    process *kernel_proc = (process *)kcalloc(sizeof(process));
+
+    kernel_proc->id            = getFreeID();
+    kernel_proc->pageDirectory = create_address_space();
+    // temporarily copy stack to new address space
+    void *running_proc_stack = get_current_task()->initialStack-PAGE_SIZE;
+    vmmngr_mmap_virt2virt(vmmngr_get_directory(),kernel_proc->pageDirectory,running_proc_stack,running_proc_stack,I86_PDE_WRITABLE,I86_PTE_WRITABLE);
+    
+    disable_scheduling();
+    vmmngr_switch_pdirectory(kernel_proc->pageDirectory);
+    kernel_proc->priority      = PRIORITY_HIGH;
+    kernel_proc->state         = PROCESS_STATE_ACTIVE;
+    kernel_proc->next = 0;
+    kernel_proc->threadList = 0;
+    kernel_proc->livingThreads = 0;
+    kernel_proc->name = 0;
+    kernel_proc->is_kernel = true;
+    insert_process(kernel_proc);
+
+    /* create main thread and add it. */
+    thread *main_thread = (thread *)kcalloc(sizeof(thread));
+    thread_create(main_thread, entry, create_kernel_stack(), true);
+    vmmngr_switch_pdirectory(prevDir);
+    enable_scheduling();
+    vmmngr_unmap_virt(kernel_proc->pageDirectory,running_proc_stack);
+
+    main_thread->parent = kernel_proc;
+    main_thread->isMain = true;
+    main_thread->priority = PRIORITY_HIGH;
+    queue_insert(*main_thread);
+    insert_thread_to_proc(kernel_proc,main_thread);
+
+}
+
+void terminateKernelProcessById (int pid) {
+
+
+    process *proc = getProcessByID(pid);
+
+    if (!proc)
+        return;
+
+    void (*on_terminate)();
+
+    on_terminate = proc->on_terminate;
+
+    if (on_terminate)
+        on_terminate();
+
+    disable_scheduling();
+
+    /* release threads */
+    thread* pThread = proc->threadList;
+
+    while (pThread)
+    {
+
+        thread *tmp = pThread;
+        pThread = pThread->next;
+        remove_by_tid(tmp->tid); // remove thread from thread list
+        kfree(tmp);
+
+    }
+
+    // release windows created by process
+    winsys_remove_windows_by_pid(proc->id);
+
+    removeProcessFromList(proc->id);
+
+    //printf_term(proc->term,"\nKernel Process %d terminated.\n",proc->id);
+
+    enable_scheduling();
+
+    schedule();// force task switch.
+
+}
+
+int createProcess(char* exec, char *args) {
 
     pdirectory *prevDir = vmmngr_get_directory();
 
@@ -126,6 +208,7 @@ int createProcess (char* exec, char *args) {
     proc->name = 0;
     proc->threadList = 0;
     proc->livingThreads = 0;
+    proc->is_kernel = false;
 
     /* Create userspace stack (4k size) */
     // void* stack = (void*) (imageInfo->ImageBase + imageInfo->ImageSize + PAGE_SIZE);
@@ -146,6 +229,7 @@ int createProcess (char* exec, char *args) {
     thread_create(mainThread,(void *)(imageInfo->EntryPointRVA + imageInfo->ImageBase),esp, false);
     vmmngr_switch_pdirectory(prevDir);
     enable_scheduling();
+    clear_kernel_stacks(addressSpace);
 
     proc->term = get_running_process()->term;
 
@@ -394,7 +478,10 @@ void terminateProcess()
     if (proc->id==PROC_INVALID_ID)
             return;
 
-    terminateProcessById(proc->id);
+    if (proc->is_kernel)
+        terminateKernelProcessById(proc->id);
+    else
+        terminateProcessById(proc->id);
 
 }
 

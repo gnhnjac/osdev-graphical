@@ -96,6 +96,8 @@ struct _process {
    process* next;
    thread* threadList;
    uint32_t livingThreads;
+   bool is_kernel;
+   void (*on_terminate)();
    char *name;
 };
 
@@ -105,7 +107,9 @@ struct _process {
 void removeProcessFromList(int id);
 process *getProcessByID(int id);
 int getFreeID();
-int createProcess (char* exec, char *args);
+int createKernelProcess(void *entry);
+void terminateKernelProcessById (int pid);
+int createProcess(char* exec, char *args);
 uintptr_t inc_proc_brk(uintptr_t inc);
 PFILE get_file_by_fd(process *proc, uint32_t fd);
 uint32_t append_fd_to_process(process *proc, FILE f);
