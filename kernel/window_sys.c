@@ -320,161 +320,11 @@ void winsys_paint_window(PWINDOW win)
 	if (!win)
 		return;
 
-	pdirectory *winDir;
-	void *tmp_win_buf_base;
+	winsys_paint_window_section(win, 0, 0, win->width, win->height);
 
-	if (win->is_user){
-		winDir = getProcessByID(win->parent_pid)->pageDirectory;
-		#define TMP_WIN_BUF_VIRT 0xB0000000
-		tmp_win_buf_base = find_user_space_pages((void *)TMP_WIN_BUF_VIRT,get_win_page_amt(win));
-		for (int i = 0; i < get_win_page_amt(win); i++)
-			vmmngr_mmap_virt2virt(winDir, vmmngr_get_directory(), win->w_buffer + i*PAGE_SIZE, (void *)((uint32_t)tmp_win_buf_base + i*PAGE_SIZE), I86_PDE_WRITABLE, I86_PTE_WRITABLE);
-	}
-
-	uint8_t *buff;
-	if (win->is_user)
-		buff = (uint8_t *)TMP_WIN_BUF_VIRT;
-	else
-		buff = (uint8_t *)win->w_buffer;
-
-	uint8_t *vram = (uint8_t *)VIDEO_ADDRESS + win->y * PIXEL_WIDTH / PIXELS_PER_BYTE;
-
-	bool hide_mouse = winsys_check_collide_win_rect(win,get_mouse_x(),get_mouse_y(),MOUSE_WIDTH,MOUSE_HEIGHT);
-
-	if (hide_mouse)
-		disable_mouse();
-
-	for (int i = 0; i < win->height; i++)
-	{
-
-		for (int j = 0; j < win->width; j++)
-		{
-
-			uint32_t x = win->x+j;
-			uint32_t y = win->y+i;
-
-			if (x >= PIXEL_WIDTH || y >= PIXEL_HEIGHT)
-				continue;
-
-			uint32_t vram_off = x/PIXELS_PER_BYTE;
-
-			if (x % 8 == 0 && j < win->width-8 && x < PIXEL_WIDTH-8)
-			{
-
-				uint32_t eight_colors = *(uint32_t *)(buff+j/2);
-
-				if (j%2 != 0)
-					eight_colors = ((eight_colors&0xFFFFFFF0)>>4)|((*(buff+j/2+4)&0xF)<<28);
-
-				for (uint8_t color = 0; color < 16; color++)
-				{
-
-					uint32_t color_mask = eight_colors^(~xor_masks[color]);
-
-					if (color_mask == 0xFFFFFFFF)
-					{
-
-						outb(0x3C4, MEMORY_PLANE_WRITE_ENABLE);
-						outb(0x3CE,0x8);
-						outb(0x3CF,0xFF);
-
-						if (color != 0xF)
-						{
-							outb(0x3C5, 0xF);
-
-							vram[vram_off] = 0;
-						}
-						if (color != 0)
-						{
-							outb(0x3C5, color);
-
-							vram[vram_off] = 0xFF;
-						}
-						break;
-
-					}
-
-					uint8_t mask = 0;
-					uint8_t mask_mask = 0x80;
-
-					while (color_mask > 0)
-					{
-						if ((color_mask&0xF) == 0xF)
-							mask |= mask_mask;
-						mask_mask >>= 1;
-						color_mask >>= 4;
-
-					}
-
-					if (mask == 0)
-						continue;
-
-					outb(0x3C4, MEMORY_PLANE_WRITE_ENABLE);
-					outb(0x3CE,0x8);
-					outb(0x3CF,mask);
-
-					if (color != 0xF)
-					{
-						outb(0x3C5, 0xF);
-
-						vram[vram_off] &= ~mask;
-					}
-					if (color != 0)
-					{
-						outb(0x3C5, color);
-
-						vram[vram_off] |= mask;
-					}
-
-				}
-
-				j += 7;
-				continue;
-			}
-
-			uint8_t color = buff[j/2];
-
-			if (j % 2)
-				color >>= 4;
-			else
-				color &= 0xF;
-
-			uint8_t mask = (0x80>>(x%PIXELS_PER_BYTE));
-
-			outb(0x3C4, MEMORY_PLANE_WRITE_ENABLE);
-			outb(0x3CE,0x8);
-			outb(0x3CF,mask);
-
-			if (color != 0xF)
-			{
-				outb(0x3C5, 0xF);
-
-				vram[vram_off] &= ~mask;
-			}
-			if (color != 0)
-			{
-				outb(0x3C5, color);
-
-				vram[vram_off] |= mask;
-			}
-
-		}
-
-		buff += win->width/2;
-		vram += PIXEL_WIDTH/PIXELS_PER_BYTE;
-
-	}
-
+	disable_mouse();
 	winsys_paint_window_frame(win);
-
-	if (hide_mouse)
-		enable_mouse();
-
-	if (win->is_user)
-	{
-		for (int i = 0; i < get_win_page_amt(win); i++)
-			vmmngr_unmap_virt(vmmngr_get_directory(), (void *) tmp_win_buf_base + i*PAGE_SIZE); // MEMORY WILL LEAK SINCE WE ARE NOT FREEING THE PAGE TABLE!! thats fine though as it's only if its called from a kernel proc
-	}
+	enable_mouse();
 
 }
 
@@ -489,6 +339,7 @@ void winsys_paint_window_section(PWINDOW win, int x, int y, int width, int heigh
 
 	if (win->is_user){
 		winDir = getProcessByID(win->parent_pid)->pageDirectory;
+		#define TMP_WIN_BUF_VIRT 0xB0000000
 		tmp_win_buf_base = find_user_space_pages((void *)TMP_WIN_BUF_VIRT,get_win_page_amt(win));
 		for (int i = 0; i < get_win_page_amt(win); i++)
 			vmmngr_mmap_virt2virt(winDir, vmmngr_get_directory(), win->w_buffer + i*PAGE_SIZE, (void *)((uint32_t)tmp_win_buf_base + i*PAGE_SIZE), I86_PDE_WRITABLE, I86_PTE_WRITABLE);
@@ -514,6 +365,8 @@ void winsys_paint_window_section(PWINDOW win, int x, int y, int width, int heigh
 
 	if (hide_mouse)
 		disable_mouse();
+
+	outb(0x3C4, MEMORY_PLANE_WRITE_ENABLE);
 
 	for (int i = max_y; i < max_y+min_height; i++)
 	{
@@ -542,10 +395,12 @@ void winsys_paint_window_section(PWINDOW win, int x, int y, int width, int heigh
 
 					uint32_t color_mask = eight_colors^(~xor_masks[color]);
 
-					if (color_mask == 0xFFFFFFFF)
+					if (color_mask == 0xFFFFFFFF || color_mask == 0)
 					{
 
-						outb(0x3C4, MEMORY_PLANE_WRITE_ENABLE);
+						if (color_mask == 0)
+							color = 15-color;
+
 						outb(0x3CE,0x8);
 						outb(0x3CF,0xFF);
 
@@ -580,7 +435,6 @@ void winsys_paint_window_section(PWINDOW win, int x, int y, int width, int heigh
 					if (mask == 0)
 						continue;
 
-					outb(0x3C4, MEMORY_PLANE_WRITE_ENABLE);
 					outb(0x3CE,0x8);
 					outb(0x3CF,mask);
 
@@ -612,7 +466,6 @@ void winsys_paint_window_section(PWINDOW win, int x, int y, int width, int heigh
 
 			uint8_t mask = (0x80>>(x%PIXELS_PER_BYTE));
 
-			outb(0x3C4, MEMORY_PLANE_WRITE_ENABLE);
 			outb(0x3CE,0x8);
 			outb(0x3CF,mask);
 

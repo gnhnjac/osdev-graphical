@@ -6,6 +6,7 @@
 #include "graphics.h"
 
 extern void syscall_stub(void);
+extern void scheduler_syscall(void);
 
 void* _syscalls[] = {
 	print,
@@ -20,7 +21,7 @@ void* _syscalls[] = {
 	inc_proc_brk,
 	fopen,
 	fclose,
-	fread
+	fread,
 };
 
 void install_syscalls()

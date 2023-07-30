@@ -379,7 +379,7 @@ extern _scheduler_tick
 extern _tss_set_stack
 extern _vmmngr_set_pdirectory_ptr
 extern __currentTask
-gen db 0
+
 _scheduler_isr:
 
    ;
@@ -462,6 +462,93 @@ interrupt_return:
    popa
 
    jmp _irq0
+
+; raw scheduler function without pit
+
+global _scheduler_raw
+
+_scheduler_raw:
+
+   ;
+   ; clear interrupts and save context.
+   ;
+   cli
+   pushad
+
+   ;
+   ; if no current task, just return.
+   ;
+   mov eax, [__currentTask]
+   cmp eax, 0
+   jz  .interrupt_return
+   ;
+   ; save selectors.
+   ;
+   push ds
+   push es
+   push fs
+   push gs
+   ;
+   ; switch to kernel segments.
+   ;
+   mov ax, 0x10
+   mov ds, ax
+   mov es, ax
+   mov fs, ax
+   mov gs, ax
+   ;
+   ; save esp.
+   ;
+   mov eax, [__currentTask]
+   mov [eax], esp
+
+   ;
+   ; call scheduler.
+   ;
+   call _scheduler_tick
+
+   ;
+   ; restore esp.
+   ;
+   mov eax, [__currentTask]
+   mov esp, [eax]
+
+   ; restore page directory
+   mov ebx, [eax+16] ; the parent process pointer
+   mov ecx, [ebx] ; page directory is right at the start of the process struct
+
+   mov ebx, cr3
+   cmp ecx, ebx
+   je .same_pdir ; not need to switch pdirectory if it's the same
+
+   mov cr3, ecx
+
+   ; officially restore page directory now that the stack can be used
+   push ecx
+   call _vmmngr_set_pdirectory_ptr
+   add esp, 4
+
+.same_pdir:
+   ;
+   ; Call tss_set_stack (kernelSS, kernelESP).
+   ;
+   mov eax, [__currentTask]
+   push dword [eax+8]
+   push dword [eax+12]
+   call _tss_set_stack
+   add esp, 8
+   ;
+   ; send EOI and restore context.
+   ;
+   pop gs
+   pop fs
+   pop es
+   pop ds
+
+.interrupt_return:
+   popa
+
+   iret
 
 ; lock operations
 

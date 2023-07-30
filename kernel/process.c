@@ -466,8 +466,7 @@ void terminateProcessById (int pid) {
 
     enable_scheduling();
 
-    // unecessary if pid != current pid
-    schedule(); // force task switch.
+    schedule();// force task switch.
 
 }
 

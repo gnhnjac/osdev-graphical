@@ -44,8 +44,9 @@ void enable_scheduling()
 /* schedule new task to run. */
 void schedule() {
 
-        /* force a task switch. */
-        __asm__ ("int $32");
+        /* force a task switch without invoking the pit */
+        __asm__("int $0x81");
+
 }
 
 /* set thread state flags. */
@@ -376,20 +377,27 @@ void scheduler_dispatch () {
 
                 }
 
-                /* adjust time delta. */
-                if (_currentTask->sleepTimeDelta > 0)
-                {
-                        _currentTask->sleepTimeDelta--;
-
-                        /* should we wake thread? */
-                        if (_currentTask->sleepTimeDelta == 0) {
-                                thread_wake();
-                                return;
-                        }
-
-                }
-
         } while (_currentTask->state & THREAD_BLOCK_SLEEP || is_terminate);
+
+        // adjust time delta
+        queueEntry *tmp = _readyQueue;
+
+        while(tmp)
+        {
+
+                if (tmp->thread.sleepTimeDelta > 0)
+                {
+                        tmp->thread.sleepTimeDelta--;
+                        /* should we wake thread? */
+                        if (tmp->thread.sleepTimeDelta == 0)
+                        {
+                                thread_remove_state(&tmp->thread,THREAD_BLOCK_SLEEP);
+                                tmp->thread.sleepTimeDelta = 0;
+                        }
+                }
+                tmp = tmp->next;
+
+        }
 }
 
 void scheduler_tick(void)
@@ -407,6 +415,7 @@ void scheduler_tick(void)
 }
 
 extern void scheduler_isr(void);
+extern void scheduler_raw(void);
 
 /* initialize scheduler. */
 void scheduler_initialize(void) {
@@ -445,6 +454,7 @@ void scheduler_initialize(void) {
 
         /* register isr */
         idt_set_gate(32, (void *)scheduler_isr, 0x8E|0x60);
+        idt_set_gate(0x81, (void *)scheduler_raw, 0x8E|0x60); // present|32 bit interrupt gate|dpl 3
 
 }
 
@@ -477,7 +487,7 @@ void cycle_colors()
           display_psf1_8x16_char_bg('o', get_screen_x(2),0, 0xf, (cycler+1)%15);
           display_psf1_8x16_char_bg('s', get_screen_x(3),0, 0xf, cycler);
           cycler = (cycler + 1) % 15;
-          thread_sleep(300);
+          thread_sleep(200);
   } 
 
 }
