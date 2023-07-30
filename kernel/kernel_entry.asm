@@ -466,6 +466,7 @@ interrupt_return:
 ; raw scheduler function without pit
 
 global _scheduler_raw
+extern _scheduler_dispatch
 
 _scheduler_raw:
 
@@ -505,7 +506,7 @@ _scheduler_raw:
    ;
    ; call scheduler.
    ;
-   call _scheduler_tick
+   call _scheduler_dispatch
 
    ;
    ; restore esp.

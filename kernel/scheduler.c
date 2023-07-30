@@ -379,26 +379,6 @@ void scheduler_dispatch () {
 
         } while (_currentTask->state & THREAD_BLOCK_SLEEP || is_terminate);
 
-        // adjust time delta (this is kinda faulty because when you call schedule it isn't necessarily on a PHASE irq call, it can be int 0x81)
-        queueEntry *tmp = _readyQueue;
-
-        while(tmp)
-        {
-
-                if (tmp->thread.sleepTimeDelta > 0)
-                {
-                        tmp->thread.sleepTimeDelta--;
-                        /* should we wake thread? */
-                        if (tmp->thread.sleepTimeDelta == 0)
-                        {
-                                thread_remove_state(&tmp->thread,THREAD_BLOCK_SLEEP);
-                                tmp->thread.sleepTimeDelta = 0;
-                        }
-                }
-                tmp = tmp->next;
-
-        }
-
         static uint32_t idle_task_ticks = 0;
         static uint32_t total_ticks = 0;
 
@@ -432,6 +412,26 @@ void scheduler_tick(void)
 
         // dispatch the next thread
         scheduler_dispatch();
+
+        // adjust time delta
+        queueEntry *tmp = _readyQueue;
+
+        while(tmp)
+        {
+
+                if (tmp->thread.sleepTimeDelta > 0)
+                {
+                        tmp->thread.sleepTimeDelta--;
+                        /* should we wake thread? */
+                        if (tmp->thread.sleepTimeDelta == 0)
+                        {
+                                thread_remove_state(&tmp->thread,THREAD_BLOCK_SLEEP);
+                                tmp->thread.sleepTimeDelta = 0;
+                        }
+                }
+                tmp = tmp->next;
+
+        }
 
         // switch to it's address space if it's parent is different than the old parent
         // cant do that here because we're still in the old esp, maybe it's not virtually mapped in the new page directory
