@@ -92,6 +92,35 @@ void thread_set_state_by_id(int tid, uint32_t state)
 
 }
 
+void thread_remove_state_by_id(int tid, uint32_t state)
+{
+
+        bool scheduling_enabled = (_currentTask != 0);
+
+        if (scheduling_enabled)
+                disable_scheduling();
+
+        queueEntry *tmp = _readyQueue;
+
+        while (tmp)
+        {
+                if (tmp->thread.tid == tid)
+                {       
+                        thread_remove_state(&tmp->thread, state);
+                        if (scheduling_enabled)
+                                enable_scheduling();
+                        return;
+                }
+
+                tmp = tmp->next;
+
+        }
+
+        if (scheduling_enabled)
+                enable_scheduling();
+
+}
+
 void thread_sleep(uint32_t ms) {
 
         /* go to sleep. */
@@ -105,6 +134,45 @@ void thread_wake() {
         /* wake up. */
         thread_remove_state(_currentTask,THREAD_BLOCK_SLEEP);
         _currentTask->sleepTimeDelta = 0;
+}
+
+void thread_suspend() {
+
+        thread_set_state(_currentTask,THREAD_SUSPENDED);
+        schedule();
+}
+
+void thread_unsuspend() {
+
+        thread_remove_state(_currentTask,THREAD_SUSPENDED);
+}
+
+void unsuspend_suspended_threads(process *proc)
+{
+
+    if (!proc)
+        return;
+
+    bool scheduling_enabled = (_currentTask != 0);
+
+    if (scheduling_enabled)
+        disable_scheduling();
+
+    queueEntry *tmp = _readyQueue;
+
+    while (tmp)
+    {
+
+        if (tmp->thread.parent->id == proc->id)
+                thread_remove_state(&tmp->thread,THREAD_SUSPENDED);
+
+        tmp = tmp->next;
+
+    }
+
+    if (scheduling_enabled)
+        enable_scheduling();
+
 }
 
 /* clear queue. */
@@ -359,6 +427,11 @@ void scheduler_dispatch () {
                 if (_currentTask->state & THREAD_TERMINATE)
                 {
 
+                        if (vmmngr_get_directory() == _currentTask->parent->pageDirectory){
+                                is_terminate = true;
+                                continue;
+                        }
+
                         if (_currentTask->kernelESP != 0)
                         {
                                 vmmngr_free_virt(_currentTask->parent->pageDirectory, (void *)(_currentTask->kernelESP-PAGE_SIZE));
@@ -371,13 +444,14 @@ void scheduler_dispatch () {
                                 vmmngr_free_pdir(_currentTask->parent->pageDirectory);
                                 kfree(_currentTask->parent);
                         }
+
                         queue_delete_first();
                         is_terminate = true;
                         continue;
 
                 }
 
-        } while (_currentTask->state & THREAD_BLOCK_SLEEP || is_terminate);
+        } while (is_terminate || _currentTask->state & THREAD_BLOCK_SLEEP || _currentTask->state & THREAD_SUSPENDED);
 
         static uint32_t idle_task_ticks = 0;
         static uint32_t total_ticks = 0;

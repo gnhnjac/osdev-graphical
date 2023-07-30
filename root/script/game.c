@@ -39,7 +39,7 @@ void _start()
 		get_window_event(&win,&e);
 
 		if (e.event_type == EVENT_INVALID)
-			continue;
+			suspend();
 
 		if (e.event_type == EVENT_MOUSE_LEFT_CLICK)
 		{

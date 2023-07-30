@@ -9,6 +9,7 @@
 #include "ps2.h"
 #include "window_sys.h"
 #include "process.h"
+#include "scheduler.h"
 
 // status byte for keyboard
 // [n,n,n,n,caps,shift,alt,ctrl]
@@ -295,6 +296,9 @@ void keyboard_handler()
         kbd_event.event_data |= 0x200;
 
       winsys_enqueue_to_event_handler(win_event_handler, kbd_event);
+
+      // wake up waiting thread if suspended
+      unsuspend_suspended_threads(getProcessByID(working_win->parent_pid));
 
     }
 

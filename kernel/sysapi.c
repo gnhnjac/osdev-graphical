@@ -22,6 +22,7 @@ void* _syscalls[] = {
 	fopen,
 	fclose,
 	fread,
+	thread_suspend
 };
 
 void install_syscalls()

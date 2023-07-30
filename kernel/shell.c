@@ -41,7 +41,7 @@ void get_shell_input(char *buff, int buff_size)
 	while(window_input_info->is_taking_input)
 	{
 		while(main_window->event_handler.events[0].event_type & EVENT_INVALID)
-			continue;
+			thread_suspend();
 
 		EVENT e = winsys_dequeue_from_event_handler(&main_window->event_handler);
 

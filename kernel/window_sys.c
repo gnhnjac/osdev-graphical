@@ -148,7 +148,7 @@ void winsys_create_win_user(PWINDOW local_win, int x, int y, int width, int heig
 	win->y = y;
 	win->width = width;
 	win->height = height;
-	win->closable = false;
+	win->closable = true;
 	win->parent_pid = parent_proc->id;
 	win->is_user = true;
 	win->event_handler.event_mask = local_win->event_handler.event_mask;
@@ -698,9 +698,9 @@ void winsys_clear_window_frame(PWINDOW win)
 
 void winsys_clear_whole_window(PWINDOW win)
 {
-
+	disable_mouse();
 	fill_rect(win->x-WIN_FRAME_SIZE,win->y-TITLE_BAR_HEIGHT,win->width+WIN_FRAME_SIZE*2,win->height+TITLE_BAR_HEIGHT+WIN_FRAME_SIZE,BG_COLOR);
-
+	enable_mouse();
 }
 
 bool winsys_check_collide(PWINDOW w1, PWINDOW w2)
@@ -852,7 +852,10 @@ PWINDOW winsys_get_window_from_title_collision(int x, int y)
 
 	if (winsys_check_close_collide(top_collision,x,y))
 	{
-		winsys_remove_window(top_collision);
+		if (top_collision->is_user)
+				terminateProcessById(top_collision->parent_pid);
+			else
+				winsys_remove_window(top_collision);
 		return 0;
 	}
 

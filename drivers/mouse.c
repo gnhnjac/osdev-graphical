@@ -6,7 +6,9 @@
 #include "std.h"
 #include "keyboard.h"
 #include "graphics.h"
+#include "process.h"
 #include "window_sys.h"
+#include "scheduler.h"
 #include <stdint.h>
 #include <stdbool.h>
 
@@ -237,10 +239,7 @@ void mouse_handler()
 
 		if (!dragging_window)
 		{
-			clear_mouse();
 			PWINDOW win = winsys_get_window_from_title_collision(MOUSEX,MOUSEY);
-			save_to_mouse_buffer();
-			print_mouse();
 			if (win)
 			{
 				dragging_window = win;
@@ -274,6 +273,9 @@ void mouse_handler()
 
 	PWINDOW working_win = winsys_get_working_window();
 
+	if (!working_win)
+		return;
+
 	PEVENTHAND win_event_handler = &working_win->event_handler;
 
 	if (win_event_handler->event_mask & GENERAL_EVENT_MOUSE)
@@ -293,6 +295,9 @@ void mouse_handler()
 		mouse_event.event_data = (MOUSEX-working_win->x) | ((MOUSEY-working_win->y)<<16);
 
 		winsys_enqueue_to_event_handler(win_event_handler, mouse_event);
+
+		// wake up waiting thread if suspended
+        unsuspend_suspended_threads(getProcessByID(working_win->parent_pid));
 
 	}
 

@@ -545,12 +545,14 @@ void print_processes()
 
             printf("tid: %d, state: ",t.tid);
 
-            if (t.state & THREAD_BLOCK_SLEEP)
-                    printf("SLEEPING\n");
-            else if(t.state & THREAD_TERMINATE)
-                    printf("TERMINATE\n");
+            if(t.state & THREAD_TERMINATE)
+                printf("TERMINATE\n");
+            else if (t.state & THREAD_SUSPENDED)
+                printf("SUSPENDED\n");
+            else if (t.state & THREAD_BLOCK_SLEEP)
+                printf("SLEEPING\n");
             else if (t.state & THREAD_RUN)
-                    printf("RUNNING\n");
+                printf("RUNNING\n");
 
             tmp_thread = tmp_thread->next;
 

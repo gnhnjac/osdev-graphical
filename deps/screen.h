@@ -9,7 +9,7 @@
 #define TOP 1
 #define TIME_OFF 70
 
-#define SCROLL_ROWS 10
+#define SCROLL_ROWS 5
 
 //refs
 void screen_print_char(const char character, int row, int col, char color);

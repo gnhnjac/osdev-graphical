@@ -4,6 +4,7 @@
 #define THREAD_RUN          1
 #define THREAD_BLOCK_SLEEP  2
 #define THREAD_TERMINATE    4
+#define THREAD_SUSPENDED    8
 
 #define PRIORITY_HIGH 1
 #define PRIORITY_MID 2
@@ -26,8 +27,12 @@ void schedule();
 void thread_set_state(thread* t, uint32_t flags);
 void thread_remove_state(thread* t, uint32_t flags);
 void thread_set_state_by_id(int tid, uint32_t state);
+void thread_remove_state_by_id(int tid, uint32_t state);
 void thread_sleep(uint32_t ms);
 void thread_wake();
+void thread_suspend();
+void thread_unsuspend();
+void unsuspend_suspended_threads(process *proc);
 void clear_queue();
 void queue_insert(thread t);
 void queue_insert_prioritized(thread t);

@@ -140,3 +140,11 @@ void fclose(uint32_t fd)
 	__asm__("int $0x80");
 
 }
+
+void suspend()
+{
+
+	__asm__("mov $13, %eax");
+	__asm__("int $0x80");
+
+}
