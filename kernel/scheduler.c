@@ -574,10 +574,7 @@ void app_launcher()
                         int16_t mx = e.event_data&0xFFFF;
                         int16_t my = (e.event_data&(0xFFFF<<16))>>16;
 
-                        if (mx < 0 || my < 0)
-                                continue;
-
-                        if (0 <= mx < 100 && 0 <= my < 100)
+                        if (0 <= mx && mx < 50 && 0 <= my && my < 50)
                         {
                                 createKernelProcess(shell_main);
                                 thread_sleep(100);
