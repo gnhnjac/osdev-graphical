@@ -4,13 +4,13 @@ Compiled using windows and gcc.
 
 ## PREREQUISITES
 
-mingw32 -> make, ld, gcc
-nasm
-python 3.x
-windows 32 bit
-qemu emulator/bochs emulator (bochs is much slower)
-dd
-WinImage
+- mingw32 -> make, ld, gcc
+- nasm
+- python 3.x
+- windows 32 bit
+- qemu emulator/bochs emulator (bochs is much slower)
+- dd
+- WinImage
 
 ## CURRENTLY SUPPORTS
 
