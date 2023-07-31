@@ -76,4 +76,4 @@ type help in the shell to get a list of commands, type "help COMMAND" to get hel
 
 ![Screenshot of the operating system](screenshot.png "The AKOS Operating System")
 
-![Screenshot of the operating system #2](screenshot_1.png "The AKOS Operating System")
+![Screenshot of the operating system #2](screenshot2.png "The AKOS Operating System")
