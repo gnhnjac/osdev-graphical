@@ -1644,7 +1644,7 @@ void gfx_open_bmp16(char *path, int wx, int wy)
 
 	}
 
-	winsys_display_window(win);
+	winsys_display_window_section(win,0,0,win->width,win->height);
 	volCloseFile(&bmp);
 
 }
