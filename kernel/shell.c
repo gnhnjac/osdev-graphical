@@ -129,42 +129,52 @@ void handle_command(char *cmd_buff)
 
 	if(strcmp(cmd, "help"))
 	{
+		kfree(cmd);
 		handle_help(cmd_buff);
 	}
 	else if(strcmp(cmd, "reboot"))
 	{
+		kfree(cmd);
 		handle_reboot();
 	}
 	else if(strcmp(cmd, "shutdown"))
 	{
+		kfree(cmd);
 		handle_shutdown();
 	}
 	else if(strcmp(cmd, "ls"))
 	{
+		kfree(cmd);
 		handle_ls();
 	}
 	else if(strcmp(cmd, "cd"))
 	{
+		kfree(cmd);
 		handle_cd(cmd_buff);
 	}
 	else if(strcmp(cmd, "mkdir"))
 	{
+		kfree(cmd);
 		handle_mkdir(cmd_buff);
 	}
 	else if(strcmp(cmd, "touch"))
 	{
+		kfree(cmd);
 		handle_touch(cmd_buff);
 	}
 	else if(strcmp(cmd, "write"))
 	{
+		kfree(cmd);
 		handle_write(cmd_buff);
 	}
 	else if(strcmp(cmd, "cat"))
 	{
+		kfree(cmd);
 		handle_cat(cmd_buff);
 	}
 	else if(strcmp(cmd,"cls"))
 	{
+		kfree(cmd);
 		disable_mouse();
 		clear_viewport();
 		window_input_info->cursor_offset_y = 0;
@@ -173,48 +183,55 @@ void handle_command(char *cmd_buff)
 	}
 	else if(strcmp(cmd,"rm"))
 	{
+		kfree(cmd);
 		handle_rm(cmd_buff);
 	}
 	else if(strcmp(cmd,"size"))
 	{
+		kfree(cmd);
 		handle_size(cmd_buff);
 	}
 	else if(strcmp(cmd,"concat"))
 	{
+		kfree(cmd);
 		handle_concat(cmd_buff);
 	}
 	else if(strcmp(cmd,"stats"))
 	{
+		kfree(cmd);
 		handle_stats();
 	}
 	else if(strcmp(cmd,"exec"))
 	{
+		kfree(cmd);
 		handle_exec(cmd_buff);
 	}
 	else if(strcmp(cmd,"execbg"))
 	{
+		kfree(cmd);
 		handle_execbg(cmd_buff);
 	}
 	else if(strcmp(cmd, "ps"))
 	{
+		kfree(cmd);
 		print_processes();
 	}
 	else if(strcmp(cmd,"img"))
 	{
+		kfree(cmd);
 		handle_img(cmd_buff);
 	}
 	else if(strcmp(cmd,"kill"))
 	{
+		kfree(cmd);
 		handle_kill(cmd_buff);
 	}
 	else
 	{
 
 		printf("Unknown command '%s'. type 'help' for a list of available commands.",cmd);
-
+		kfree(cmd);
 	}
-
-	kfree(cmd);
 
 }
 

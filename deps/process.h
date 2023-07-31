@@ -107,7 +107,7 @@ struct _process {
 void removeProcessFromList(int id);
 process *getProcessByID(int id);
 int getFreeID();
-int createKernelProcess(void *entry);
+int createKernelProcess(void *entry, char *name);
 void terminateKernelProcessById (int pid);
 int createProcess(char* exec, char *args);
 uintptr_t inc_proc_brk(uintptr_t inc);

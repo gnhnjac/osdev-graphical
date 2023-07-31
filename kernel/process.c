@@ -91,7 +91,7 @@ int getFreeID()
 
 }
 
-int createKernelProcess(void *entry)
+int createKernelProcess(void *entry, char *name)
 {
 
     pdirectory *prevDir = vmmngr_get_directory();
@@ -111,7 +111,8 @@ int createKernelProcess(void *entry)
     kernel_proc->next = 0;
     kernel_proc->threadList = 0;
     kernel_proc->livingThreads = 0;
-    kernel_proc->name = 0;
+    kernel_proc->name = kmalloc(strlen(name)+1);
+    strcpy(kernel_proc->name,name);
     kernel_proc->is_kernel = true;
     insert_process(kernel_proc);
 
@@ -134,6 +135,7 @@ int createKernelProcess(void *entry)
 
 void terminateKernelProcessById (int pid) {
 
+    // NEED TO DO THIS WITH SIGNALS SO PROCESS ITSELF WILL RUN THIS
 
     process *proc = getProcessByID(pid);
 
@@ -216,7 +218,8 @@ int createProcess(char* exec, char *args) {
     proc->imageSize = imageInfo->ImageSize;
     proc->brk = imageInfo->ImageBase+imageInfo->ImageSize;
     proc->file_descs = 0;
-    proc->name = 0;
+    proc->name = kmalloc(strlen(k_exec)+1);
+    strcpy(proc->name,k_exec);
     proc->threadList = 0;
     proc->livingThreads = 0;
     proc->is_kernel = false;
@@ -562,7 +565,7 @@ void terminateProcessById (int pid) {
 
     removeProcessFromList(proc->id);
 
-    printf_term(proc->term,"\nProcess %d terminated.\n",proc->id);
+    // printf_term(proc->term,"\nProcess %d terminated.\n",proc->id);
 
     enable_scheduling();
 

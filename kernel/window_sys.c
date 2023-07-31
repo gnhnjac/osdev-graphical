@@ -1518,23 +1518,26 @@ int gfx_handle_scrolling(PWINDOW win, PINPINFO inp_info, int offset_y)
 		return offset_y;
 	}
 	
-	gfx_paint_char_bg(win,'.',gfx_get_win_x(0),gfx_get_win_y(offset_y),0,0x4);
-	gfx_paint_char_bg(win,'.',gfx_get_win_x(1),gfx_get_win_y(offset_y),0,0x4);
-	gfx_paint_char_bg(win,'.',gfx_get_win_x(2),gfx_get_win_y(offset_y),0,0x4);
-	winsys_display_window(win);
-
-	while(1)
+	if (get_current_task())
 	{
-		while(win->event_handler.events[0].event_type & EVENT_INVALID)
-			continue;
+		gfx_paint_char_bg(win,'.',gfx_get_win_x(0),gfx_get_win_y(offset_y),0,0x4);
+		gfx_paint_char_bg(win,'.',gfx_get_win_x(1),gfx_get_win_y(offset_y),0,0x4);
+		gfx_paint_char_bg(win,'.',gfx_get_win_x(2),gfx_get_win_y(offset_y),0,0x4);
+		winsys_display_window(win);
 
-		EVENT e = winsys_dequeue_from_event_handler(&win->event_handler);
+		while(1)
+		{
+			while(win->event_handler.events[0].event_type & EVENT_INVALID)
+				continue;
 
-		if (e.event_type & EVENT_KBD_PRESS)
-			break;
+			EVENT e = winsys_dequeue_from_event_handler(&win->event_handler);
+
+			if (e.event_type & EVENT_KBD_PRESS)
+				break;
+		}
+
+		gfx_fill_rect(win,0,win->height-CHAR_HEIGHT,CHAR_WIDTH*3,CHAR_HEIGHT,0);
 	}
-
-	gfx_fill_rect(win,0,win->height-CHAR_HEIGHT,CHAR_WIDTH*3,CHAR_HEIGHT,0);
 
 	uint32_t char_line_size = win->width*CHAR_HEIGHT/2;
 	uint32_t scroll_diff_size = SCROLL_ROWS*char_line_size;

@@ -443,6 +443,8 @@ void scheduler_dispatch () {
                         {
                                 clear_kernel_space(_currentTask->parent->pageDirectory);
                                 vmmngr_free_pdir(_currentTask->parent->pageDirectory);
+                                if (_currentTask->parent->name)
+                                        kfree(_currentTask->parent->name);
                                 kfree(_currentTask->parent);
                         }
 
@@ -545,7 +547,7 @@ void scheduler_initialize(void) {
         insert_thread_to_proc(kernel_proc,&_idleThread);
 
         /* create app launcher process */
-        createKernelProcess(app_launcher);
+        createKernelProcess(app_launcher,"app_launcher");
 
 
         /* register isr */
@@ -589,7 +591,7 @@ void app_launcher()
 
                         if (0 <= mx && mx < 50 && 0 <= my && my < 50 && !is_shell_alive)
                         {
-                                shell_pid = createKernelProcess(shell_main);
+                                shell_pid = createKernelProcess(shell_main, "shell");
                                 thread_sleep(100);
                         }
                 }
