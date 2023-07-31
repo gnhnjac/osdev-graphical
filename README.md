@@ -75,4 +75,5 @@ type help in the shell to get a list of commands, type "help COMMAND" to get hel
 3GB + 5MB-6MB -> RAM FS
 
 ![Screenshot of the operating system](screenshot.png "The AKOS Operating System")
-![Screenshot of the operating system](screenshot_1.png "The AKOS Operating System")
+
+![Screenshot of the operating system #2](screenshot_1.png "The AKOS Operating System")
