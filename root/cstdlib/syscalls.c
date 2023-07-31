@@ -21,11 +21,11 @@ int fork()
 	__asm__("mov $2, %eax");
 	__asm__("int $0x80");
 
-	unsigned int ret = 0;
+	unsigned int tid = 0;
 
-	__asm__("mov %%eax, %0" : "=m" (ret));
+	__asm__("mov %%eax, %0" : "=m" (tid));
 
-	return ret;
+	return tid;
 
 }
 
@@ -113,11 +113,20 @@ uint32_t fopen(char *path)
 	__asm__("mov %0, %%ebx" : : "m" (path));
 	__asm__("int $0x80");
 
-	uintptr_t ret = 0;
+	uintptr_t fd = 0;
 
-	__asm__("mov %%eax, %0" : "=m" (ret));
+	__asm__("mov %%eax, %0" : "=m" (fd));
 
-	return ret;
+	return fd;
+
+}
+
+void fclose(uint32_t fd)
+{
+
+    __asm__("mov $11, %eax");
+	__asm__("mov %0, %%ebx" : : "m" (fd));
+	__asm__("int $0x80");
 
 }
 
@@ -132,19 +141,25 @@ void fread(uint32_t fd, unsigned char* Buffer, unsigned int Length)
 
 }
 
-void fclose(uint32_t fd)
-{
-
-    __asm__("mov $11, %eax");
-	__asm__("mov %0, %%ebx" : : "m" (fd));
-	__asm__("int $0x80");
-
-}
-
 void suspend()
 {
 
 	__asm__("mov $13, %eax");
 	__asm__("int $0x80");
 
+}
+
+int exec(char* path, char *args)
+{
+
+	__asm__("mov $14, %eax");
+	__asm__("mov %0, %%ebx" : : "m" (path));
+	__asm__("mov %0, %%ecx" : : "m" (args));
+	__asm__("int $0x80");
+
+	uintptr_t pid = 0;
+
+	__asm__("mov %%eax, %0" : "=m" (pid));
+
+	return pid;
 }

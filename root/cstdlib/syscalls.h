@@ -16,3 +16,4 @@ uint32_t fopen(char *path);
 void fread(uint32_t fd, unsigned char* Buffer, unsigned int Length);
 void fclose(uint32_t fd);
 void suspend();
+int exec(char* path, char *args);

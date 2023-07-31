@@ -52,7 +52,7 @@ void get_shell_input(char *buff, int buff_size)
 
 		if (e.event_type & EVENT_KBD_PRESS)
 		{
-			int pre_x = gfx_get_win_x(window_input_info->cursor_offset_x)-CHAR_WIDTH;
+			int pre_x = gfx_get_win_x(window_input_info->cursor_offset_x);
 			int pre_y = gfx_get_win_y(window_input_info->cursor_offset_y);
 
 			char c;
@@ -66,7 +66,12 @@ void get_shell_input(char *buff, int buff_size)
 			if (gfx_keyboard_input_character(window_input_info,c) != -1)
 			{
 				gfx_putchar(main_window, window_input_info, c);
-				winsys_display_window_section(main_window,pre_x,pre_y,CHAR_WIDTH*3,CHAR_HEIGHT);
+
+				int post_x = gfx_get_win_x(window_input_info->cursor_offset_x);
+				int post_y = gfx_get_win_y(window_input_info->cursor_offset_y);
+
+				winsys_display_window_section(main_window,pre_x,pre_y,CHAR_WIDTH,CHAR_HEIGHT);
+				winsys_display_window_section(main_window,post_x,post_y,CHAR_WIDTH,CHAR_HEIGHT);
 				window_input_info->cursor_input_col = window_input_info->cursor_offset_x;
 				window_input_info->cursor_input_row = window_input_info->cursor_offset_y;
 			}

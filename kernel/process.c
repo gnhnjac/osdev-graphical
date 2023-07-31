@@ -100,8 +100,8 @@ int createKernelProcess(void *entry)
     kernel_proc->id            = getFreeID();
     kernel_proc->pageDirectory = create_address_space();
     // temporarily copy stack to new address space
-    void *running_proc_stack = get_current_task()->initialStack-PAGE_SIZE;
-    vmmngr_mmap_virt2virt(vmmngr_get_directory(),kernel_proc->pageDirectory,running_proc_stack,running_proc_stack,I86_PDE_WRITABLE,I86_PTE_WRITABLE);
+    void *running_proc_stack = (void *)get_current_task()->kernelESP-PAGE_SIZE;
+    vmmngr_mmap_virt2virt(prevDir,kernel_proc->pageDirectory,running_proc_stack,running_proc_stack,I86_PDE_WRITABLE,I86_PTE_WRITABLE);
     
     disable_scheduling();
     vmmngr_switch_pdirectory(kernel_proc->pageDirectory);
@@ -178,18 +178,26 @@ int createProcess(char* exec, char *args) {
 
     pdirectory *prevDir = vmmngr_get_directory();
 
+    char *k_args = kmalloc(strlen(args)+1);
+    strcpy(k_args,args);
+
+    char *k_exec = kmalloc(strlen(exec)+1);
+    strcpy(k_exec,exec);
+
     /* get process virtual address space */
     pdirectory *addressSpace = create_address_space(); // *** REMEMBER TO FREE IT ONCE THE PROCESS TERMINATES
-    clone_kernel_stacks(addressSpace);
+    void *running_proc_stack = (void *)get_current_task()->kernelESP-PAGE_SIZE;
+    vmmngr_mmap_virt2virt(prevDir,addressSpace,running_proc_stack,running_proc_stack,I86_PDE_WRITABLE,I86_PTE_WRITABLE);
 
     disable_scheduling();
     vmmngr_switch_pdirectory(addressSpace); // this will only work when we're in a kernel process because were mapping kernel stacks to all processes, as opposed to user stacks which are individual.
-    PImageInfo imageInfo = load_executable(addressSpace,exec);
+    PImageInfo imageInfo = load_executable(addressSpace,k_exec);
 
     if (!imageInfo)
     {
-        pmmngr_free_block(addressSpace);
         vmmngr_switch_pdirectory(prevDir);
+        clear_kernel_space(addressSpace);
+        vmmngr_free_pdir(addressSpace);
         enable_scheduling();
         return 0;
     }
@@ -224,14 +232,14 @@ int createProcess(char* exec, char *args) {
     // I86_PTE_WRITABLE|I86_PTE_USER);
 
     void *stack = create_user_stack(addressSpace);
-    void *esp = insert_argv_to_process_stack(args, stack+PAGE_SIZE);
+    void *esp = insert_argv_to_process_stack(k_args, stack+PAGE_SIZE);
 
     /* create thread descriptor */
     thread *mainThread       = (thread *)kcalloc(sizeof(thread));
     thread_create(mainThread,(void *)(imageInfo->EntryPointRVA + imageInfo->ImageBase),esp, false);
     vmmngr_switch_pdirectory(prevDir);
     enable_scheduling();
-    clear_kernel_stacks(addressSpace);
+    vmmngr_unmap_virt(addressSpace,running_proc_stack);
 
     proc->term = get_running_process()->term;
 
@@ -241,6 +249,8 @@ int createProcess(char* exec, char *args) {
     mainThread->priority = proc->priority;
 
     kfree(imageInfo);
+    kfree(k_exec);
+    kfree(k_args);
 
     insert_process(proc);
 
