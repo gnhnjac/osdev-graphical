@@ -443,33 +443,6 @@ int main_stub (int argc, char *args[]) {
 
 		get_window_event(&window,&e);
 		
-		if (e.event_type == EVENT_KBD_PRESS)
-		{
-
-			char scancode = e.event_data&0xFF;
-
-			if (scancode == K_ESCAPE) {
-			
-				quit = 1;
-			}
-			
-			else if (scancode == K_DOWN) {
-				
-				//draw paddles
-				draw_paddle(0);
-
-				move_paddle(0);
-			}
-
-			else if (scancode == K_UP) {
-				
-				//draw paddles
-				draw_paddle(0);
-
-				move_paddle(1);
-			}
-		}
-		
 		//display main menu
 		if (state == 0 ) {
 			
@@ -562,6 +535,27 @@ int main_stub (int argc, char *args[]) {
 
 			//draw paddles
 			draw_paddle(0);
+
+			if (e.event_type == EVENT_KBD_PRESS)
+			{
+
+				char scancode = e.event_data&0xFF;
+
+				if (scancode == K_ESCAPE) {
+				
+					quit = 1;
+				}
+				
+				else if (scancode == K_DOWN) {
+
+					move_paddle(0);
+				}
+
+				else if (scancode == K_UP) {
+
+					move_paddle(1);
+				}
+			}
 
 			//paddle ai movement
 			move_paddle_ai();

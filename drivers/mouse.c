@@ -292,7 +292,10 @@ void mouse_handler()
 		if (rel_x != 0 || rel_y != 0)
 			mouse_event.event_type |= EVENT_MOUSE_MOVE;
 
-		mouse_event.event_data = (MOUSEX-working_win->x) | ((MOUSEY-working_win->y)<<16);
+		int16_t win_relx = MOUSEX-working_win->x;
+		int16_t win_rely = MOUSEY-working_win->y;
+
+		mouse_event.event_data = win_relx | (win_rely<<16);
 
 		winsys_enqueue_to_event_handler(win_event_handler, mouse_event);
 

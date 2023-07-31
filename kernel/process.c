@@ -10,6 +10,7 @@
 #include "pmm.h"
 #include "graphics.h"
 #include "math.h"
+#include "strings.h"
 
 #define PAGE_SIZE 4096
 #define PROC_INVALID_ID -1
