@@ -19,7 +19,7 @@ emu = QEMU
 
 DEPS := $(OBJ:.o=.d)
 
-CFLAGS = -m32 -ffreestanding -MMD -c $< -I ./deps
+CFLAGS = -m32 -ffreestanding -MMD -nostdlib -c $< -I ./deps
 
 # Default make target .
 all: pre-build os-image
@@ -63,7 +63,7 @@ kernel.sys: kernel/kernel_entry.o ${OBJ}
 
 # Rule for building root c files
 %.exe: %.c ${ROOT_C_LIB}
-	@gcc -fno-builtin -m32 -nostdlib -I ./root/cstdlib $^ -o $@
+	@gcc -fno-builtin -m32 -nostdlib -e __main -I ./root/cstdlib $^ -o $@
 
 
 # Build our kernel entry object file.

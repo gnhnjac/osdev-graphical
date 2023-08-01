@@ -5,7 +5,7 @@
 
 WINDOW win;
 
-void _start()
+void _main()
 {
 
 	win.w_name = "clickme!!";

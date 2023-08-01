@@ -15,7 +15,12 @@ WINDOW win;
 
 #define BOX_SIZE 5
 
-void _start(int argc, char **argv)
+void some_other_function()
+{
+	return;
+}
+
+void _main(int argc, char **argv)
 {
 	printf("\nreceived argc: %U\n",argc);
 

@@ -316,10 +316,10 @@ void set_pixel (int x, int y, uint8_t color)
 	outb(0x3CE,0x8);
 	outb(0x3CF,mask);
 
-	outb(0x3C5, 0xF);
-
 	uint8_t *vram = (uint8_t *)VIDEO_ADDRESS + (y * PIXEL_WIDTH + x)/PIXELS_PER_BYTE;
 
+	outb(0x3C5, 0xF);
+	
 	*vram &= ~mask;
 
 	outb(0x3C5, color);

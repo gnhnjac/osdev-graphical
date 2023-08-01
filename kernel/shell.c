@@ -175,11 +175,9 @@ void handle_command(char *cmd_buff)
 	else if(strcmp(cmd,"cls"))
 	{
 		kfree(cmd);
-		disable_mouse();
 		clear_viewport();
 		window_input_info->cursor_offset_y = 0;
 		window_input_info->cursor_input_row = 0;
-		enable_mouse();
 	}
 	else if(strcmp(cmd,"rm"))
 	{

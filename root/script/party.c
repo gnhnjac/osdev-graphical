@@ -5,10 +5,23 @@
 WINDOW win;
 uint8_t font_buff[256*16];
 
-void cycle(int col, int cycler_start);
+void cycle(int col, int cycler_start)
+{
+
+	int cycler = cycler_start;
+	while(1)
+	{
+		gfx_paint_char_bg(&win,'a'+cycler,col*CHAR_WIDTH,0,cycler%16,(cycler+5)%16,font_buff);
+		display_window_section(&win,col*CHAR_WIDTH,0,CHAR_WIDTH,CHAR_HEIGHT);
+		sleep(300);
+		cycler = (cycler + 1)%26;
+
+	}
+
+}
 
 #define PARTIERS 5
-void _start()
+void _main()
 {
 	load_font((void *)font_buff);
 	win.w_name = "party";
@@ -34,19 +47,4 @@ void _start()
 
 	terminate();
 	__builtin_unreachable();
-}
-
-void cycle(int col, int cycler_start)
-{
-
-	int cycler = cycler_start;
-	while(1)
-	{
-		gfx_paint_char_bg(&win,'a'+cycler,col*CHAR_WIDTH,0,cycler%16,(cycler+5)%16,font_buff);
-		display_window_section(&win,col*CHAR_WIDTH,0,CHAR_WIDTH,CHAR_HEIGHT);
-		sleep(300);
-		cycler = (cycler + 1)%26;
-
-	}
-
 }

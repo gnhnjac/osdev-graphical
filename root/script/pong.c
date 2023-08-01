@@ -5,14 +5,6 @@
 
 int main_stub (int argc, char *args[]);
 
-void _start()
-{
-	main_stub(0,0);
-
-	terminate();
-	__builtin_unreachable();
-}
-
 #define SCREEN_WIDTH 600	//window height
 #define SCREEN_HEIGHT 440	//window width
 
@@ -416,12 +408,12 @@ static void draw_player_1_score() {
 
 }
 
-int main_stub (int argc, char *args[]) {
+void _main (int argc, char *args[]) {
 		
 	//SDL Window setup
 	if (init(SCREEN_WIDTH, SCREEN_HEIGHT, argc, args) == 1) {
 		
-		return 0;
+		terminate();
 	}
 	
 	width = window.width;
@@ -583,7 +575,8 @@ int main_stub (int argc, char *args[]) {
 		}
 	}
 	 
-	return 0;
+	terminate();
+	__builtin_unreachable();
 	
 }
 

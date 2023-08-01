@@ -13,7 +13,7 @@ bool check_win(char grid[3][3]);
 void init_win();
 
 #define BLOCK_SIZE 100
-void _start()
+void _main()
 {
 	load_font((void *)font_buff);
 

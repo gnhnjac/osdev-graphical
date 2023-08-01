@@ -1,6 +1,6 @@
 
 __attribute__((force_align_arg_pointer))
-void _start()
+void _main()
 {
 	
 	char *hello = "hello world!\n";

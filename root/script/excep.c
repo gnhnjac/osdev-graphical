@@ -1,5 +1,5 @@
 __attribute__((force_align_arg_pointer))
-void _start()
+void _main()
 {
 
 	char *a = 0;

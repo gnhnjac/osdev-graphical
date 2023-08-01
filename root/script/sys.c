@@ -2,7 +2,7 @@
 #include "syscalls.h"
 #include "stdlib.h"
 
-void _start()
+void _main()
 {
 	
 	// char *hello = "hello world!\n";
