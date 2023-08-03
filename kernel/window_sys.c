@@ -510,6 +510,14 @@ void winsys_display_window_section(PWINDOW win, int x, int y, int width, int hei
 	if (!win || x >= win->width || y >= win->height)
 		return;
 
+	if (win->is_user)
+	{
+		win = winsys_get_window_by_id(win->id);
+		if (!win)
+			return;
+	}
+
+
 	winsys_paint_window_section(win, x, y, width, height);
 
 	PWINDOW tmp = win->next;
@@ -541,21 +549,6 @@ void winsys_display_window_section(PWINDOW win, int x, int y, int width, int hei
 		tmp = tmp->next;
 
 	}
-
-}
-
-void winsys_display_window_section_user(PWINDOW win, int x, int y, int width, int height)
-{
-
-	if (!win)
-		return;
-
-	win = winsys_get_window_by_id(win->id);
-
-	if (!win)
-		return;
-
-	winsys_display_window_section(win, x, y, width, height);
 
 }
 
@@ -884,6 +877,12 @@ void winsys_remove_window(PWINDOW win)
 
 	if (!win)
 		return;
+
+	if (win->is_user)
+	{
+		winsys_remove_window_user(win);
+		return;
+	}
 
 	winsys_clear_whole_window(win);
 

@@ -105,7 +105,6 @@ void winsys_paint_window_frame(PWINDOW win);
 void winsys_paint_window(PWINDOW win);
 void winsys_paint_window_section(PWINDOW win, int x, int y, int width, int height);
 void winsys_display_window_section(PWINDOW win, int x, int y, int width, int height);
-void winsys_display_window_section_user(PWINDOW win, int x, int y, int width, int height);
 void winsys_display_window_section_exclude_original(PWINDOW win, PWINDOW orig, int x, int y, int width, int height);
 void winsys_display_window(PWINDOW win);
 void winsys_display_window_exclude_original(PWINDOW win, PWINDOW orig);
