@@ -74,6 +74,7 @@ typedef struct _window
 	int parent_pid;
 	bool is_user;
 	bool closable;
+    bool has_frame;
 	EVENTHAND event_handler;
 	struct _window *next;
 

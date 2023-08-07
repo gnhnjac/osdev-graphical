@@ -149,6 +149,11 @@ void terminateKernelProcessById (int pid) {
     if (on_terminate)
         on_terminate();
 
+    // release windows created by process
+    winsys_remove_windows_by_pid(proc->id);
+
+    removeProcessFromList(proc->id);
+
     disable_scheduling();
 
     /* release threads */
@@ -164,14 +169,9 @@ void terminateKernelProcessById (int pid) {
 
     }
 
-    // release windows created by process
-    winsys_remove_windows_by_pid(proc->id);
-
-    removeProcessFromList(proc->id);
+    enable_scheduling();
 
     //printf_term(proc->term,"\nKernel Process %d terminated.\n",proc->id);
-
-    enable_scheduling();
 
     schedule();// force task switch.
 
@@ -508,6 +508,11 @@ void terminateProcessById (int pid) {
     if (!proc)
         return;
 
+    // release windows created by process
+    winsys_remove_windows_by_pid(proc->id);
+
+    removeProcessFromList(proc->id);
+
     disable_scheduling();
 
     /* release threads */
@@ -559,11 +564,6 @@ void terminateProcessById (int pid) {
         kfree(tmp);
 
     }
-
-    // release windows created by process
-    winsys_remove_windows_by_pid(proc->id);
-
-    removeProcessFromList(proc->id);
 
     // printf_term(proc->term,"\nProcess %d terminated.\n",proc->id);
 

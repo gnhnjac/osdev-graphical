@@ -9,8 +9,6 @@
 #include "process.h"
 #include "window_sys.h"
 #include "scheduler.h"
-#include <stdint.h>
-#include <stdbool.h>
 
 static int16_t PREVX = 0;
 static int16_t PREVY = 0;
@@ -21,30 +19,6 @@ static bool mouse_enabled = true;
 static bool mouse_installed = false;
 
 static PWINDOW dragging_window = 0;
-
-// 18x10 cursor bitmap
-uint8_t mouse_bitmap[18][10] = {
-{ 1,0,0,0,0,0,0,0,0,0, },
-{ 1,1,0,0,0,0,0,0,0,0, },
-{ 1,2,1,0,0,0,0,0,0,0, },
-{ 1,2,2,1,0,0,0,0,0,0, },
-{ 1,2,2,2,1,0,0,0,0,0, },
-{ 1,2,2,2,2,1,0,0,0,0, },
-{ 1,2,2,2,2,2,1,0,0,0, },
-{ 1,2,2,2,2,2,2,1,0,0, },
-{ 1,2,2,2,2,2,2,2,1,0, },
-{ 1,2,2,2,2,2,1,1,1,1, },
-{ 1,2,2,1,2,2,1,0,0,0, },
-{ 1,2,1,1,2,2,1,0,0,0, },
-{ 1,1,0,0,1,2,1,0,0,0, },
-{ 1,0,0,0,0,1,2,1,0,0, },
-{ 0,0,0,0,0,1,2,1,0,0, },
-{ 0,0,0,0,0,0,1,2,1,0, },
-{ 0,0,0,0,0,0,1,2,1,0, },
-{ 0,0,0,0,0,0,0,1,0,0, }
-};
-
-uint8_t mouse_placeholder_buffer[18][10];
 
 int get_mouse_x()
 {
@@ -90,83 +64,20 @@ void disable_mouse()
 		return;
 	mouse_enabled = false;
 
-	for (int i = 0; i < 18; i++)
-	{
-
-		for (int j = 0; j < 10; j++)
-		{
-
-			if (mouse_bitmap[i][j])
-				set_pixel(MOUSEX+j,MOUSEY+i,mouse_placeholder_buffer[i][j]);
-
-		}
-
-	}
-
-}
-
-void save_to_mouse_buffer()
-{
-	for (int i = 0; i < 18; i++)
-	{
-
-		for (int j = 0; j < 10; j++)
-		{
-
-			if (mouse_bitmap[i][j])
-				mouse_placeholder_buffer[i][j] = get_pixel(MOUSEX+j,MOUSEY+i);
-
-		}
-
-	}
-
-}
-
-void print_mouse()
-{
-
-	for (int i = 0; i < 18; i++)
-	{
-
-		for (int j = 0; j < 10; j++)
-		{
-
-			if (mouse_bitmap[i][j] == 1)
-				set_pixel(MOUSEX+j,MOUSEY+i,0xf);
-			else if(mouse_bitmap[i][j] == 2)
-				set_pixel(MOUSEX+j,MOUSEY+i,0);
-
-		}
-
-	}
-
-}
-
-void clear_mouse()
-{
-
-	for (int i = 0; i < 18; i++)
-	{
-
-		for (int j = 0; j < 10; j++)
-		{
-
-			if (mouse_bitmap[i][j])
-				set_pixel(PREVX+j,PREVY+i,mouse_placeholder_buffer[i][j]);
-
-		}
-
-	}
-
 }
 
 void enable_mouse()
 {
 	if (!mouse_installed)
 		return;
-	save_to_mouse_buffer();
-	print_mouse();
 	mouse_enabled = true;
+}
+
+bool is_mouse_enabled()
+{
+
+	return mouse_enabled;
+
 }
 
 void mouse_handler()
@@ -211,14 +122,8 @@ void mouse_handler()
 	else if (MOUSEY >= PIXEL_HEIGHT)
 		MOUSEY = (uint16_t)PIXEL_HEIGHT-1;
 
-	clear_mouse();
-
 	PREVX = MOUSEX;
 	PREVY = MOUSEY;
-
-	save_to_mouse_buffer();
-	
-	print_mouse();
 
 	// handle scrolling
 	int8_t scroll = zmov & 0xF;
@@ -303,6 +208,9 @@ void mouse_handler()
         unsuspend_suspended_threads(getProcessByID(working_win->parent_pid));
 
 	}
+	
+	if (rel_x != 0 || rel_y != 0)
+		winsys_move_mouse(MOUSEX, MOUSEY);
 
 }
 
@@ -345,7 +253,7 @@ void mouse_install()
 	MOUSEY = 0;
 	PREVX = 0;
 	PREVY = 0;
-	save_to_mouse_buffer();
+	winsys_save_to_mouse_buffer();
 
 	__asm__ __volatile__ ("cli");
 

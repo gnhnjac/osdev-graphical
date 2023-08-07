@@ -7,6 +7,7 @@
 #include "cmos.h"
 #include "memory.h"
 #include "graphics.h"
+#include "window_sys.h"
 
 void timer_phase(int hz)
 {
@@ -24,6 +25,8 @@ unsigned int current_min = 0;
 unsigned int current_hour = 0;
 unsigned int second_ticks = 0;
 
+PWINDOW time_window;
+
 /* Handles the timer. In this case, it's very simple: We
 *  increment the 'timer_ticks' variable every time the
 *  timer fires. By default, the timer fires 18.222 times
@@ -40,6 +43,10 @@ void timer_handler()
 *  into IRQ0 */
 void timer_install()
 {
+
+    time_window = winsys_create_win(0,50,8*CHAR_WIDTH,CHAR_HEIGHT, "", false);
+    time_window->has_frame = false;
+    winsys_move_window(time_window,PIXEL_WIDTH-8*CHAR_WIDTH,0);
 
     current_sec = cmos_rtc_get_seconds();
     current_min = cmos_rtc_get_minutes();
@@ -115,13 +122,15 @@ void update_time()
         time_str[2] = ':';
         time_str[5] = ':';
 
-        uint32_t off = TIME_OFF;
+        uint32_t off = 0;
 
         while(*time_str)
         {
-            display_psf1_8x16_char_bg(*time_str,get_screen_x(off),0,0xF,0);
+
+            gfx_paint_char_bg(time_window, *time_str,off*CHAR_WIDTH,0,0xF,0);
             time_str++;
             off++;
         }
+        winsys_display_window(time_window);
     }
 }

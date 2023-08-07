@@ -1,4 +1,5 @@
 #include <stdint.h>
+#include <stdbool.h>
 
 #define VERTICAL_SCROLL_UP 1
 #define VERTICAL_SCROLL_DOWN 0xF
@@ -25,10 +26,8 @@ int get_mouse_x();
 int get_mouse_y();
 void mouse_wait(uint8_t type);
 void disable_mouse();
-void save_to_mouse_buffer();
-void print_mouse();
-void clear_mouse();
 void enable_mouse();
+bool is_mouse_enabled();
 void mouse_handler();
 void ack();
 void mouse_write(uint8_t byte);

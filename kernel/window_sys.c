@@ -12,11 +12,246 @@
 #include "vmm.h"
 #include "scheduler.h"
 #include "mouse.h"
+#include "lock.h"
 
 // ** NEED TO MAKE IT IT'S OWN PROCESS WITH A DISPLAY STACK THEN THERE WILL BE NO DRAWING ARTIFACTS
 
 static PWINDOW win_list = 0;
 static PWINDOW working_window = 0;
+static WINSYSOP winsys_queue[WINSYS_QUEUE_SIZE] = {0};
+static lock_t winsys_queue_last_lock = ATOMIC_LOCK_INIT;
+static lock_t winsys_queue_lock = ATOMIC_LOCK_INIT;
+
+static int winsys_mousex = 0;
+static int winsys_mousey = 0;
+
+static bool winsys_initialized = false;
+
+// 18x10 cursor bitmap
+static uint8_t mouse_bitmap[18][10] = {
+{ 1,0,0,0,0,0,0,0,0,0, },
+{ 1,1,0,0,0,0,0,0,0,0, },
+{ 1,2,1,0,0,0,0,0,0,0, },
+{ 1,2,2,1,0,0,0,0,0,0, },
+{ 1,2,2,2,1,0,0,0,0,0, },
+{ 1,2,2,2,2,1,0,0,0,0, },
+{ 1,2,2,2,2,2,1,0,0,0, },
+{ 1,2,2,2,2,2,2,1,0,0, },
+{ 1,2,2,2,2,2,2,2,1,0, },
+{ 1,2,2,2,2,2,1,1,1,1, },
+{ 1,2,2,1,2,2,1,0,0,0, },
+{ 1,2,1,1,2,2,1,0,0,0, },
+{ 1,1,0,0,1,2,1,0,0,0, },
+{ 1,0,0,0,0,1,2,1,0,0, },
+{ 0,0,0,0,0,1,2,1,0,0, },
+{ 0,0,0,0,0,0,1,2,1,0, },
+{ 0,0,0,0,0,0,1,2,1,0, },
+{ 0,0,0,0,0,0,0,1,0,0, }
+};
+
+static uint8_t mouse_placeholder_buffer[18][10];
+
+void winsys_disable_mouse()
+{	
+
+	disable_mouse();
+
+	winsys_clear_mouse();
+
+}
+
+void winsys_save_to_mouse_buffer()
+{
+	for (int i = 0; i < 18; i++)
+	{
+
+		for (int j = 0; j < 10; j++)
+		{
+
+			if (mouse_bitmap[i][j])
+				mouse_placeholder_buffer[i][j] = get_pixel(winsys_mousex+j,winsys_mousey+i);
+
+		}
+
+	}
+
+}
+
+void winsys_print_mouse()
+{
+
+	for (int i = 0; i < 18; i++)
+	{
+
+		for (int j = 0; j < 10; j++)
+		{
+
+			if (mouse_bitmap[i][j] == 1)
+				set_pixel(winsys_mousex+j,winsys_mousey+i,0xf);
+			else if(mouse_bitmap[i][j] == 2)
+				set_pixel(winsys_mousex+j,winsys_mousey+i,0);
+
+		}
+
+	}
+
+}
+
+void winsys_clear_mouse()
+{
+
+	for (int i = 0; i < 18; i++)
+	{
+
+		for (int j = 0; j < 10; j++)
+		{
+
+			if (mouse_bitmap[i][j])
+				set_pixel(winsys_mousex+j,winsys_mousey+i,mouse_placeholder_buffer[i][j]);
+
+		}
+
+	}
+
+}
+
+void winsys_enable_mouse()
+{
+	winsys_save_to_mouse_buffer();
+	winsys_print_mouse();
+	enable_mouse();
+}
+
+void winsys_listener()
+{
+
+	WINSYSOP op_handle;
+
+	while(1)
+	{
+
+
+		while(winsys_queue[0].op == WINSYS_EMPTY)
+			__asm__("pause");
+
+		op_handle = winsys_dequeue_from_winsys_listener();
+
+		if (op_handle.op == WINSYS_MOVE_MOUSE)
+		{
+		
+			winsys_clear_mouse();
+
+			winsys_mousex = op_handle.x;
+			winsys_mousey = op_handle.y;
+
+			winsys_save_to_mouse_buffer();
+			winsys_print_mouse();
+
+		}
+		else if (op_handle.op == WINSYS_DISPLAY_WINDOW)
+		{
+
+			winsys_display_window_operation(winsys_get_window_by_id(op_handle.wid));
+
+		}
+		else if (op_handle.op == WINSYS_DISPLAY_WINDOW_SECTION)
+		{
+			winsys_display_window_section_operation(winsys_get_window_by_id(op_handle.wid),op_handle.x,op_handle.y,op_handle.w,op_handle.h);
+
+		}
+		else if (op_handle.op == WINSYS_MOVE_WINDOW)
+		{
+
+			winsys_move_window_operation(winsys_get_window_by_id(op_handle.wid), op_handle.x, op_handle.y);
+
+		}
+		else if (op_handle.op == WINSYS_SET_WORKING_WINDOW)
+		{
+
+			winsys_set_working_window_operation(op_handle.wid);
+
+		}
+		else if (op_handle.op == WINSYS_REMOVE_WINDOW)
+		{
+
+			winsys_remove_window_operation(winsys_get_window_by_id(op_handle.wid));
+
+		}
+
+	}
+
+}
+
+WINSYSOP winsys_dequeue_from_winsys_listener()
+{
+
+	//acquireLock(&winsys_queue_lock);
+
+	WINSYSOP op = winsys_queue[0];
+
+	for (int i = 0; i < WINSYS_QUEUE_SIZE-1; i++)
+	{
+
+		winsys_queue[i] = winsys_queue[i+1];
+
+	}
+
+	winsys_queue[WINSYS_QUEUE_SIZE-1].op = WINSYS_EMPTY;
+
+	releaseLock(&winsys_queue_last_lock);
+
+	//releaseLock(&winsys_queue_lock);
+
+	return op;
+
+}
+
+void winsys_enqueue_to_winsys_listener(WINSYSOP operation)
+{
+
+	if (!winsys_initialized)
+		return;
+
+	acquireLock(&winsys_queue_lock);
+
+	for (int i = 0; i < WINSYS_QUEUE_SIZE; i++)
+	{
+
+		if (i == WINSYS_QUEUE_SIZE-1)
+		{
+			releaseLock(&winsys_queue_lock);
+			while(winsys_queue[i].op != WINSYS_EMPTY)
+				__asm__("pause");
+			
+			acquireLock(&winsys_queue_last_lock);
+			acquireLock(&winsys_queue_lock);
+		}
+		
+
+		if (winsys_queue[i].op == WINSYS_EMPTY)
+		{
+			winsys_queue[i] = operation;
+			releaseLock(&winsys_queue_lock);
+			return;
+		}
+	}
+
+}
+
+void winsys_move_mouse(int new_x, int new_y)
+{
+
+	WINSYSOP mouse_move_operation = {
+
+		.op = WINSYS_MOVE_MOUSE,
+		.x = new_x,
+		.y = new_y
+
+	};
+
+	winsys_enqueue_to_winsys_listener(mouse_move_operation);
+
+}
 
 PWINDOW winsys_get_working_window()
 {
@@ -71,6 +306,15 @@ void winsys_init()
 	win_list = 0;
 	working_window = 0;
 
+	for (int i = 0; i < WINSYS_QUEUE_SIZE; i++)
+	{
+
+		winsys_queue[i].op = WINSYS_EMPTY;
+
+	}
+
+	winsys_initialized = true;
+
 }
 
 uint32_t get_win_page_amt(PWINDOW win)
@@ -100,6 +344,7 @@ PWINDOW winsys_create_win(int x, int y, int width, int height, char *w_name, boo
 	win->closable = is_closable;
 	win->parent_pid = get_running_process()->id;
 	win->is_user = false;
+	win->has_frame = true;
 
 	for (int i = 0; i < EVENT_HANDLER_QUEUE_SIZE; i++)
 	{
@@ -116,10 +361,6 @@ PWINDOW winsys_create_win(int x, int y, int width, int height, char *w_name, boo
 
 	win->next = 0;
 
-	PWINDOW old_working = working_window;
-
-	working_window = win;
-
 	if (win_list)
 	{
 		PWINDOW tmp = win_list;
@@ -132,9 +373,7 @@ PWINDOW winsys_create_win(int x, int y, int width, int height, char *w_name, boo
 	else
 		win_list = win;
 
-	if (old_working)
-		winsys_display_window(old_working);
-	winsys_display_window(win);
+	winsys_set_working_window(win->id);
 
 	return win;
 
@@ -153,6 +392,7 @@ void winsys_create_win_user(PWINDOW local_win, int x, int y, int width, int heig
 	win->closable = true;
 	win->parent_pid = parent_proc->id;
 	win->is_user = true;
+	win->has_frame = true;
 	win->event_handler.event_mask = local_win->event_handler.event_mask;
 
 	for (int i = 0; i < EVENT_HANDLER_QUEUE_SIZE; i++)
@@ -170,10 +410,6 @@ void winsys_create_win_user(PWINDOW local_win, int x, int y, int width, int heig
 
 	win->next = 0;
 
-	PWINDOW old_working = working_window;
-
-	working_window = win;
-
 	if (win_list)
 	{
 		PWINDOW tmp = win_list;
@@ -189,14 +425,24 @@ void winsys_create_win_user(PWINDOW local_win, int x, int y, int width, int heig
 	win->w_name = (char *)kcalloc(strlen(local_win->w_name)+1);
 	strcpy(win->w_name,local_win->w_name);
 
-	if (old_working)
-		winsys_display_window(old_working);
-	winsys_display_window(win);
+	winsys_set_working_window(win->id);
 
 	memcpy((char *)local_win,(char *)win,sizeof(WINDOW));
 }
 
-int winsys_set_working_window(int wid)
+void winsys_set_working_window(int wid)
+{
+
+	WINSYSOP set_working_window_operation = {
+		.op = WINSYS_SET_WORKING_WINDOW,
+		.wid = wid
+	};
+
+	winsys_enqueue_to_winsys_listener(set_working_window_operation);
+
+}
+
+int winsys_set_working_window_operation(int wid)
 {
 
 	PWINDOW tmp = win_list;
@@ -240,9 +486,9 @@ int winsys_set_working_window(int wid)
 			tmp->next = 0;
 
 			if (winsys_get_window_by_id(old_working->id))
-				winsys_display_window(old_working);
+				winsys_display_window_operation(old_working);
 
-			winsys_display_window(working_window);
+			winsys_display_window_operation(working_window);
 
 			return 1;
 		}
@@ -324,9 +570,10 @@ void winsys_paint_window(PWINDOW win)
 
 	winsys_paint_window_section(win, 0, 0, win->width, win->height);
 
-	disable_mouse();
-	winsys_paint_window_frame(win);
-	enable_mouse();
+	winsys_disable_mouse();
+	if (win->has_frame)
+		winsys_paint_window_frame(win);
+	winsys_enable_mouse();
 
 }
 
@@ -363,10 +610,10 @@ void winsys_paint_window_section(PWINDOW win, int x, int y, int width, int heigh
 
 	uint8_t *vram = (uint8_t *)VIDEO_ADDRESS + (win->y+max_y) * PIXEL_WIDTH / PIXELS_PER_BYTE;
 
-	bool hide_mouse = winsys_check_collide_rect_rect(win->x+max_x,win->y+max_y,min_width,min_height,get_mouse_x(),get_mouse_y(),MOUSE_WIDTH,MOUSE_HEIGHT);
+	bool hide_mouse = winsys_check_collide_rect_rect(win->x+max_x,win->y+max_y,min_width,min_height,winsys_mousex,winsys_mousey,MOUSE_WIDTH,MOUSE_HEIGHT);
 
 	if (hide_mouse)
-		disable_mouse();
+		winsys_disable_mouse();
 
 	outb(0x3C4, MEMORY_PLANE_WRITE_ENABLE);
 
@@ -492,7 +739,7 @@ void winsys_paint_window_section(PWINDOW win, int x, int y, int width, int heigh
 	}
 
 	if (hide_mouse)
-		enable_mouse();
+		winsys_enable_mouse();
 
 	if (win->is_user)
 	{
@@ -507,16 +754,29 @@ void winsys_paint_window_section(PWINDOW win, int x, int y, int width, int heigh
 void winsys_display_window_section(PWINDOW win, int x, int y, int width, int height)
 {
 
-	if (!win || x >= win->width || y >= win->height)
+	if (!win)
 		return;
 
-	if (win->is_user)
-	{
-		win = winsys_get_window_by_id(win->id);
-		if (!win)
-			return;
-	}
+	WINSYSOP display_window_section_operation = {
 
+		.op = WINSYS_DISPLAY_WINDOW_SECTION,
+		.wid = win->id,
+		.x = x,
+		.y = y,
+		.w = width,
+		.h = height
+
+	};
+
+	winsys_enqueue_to_winsys_listener(display_window_section_operation);
+
+}
+
+void winsys_display_window_section_operation(PWINDOW win, int x, int y, int width, int height)
+{
+
+	if (!win || x >= win->width || y >= win->height)
+		return;
 
 	winsys_paint_window_section(win, x, y, width, height);
 
@@ -542,7 +802,7 @@ void winsys_display_window_section(PWINDOW win, int x, int y, int width, int hei
 			int overlap_sect_h = min(overlap_y+overlap_h, sect_y+sect_h)-overlap_sect_y;
 
 			if (overlap_sect_w > 0 && overlap_sect_h > 0)
-				winsys_display_window_section(tmp,overlap_sect_x-tmp->x,overlap_sect_y-tmp->y,overlap_sect_w,overlap_sect_h);
+				winsys_display_window_section_operation(tmp,overlap_sect_x-tmp->x,overlap_sect_y-tmp->y,overlap_sect_w,overlap_sect_h);
 
 		}
 
@@ -597,6 +857,23 @@ void winsys_display_window(PWINDOW win)
 
 	if (!win)
 		return;
+
+	WINSYSOP display_window_operation = {
+
+		.op = WINSYS_DISPLAY_WINDOW,
+		.wid = win->id
+
+	};
+
+	winsys_enqueue_to_winsys_listener(display_window_operation);
+
+}
+
+void winsys_display_window_operation(PWINDOW win)
+{
+
+	if (!win)
+		return;
 	winsys_paint_window(win);
 
 	PWINDOW tmp = win->next;
@@ -613,7 +890,7 @@ void winsys_display_window(PWINDOW win)
 
 			int overlap_h = min(win->y+win->height, tmp->y+tmp->height)-overlap_y;
 
-			winsys_display_window_section(tmp,overlap_x-tmp->x,overlap_y-tmp->y,overlap_w,overlap_h);
+			winsys_display_window_section_operation(tmp,overlap_x-tmp->x,overlap_y-tmp->y,overlap_w,overlap_h);
 
 		}
 
@@ -693,9 +970,9 @@ void winsys_clear_window_frame(PWINDOW win)
 
 void winsys_clear_whole_window(PWINDOW win)
 {
-	disable_mouse();
+	winsys_disable_mouse();
 	fill_rect(win->x-WIN_FRAME_SIZE,win->y-TITLE_BAR_HEIGHT,win->width+WIN_FRAME_SIZE*2,win->height+TITLE_BAR_HEIGHT+WIN_FRAME_SIZE,BG_COLOR);
-	enable_mouse();
+	winsys_enable_mouse();
 }
 
 bool winsys_check_collide(PWINDOW w1, PWINDOW w2)
@@ -848,9 +1125,11 @@ PWINDOW winsys_get_window_from_title_collision(int x, int y)
 	if (winsys_check_close_collide(top_collision,x,y))
 	{
 		if (top_collision->is_user)
-				terminateProcessById(top_collision->parent_pid);
-			else
-				terminateKernelProcessById(top_collision->parent_pid);
+			terminateProcessById(top_collision->parent_pid);
+		else if (top_collision->parent_pid)
+			terminateKernelProcessById(top_collision->parent_pid);
+		else
+			winsys_remove_window(top_collision);
 		return 0;
 	}
 
@@ -861,18 +1140,54 @@ PWINDOW winsys_get_window_from_title_collision(int x, int y)
 void winsys_move_window(PWINDOW win, int x, int y)
 {
 
+	if (!win)
+		return;
+
+	WINSYSOP move_window_operation = {
+
+		.op = WINSYS_MOVE_WINDOW,
+		.wid = win->id,
+		.x = x,
+		.y = y
+
+	};
+
+	winsys_enqueue_to_winsys_listener(move_window_operation);
+
+}
+
+void winsys_move_window_operation(PWINDOW win, int x, int y)
+{
+
 	winsys_clear_whole_window(win);
 	winsys_display_collided_windows(win);
 
 	win->x = x;
 	win->y = y;
-	winsys_set_working_window(win->id);
+	winsys_set_working_window_operation(win->id);
 
-	winsys_display_window(win);
+	winsys_display_window_operation(win);
 
 }
 
 void winsys_remove_window(PWINDOW win)
+{
+
+	if (!win)
+		return;
+
+	WINSYSOP remove_window_operation = {
+
+		.op = WINSYS_REMOVE_WINDOW,
+		.wid = win->id,
+
+	};
+
+	winsys_enqueue_to_winsys_listener(remove_window_operation);
+
+}
+
+void winsys_remove_window_operation(PWINDOW win)
 {
 
 	if (!win)
@@ -906,7 +1221,7 @@ void winsys_remove_window(PWINDOW win)
 			while(tmp->next)
 				tmp = tmp->next;
 			working_window = 0;
-			winsys_set_working_window(tmp->id);
+			winsys_set_working_window_operation(tmp->id);
 		}
 		else
 			working_window = 0;
@@ -932,14 +1247,18 @@ void winsys_remove_windows_by_pid(int pid)
 		tmp = tmp->next;
 		if (to_remove->parent_pid == pid)
 		{
+			winsys_remove_window(to_remove);
 			if (to_remove->is_user)
-				winsys_remove_window_user(to_remove);
-			else
-				winsys_remove_window(to_remove);
+			{
+
+				for (int i = 0; i < get_win_page_amt(to_remove); i++)
+					vmmngr_free_virt(getProcessByID(to_remove->parent_pid)->pageDirectory, (void *) to_remove->w_buffer + i*PAGE_SIZE);
+
+			}
+			return;
 		}
 
 	}
-
 
 }
 
@@ -976,13 +1295,10 @@ void winsys_remove_window_user(PWINDOW win)
 		while(tmp->next)
 			tmp = tmp->next;
 
-		winsys_set_working_window(tmp->id);
+		winsys_set_working_window_operation(tmp->id);
 	}
 
 	winsys_display_collided_windows(win);
-
-    for (int i = 0; i < get_win_page_amt(win); i++)
-		vmmngr_free_virt(getProcessByID(win->parent_pid)->pageDirectory, (void *) win->w_buffer + i*PAGE_SIZE);
 	
 	kfree(win->w_name);
 	kfree(win);
@@ -1602,6 +1918,7 @@ void gfx_open_bmp16(char *path, int wx, int wy)
 	uint32_t height = bmp_info.Height;
 
 	PWINDOW win = winsys_create_win(wx,wy,width+width%2,height,bmp.name,true);
+	win->parent_pid = 0;
 
 	uint32_t color_buff;
 

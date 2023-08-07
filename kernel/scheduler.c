@@ -549,6 +549,9 @@ void scheduler_initialize(void) {
         /* create app launcher process */
         createKernelProcess(app_launcher,"app_launcher");
 
+        /* create window system process */
+        createKernelProcess(winsys_listener, "winsys");
+
 
         /* register isr */
         idt_set_gate(32, (void *)scheduler_isr, 0x8E|0x60);
@@ -621,13 +624,18 @@ void idle_task() {
 void cycle_colors()
 {
 
+  PWINDOW akos_window = winsys_create_win(0,50,4*CHAR_WIDTH,CHAR_HEIGHT, "", false);
+  akos_window->has_frame = false;
+  winsys_move_window(akos_window,0,0);
+
   int cycler = 0;
   while(1)
   {
-          display_psf1_8x16_char_bg('a', get_screen_x(0),0, 0xf, (cycler+3)%15);
-          display_psf1_8x16_char_bg('k', get_screen_x(1),0, 0xf, (cycler+2)%15);
-          display_psf1_8x16_char_bg('o', get_screen_x(2),0, 0xf, (cycler+1)%15);
-          display_psf1_8x16_char_bg('s', get_screen_x(3),0, 0xf, cycler);
+          gfx_paint_char_bg(akos_window,'a', 0,0, 0xf, (cycler+3)%15);
+          gfx_paint_char_bg(akos_window,'k', 1*CHAR_WIDTH,0, 0xf, (cycler+2)%15);
+          gfx_paint_char_bg(akos_window,'o', 2*CHAR_WIDTH,0, 0xf, (cycler+1)%15);
+          gfx_paint_char_bg(akos_window,'s', 3*CHAR_WIDTH,0, 0xf, cycler);
+          winsys_display_window(akos_window);
           cycler = (cycler + 1) % 15;
           thread_sleep(200);
   } 

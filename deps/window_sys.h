@@ -71,6 +71,7 @@ typedef struct _window
 	int parent_pid;
 	bool is_user;
 	bool closable;
+	bool has_frame;
 	EVENTHAND event_handler;
 	struct _window *next;
 
@@ -84,6 +85,33 @@ typedef struct _terminal
 
 } terminal;
 
+typedef enum _winsysOperation
+{
+
+	WINSYS_EMPTY = 0,
+	WINSYS_MOVE_MOUSE = 1,
+	WINSYS_DISPLAY_WINDOW_SECTION = 2,
+	WINSYS_DISPLAY_WINDOW = 3,
+	WINSYS_MOVE_WINDOW = 4,
+	WINSYS_SET_WORKING_WINDOW = 5,
+	WINSYS_REMOVE_WINDOW = 6,
+
+} winsysOperation;
+
+typedef struct _winsys_op
+{
+
+	winsysOperation op;
+	int wid;
+	int x;
+	int y;
+	int w;
+	int h;
+
+} WINSYSOP, *PWINSYSOP;
+
+#define WINSYS_QUEUE_SIZE 20
+
 #define TITLE_BAR_HEIGHT 20
 #define WIN_FRAME_SIZE 1
 #define WIN_FRAME_COLOR 0x8
@@ -93,6 +121,15 @@ typedef struct _terminal
 #define BG_COLOR 0x7
 
 //refs
+void winsys_disable_mouse();
+void winsys_save_to_mouse_buffer();
+void winsys_print_mouse();
+void winsys_clear_mouse();
+void winsys_enable_mouse();
+void winsys_listener();
+WINSYSOP winsys_dequeue_from_winsys_listener();
+void winsys_enqueue_to_winsys_listener(WINSYSOP operation);
+void winsys_move_mouse(int new_x, int new_y);
 PWINDOW winsys_get_working_window();
 int winsys_get_free_id();
 PWINDOW winsys_get_window_by_id(int wid);
@@ -100,13 +137,16 @@ void winsys_init();
 uint32_t get_win_page_amt(PWINDOW win);
 PWINDOW winsys_create_win(int x, int y, int width, int height, char *w_name, bool is_closable);
 void winsys_create_win_user(PWINDOW local_win, int x, int y, int width, int height);
-int winsys_set_working_window(int wid);
+void winsys_set_working_window(int wid);
+int winsys_set_working_window_operation(int wid);
 void winsys_paint_window_frame(PWINDOW win);
 void winsys_paint_window(PWINDOW win);
 void winsys_paint_window_section(PWINDOW win, int x, int y, int width, int height);
 void winsys_display_window_section(PWINDOW win, int x, int y, int width, int height);
+void winsys_display_window_section_operation(PWINDOW win, int x, int y, int width, int height);
 void winsys_display_window_section_exclude_original(PWINDOW win, PWINDOW orig, int x, int y, int width, int height);
 void winsys_display_window(PWINDOW win);
+void winsys_display_window_operation(PWINDOW win);
 void winsys_display_window_exclude_original(PWINDOW win, PWINDOW orig);
 void winsys_display_collided_windows(PWINDOW win);
 void winsys_clear_window(PWINDOW win);
@@ -121,7 +161,9 @@ bool winsys_check_close_collide(PWINDOW w, int x, int y);
 PWINDOW winsys_get_window_from_collision(int x, int y);
 PWINDOW winsys_get_window_from_title_collision(int x, int y);
 void winsys_move_window(PWINDOW win, int x, int y);
+void winsys_move_window_operation(PWINDOW win, int x, int y);
 void winsys_remove_window(PWINDOW win);
+void winsys_remove_window_operation(PWINDOW win);
 void winsys_remove_windows_by_pid(int pid);
 void winsys_remove_window_user(PWINDOW win);
 void winsys_enqueue_to_event_handler(PEVENTHAND handler, EVENT e);

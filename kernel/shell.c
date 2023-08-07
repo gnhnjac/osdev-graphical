@@ -378,7 +378,6 @@ void handle_ls()
 	while (lst)
 	{
 		printf("%s    %d %d-%d-%d\n",lst->f.name,lst->f.fileLength,lst->f.DateCreated&0x1F,(lst->f.DateCreated&0x1F0)>>5,(lst->f.DateCreated&(0b1111111<<9))>>10);
-
 		sz += lst->f.fileLength;
 
 		if (lst->f.flags == FS_DIRECTORY)
