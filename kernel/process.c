@@ -710,6 +710,37 @@ void printf(char *fmt,...)
 
 }
 
+void vprintf(char *fmt,va_list valist)
+{
+
+    process *proc = get_running_process();
+
+    if (!proc)
+    {
+        screen_vprintf(fmt,valist);
+        return;
+    }
+
+    terminal term = proc->term;
+
+    if (term.term_win && term.term_inp_info)
+    {
+        int pre_y = gfx_get_win_y(term.term_inp_info->cursor_offset_y);
+        gfx_vprintf(term.term_win, term.term_inp_info, fmt,valist);
+        int post_y = gfx_get_win_y(term.term_inp_info->cursor_offset_y);
+        if (!term.term_inp_info->did_scroll)
+            winsys_display_window_section(term.term_win,0,min(pre_y,post_y),term.term_win->width,abs(post_y-pre_y)+CHAR_HEIGHT);
+        else
+        {
+            winsys_display_window(term.term_win);
+            term.term_inp_info->did_scroll = false;
+        }
+    }
+    else
+        screen_vprintf(fmt,valist);
+
+}
+
 void printf_term(terminal term, char *fmt,...)
 {
 

@@ -371,10 +371,20 @@ static void draw_net() {
 
 static void draw_ball(uint8_t color) {
 
-	gfx_fill_rect(&window, ball.x,ball.y,ball.w,ball.h, color);
-	//draw to the display
-	display_window_section(&window,ball.x,ball.y,ball.w,ball.h);
+	if (color != 0)
+	{
 
+		gfx_fill_rect(&window, ball.x,ball.y,ball.w,ball.h, color);
+		//draw to the display
+		display_window_section(&window,ball.x,ball.y,ball.w,ball.h);
+
+	}
+	else
+	{
+		gfx_fill_rect(&window, ball.x-5,ball.y-5,ball.w+10,ball.h+10, color);
+		//draw to the display
+		display_window_section(&window,ball.x-5,ball.y-5,ball.w+10,ball.h+10);
+	}
 }
 
 static void draw_paddle(uint8_t color) {
@@ -570,7 +580,7 @@ void _main (int argc, char *args[]) {
 			//draw the score
 			draw_player_1_score();
 
-			sleep(10);
+			sleep(1000/60);
 
 		}
 	}

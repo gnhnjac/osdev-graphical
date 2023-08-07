@@ -163,3 +163,17 @@ int exec(char* path, char *args)
 
 	return pid;
 }
+
+void printf(const char *fmt, ...)
+{
+
+
+    va_list valist;
+    va_start(valist,fmt);
+
+    __asm__("mov $15, %eax");
+	__asm__("mov %0, %%ebx" : : "m" (fmt));
+	__asm__("mov %0, %%ecx" : : "m" (valist));
+	__asm__("int $0x80");
+
+}

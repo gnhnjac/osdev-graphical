@@ -21,6 +21,7 @@ static PWINDOW working_window = 0;
 static WINSYSOP winsys_queue[WINSYS_QUEUE_SIZE] = {0};
 static lock_t winsys_queue_last_lock = ATOMIC_LOCK_INIT;
 static lock_t winsys_queue_lock = ATOMIC_LOCK_INIT;
+static lock_t winsys_win_list_lock = ATOMIC_LOCK_INIT;
 
 static int winsys_mousex = 0;
 static int winsys_mousey = 0;
@@ -122,6 +123,19 @@ void winsys_enable_mouse()
 	enable_mouse();
 }
 
+void winsys_move_mouse_operation(int x, int y)
+{
+
+	winsys_clear_mouse();
+
+	winsys_mousex = x;
+	winsys_mousey = y;
+
+	winsys_save_to_mouse_buffer();
+	winsys_print_mouse();
+
+}
+
 void winsys_listener()
 {
 
@@ -139,13 +153,7 @@ void winsys_listener()
 		if (op_handle.op == WINSYS_MOVE_MOUSE)
 		{
 		
-			winsys_clear_mouse();
-
-			winsys_mousex = op_handle.x;
-			winsys_mousey = op_handle.y;
-
-			winsys_save_to_mouse_buffer();
-			winsys_print_mouse();
+			winsys_move_mouse_operation(op_handle.x,op_handle.y);
 
 		}
 		else if (op_handle.op == WINSYS_DISPLAY_WINDOW)
@@ -185,7 +193,7 @@ void winsys_listener()
 WINSYSOP winsys_dequeue_from_winsys_listener()
 {
 
-	//acquireLock(&winsys_queue_lock);
+	acquireLock(&winsys_queue_lock);
 
 	WINSYSOP op = winsys_queue[0];
 
@@ -198,9 +206,9 @@ WINSYSOP winsys_dequeue_from_winsys_listener()
 
 	winsys_queue[WINSYS_QUEUE_SIZE-1].op = WINSYS_EMPTY;
 
-	releaseLock(&winsys_queue_last_lock);
+	releaseLock(&winsys_queue_lock);
 
-	//releaseLock(&winsys_queue_lock);
+	releaseLock(&winsys_queue_last_lock);
 
 	return op;
 
@@ -218,14 +226,7 @@ void winsys_enqueue_to_winsys_listener(WINSYSOP operation)
 	{
 
 		if (i == WINSYS_QUEUE_SIZE-1)
-		{
-			releaseLock(&winsys_queue_lock);
-			while(winsys_queue[i].op != WINSYS_EMPTY)
-				__asm__("pause");
-			
 			acquireLock(&winsys_queue_last_lock);
-			acquireLock(&winsys_queue_lock);
-		}
 		
 
 		if (winsys_queue[i].op == WINSYS_EMPTY)
@@ -235,6 +236,29 @@ void winsys_enqueue_to_winsys_listener(WINSYSOP operation)
 			return;
 		}
 	}
+
+}
+
+void winsys_enqueue_to_winsys_listener_if_possible(WINSYSOP operation)
+{
+
+	if (!winsys_initialized)
+		return;
+
+	acquireLock(&winsys_queue_lock);
+
+	for (int i = 0; i < WINSYS_QUEUE_SIZE; i++)
+	{	
+
+		if (winsys_queue[i].op == WINSYS_EMPTY)
+		{
+			winsys_queue[i] = operation;
+			releaseLock(&winsys_queue_lock);
+			return;
+		}
+	}
+
+	releaseLock(&winsys_queue_lock);
 
 }
 
@@ -249,7 +273,7 @@ void winsys_move_mouse(int new_x, int new_y)
 
 	};
 
-	winsys_enqueue_to_winsys_listener(mouse_move_operation);
+	winsys_enqueue_to_winsys_listener_if_possible(mouse_move_operation);
 
 }
 
@@ -361,6 +385,8 @@ PWINDOW winsys_create_win(int x, int y, int width, int height, char *w_name, boo
 
 	win->next = 0;
 
+	acquireLock(&winsys_win_list_lock);
+
 	if (win_list)
 	{
 		PWINDOW tmp = win_list;
@@ -372,6 +398,8 @@ PWINDOW winsys_create_win(int x, int y, int width, int height, char *w_name, boo
 	}
 	else
 		win_list = win;
+
+	releaseLock(&winsys_win_list_lock);
 
 	winsys_set_working_window(win->id);
 
@@ -410,6 +438,8 @@ void winsys_create_win_user(PWINDOW local_win, int x, int y, int width, int heig
 
 	win->next = 0;
 
+	acquireLock(&winsys_win_list_lock);
+
 	if (win_list)
 	{
 		PWINDOW tmp = win_list;
@@ -421,6 +451,8 @@ void winsys_create_win_user(PWINDOW local_win, int x, int y, int width, int heig
 	}
 	else
 		win_list = win;
+
+	releaseLock(&winsys_win_list_lock);
 
 	win->w_name = (char *)kcalloc(strlen(local_win->w_name)+1);
 	strcpy(win->w_name,local_win->w_name);
@@ -445,6 +477,8 @@ void winsys_set_working_window(int wid)
 int winsys_set_working_window_operation(int wid)
 {
 
+	acquireLock(&winsys_win_list_lock);
+
 	PWINDOW tmp = win_list;
 
 	while (tmp)
@@ -458,12 +492,18 @@ int winsys_set_working_window_operation(int wid)
 			working_window = tmp;
 
 			if (working_window == old_working)
+			{
+				releaseLock(&winsys_win_list_lock);
 				return 1;
+			}
 
 			PWINDOW tmp2 = win_list;
 
 			if (tmp2->next == 0)
+			{
+				releaseLock(&winsys_win_list_lock);
 				return 1;
+			}
 
 			if (tmp2->id == wid)
 			{
@@ -490,11 +530,15 @@ int winsys_set_working_window_operation(int wid)
 
 			winsys_display_window_operation(working_window);
 
+			releaseLock(&winsys_win_list_lock);
+
 			return 1;
 		}
 
 		tmp = tmp->next;
 	}
+
+	releaseLock(&winsys_win_list_lock);
 
 	return 0;
 
@@ -580,7 +624,7 @@ void winsys_paint_window(PWINDOW win)
 void winsys_paint_window_section(PWINDOW win, int x, int y, int width, int height)
 {
 
-	if (!win)
+	if (!win || x+width > win->width || y+height > win->height)
 		return;
 
 	pdirectory *winDir;
@@ -600,6 +644,9 @@ void winsys_paint_window_section(PWINDOW win, int x, int y, int width, int heigh
 	int max_x = max(x,0);
 	int max_y = max(y,0);
 
+	uint32_t lim_x = min(x+win->width,max_x+min_width);
+	uint32_t lim_y = min(y+win->height,max_y+min_height);
+
 	uint8_t *buff;
 	if (win->is_user)
 		buff = (uint8_t *)TMP_WIN_BUF_VIRT;
@@ -617,10 +664,10 @@ void winsys_paint_window_section(PWINDOW win, int x, int y, int width, int heigh
 
 	outb(0x3C4, MEMORY_PLANE_WRITE_ENABLE);
 
-	for (int i = max_y; i < max_y+min_height; i++)
+	for (int i = max_y; i < lim_y; i++)
 	{
 
-		for (int j = max_x; j < max_x+min_width; j++)
+		for (int j = max_x; j < lim_x; j++)
 		{
 
 			uint32_t x = win->x+j;
@@ -775,7 +822,7 @@ void winsys_display_window_section(PWINDOW win, int x, int y, int width, int hei
 void winsys_display_window_section_operation(PWINDOW win, int x, int y, int width, int height)
 {
 
-	if (!win || x >= win->width || y >= win->height)
+	if (!win || x+width > win->width || y+height > win->height)
 		return;
 
 	winsys_paint_window_section(win, x, y, width, height);
@@ -791,18 +838,23 @@ void winsys_display_window_section_operation(PWINDOW win, int x, int y, int widt
 			int overlap_w = min(win->x+win->width,tmp->x+tmp->width)-overlap_x;
 			int overlap_h = min(win->y+win->height, tmp->y+tmp->height)-overlap_y;
 
-			int sect_x = win->x+max(x,0);
-			int sect_y = win->y+max(y,0);
-			int sect_w = min(win->width,width);
-			int sect_h = min(win->height,height);
+			if (overlap_w > 0 && overlap_h > 0)
+			{
 
-			int overlap_sect_x = max(overlap_x,sect_x);
-			int overlap_sect_y = max(overlap_y,sect_y);
-			int overlap_sect_w = min(overlap_x+overlap_w,sect_x+sect_w)-overlap_sect_x;
-			int overlap_sect_h = min(overlap_y+overlap_h, sect_y+sect_h)-overlap_sect_y;
+				int sect_x = win->x+max(x,0);
+				int sect_y = win->y+max(y,0);
+				int sect_w = min(win->width,width);
+				int sect_h = min(win->height,height);
 
-			if (overlap_sect_w > 0 && overlap_sect_h > 0)
-				winsys_display_window_section_operation(tmp,overlap_sect_x-tmp->x,overlap_sect_y-tmp->y,overlap_sect_w,overlap_sect_h);
+				int overlap_sect_x = max(overlap_x,sect_x);
+				int overlap_sect_y = max(overlap_y,sect_y);
+				int overlap_sect_w = min(overlap_x+overlap_w,sect_x+sect_w)-overlap_sect_x;
+				int overlap_sect_h = min(overlap_y+overlap_h, sect_y+sect_h)-overlap_sect_y;
+
+				if (overlap_sect_w > 0 && overlap_sect_h > 0)
+					winsys_display_window_section_operation(tmp,overlap_sect_x-tmp->x,overlap_sect_y-tmp->y,overlap_sect_w,overlap_sect_h);
+
+			}
 
 		}
 
@@ -831,18 +883,23 @@ void winsys_display_window_section_exclude_original(PWINDOW win, PWINDOW orig, i
 			int overlap_w = min(win->x+win->width,tmp->x+tmp->width)-overlap_x;
 			int overlap_h = min(win->y+win->height, tmp->y+tmp->height)-overlap_y;
 
-			int sect_x = win->x+max(x,0);
-			int sect_y = win->y+max(y,0);
-			int sect_w = min(win->width,width);
-			int sect_h = min(win->height,height);
+			if (overlap_w > 0 && overlap_h > 0)
+			{
 
-			int overlap_sect_x = max(overlap_x,sect_x);
-			int overlap_sect_y = max(overlap_y,sect_y);
-			int overlap_sect_w = min(overlap_x+overlap_w,sect_x+sect_w)-overlap_sect_x;
-			int overlap_sect_h = min(overlap_y+overlap_h, sect_y+sect_h)-overlap_sect_y;
+				int sect_x = win->x+max(x,0);
+				int sect_y = win->y+max(y,0);
+				int sect_w = min(win->width,width);
+				int sect_h = min(win->height,height);
 
-			if (overlap_sect_w > 0 && overlap_sect_h > 0)
-				winsys_display_window_section_exclude_original(tmp,orig,overlap_sect_x-tmp->x,overlap_sect_y-tmp->y,overlap_sect_w,overlap_sect_h);
+				int overlap_sect_x = max(overlap_x,sect_x);
+				int overlap_sect_y = max(overlap_y,sect_y);
+				int overlap_sect_w = min(overlap_x+overlap_w,sect_x+sect_w)-overlap_sect_x;
+				int overlap_sect_h = min(overlap_y+overlap_h, sect_y+sect_h)-overlap_sect_y;
+
+				if (overlap_sect_w > 0 && overlap_sect_h > 0)
+					winsys_display_window_section_exclude_original(tmp,orig,overlap_sect_x-tmp->x,overlap_sect_y-tmp->y,overlap_sect_w,overlap_sect_h);
+
+			}
 
 		}
 
@@ -869,6 +926,23 @@ void winsys_display_window(PWINDOW win)
 
 }
 
+void winsys_display_window_if_possible(PWINDOW win)
+{
+
+	if (!win)
+		return;
+
+	WINSYSOP display_window_operation = {
+
+		.op = WINSYS_DISPLAY_WINDOW,
+		.wid = win->id
+
+	};
+
+	winsys_enqueue_to_winsys_listener_if_possible(display_window_operation);
+
+}
+
 void winsys_display_window_operation(PWINDOW win)
 {
 
@@ -890,7 +964,8 @@ void winsys_display_window_operation(PWINDOW win)
 
 			int overlap_h = min(win->y+win->height, tmp->y+tmp->height)-overlap_y;
 
-			winsys_display_window_section_operation(tmp,overlap_x-tmp->x,overlap_y-tmp->y,overlap_w,overlap_h);
+			if (overlap_w > 0 && overlap_h > 0)
+				winsys_display_window_section_operation(tmp,overlap_x-tmp->x,overlap_y-tmp->y,overlap_w,overlap_h);
 
 		}
 
@@ -920,8 +995,8 @@ void winsys_display_window_exclude_original(PWINDOW win, PWINDOW orig)
 			int overlap_w = min(win->x+win->width,tmp->x+tmp->width)-overlap_x;
 
 			int overlap_h = min(win->y+win->height, tmp->y+tmp->height)-overlap_y;
-
-			winsys_display_window_section_exclude_original(tmp,orig,overlap_x-tmp->x,overlap_y-tmp->y,overlap_w,overlap_h);
+			if (overlap_w > 0 && overlap_h > 0)
+				winsys_display_window_section_exclude_original(tmp,orig,overlap_x-tmp->x,overlap_y-tmp->y,overlap_w,overlap_h);
 		}
 
 		tmp = tmp->next;
@@ -935,7 +1010,6 @@ void winsys_display_collided_windows(PWINDOW win)
 
 	if (!win)
 		return;
-
 
 	PWINDOW tmp = win_list;
 
@@ -1156,17 +1230,40 @@ void winsys_move_window(PWINDOW win, int x, int y)
 
 }
 
+void winsys_move_window_through_mouse(PWINDOW win, int x, int y)
+{
+
+	if (!win)
+		return;
+
+	WINSYSOP move_window_operation = {
+
+		.op = WINSYS_MOVE_WINDOW,
+		.wid = win->id,
+		.x = x,
+		.y = y
+
+	};
+
+	winsys_enqueue_to_winsys_listener_if_possible(move_window_operation);
+
+}
+
 void winsys_move_window_operation(PWINDOW win, int x, int y)
 {
+
+	if (!win)
+		return;
 
 	winsys_clear_whole_window(win);
 	winsys_display_collided_windows(win);
 
 	win->x = x;
 	win->y = y;
-	winsys_set_working_window_operation(win->id);
-
-	winsys_display_window_operation(win);
+	if (working_window != win)
+		winsys_set_working_window_operation(win->id);
+	else
+		winsys_display_window_operation(win);
 
 }
 
@@ -1201,6 +1298,8 @@ void winsys_remove_window_operation(PWINDOW win)
 
 	winsys_clear_whole_window(win);
 
+	acquireLock(&winsys_win_list_lock);
+
 	PWINDOW tmp = win_list;
 
 	if (tmp->id == win->id)
@@ -1212,6 +1311,8 @@ void winsys_remove_window_operation(PWINDOW win)
 
 		tmp->next = win->next;
 	}
+
+	releaseLock(&winsys_win_list_lock);
 
 	if (working_window->id == win->id)
 	{
@@ -1275,6 +1376,8 @@ void winsys_remove_window_user(PWINDOW win)
 
 	winsys_clear_whole_window(win);
 
+	acquireLock(&winsys_win_list_lock);
+
 	PWINDOW tmp = win_list;
 
 	if (tmp->id == win->id)
@@ -1286,6 +1389,8 @@ void winsys_remove_window_user(PWINDOW win)
 
 		tmp->next = win->next;
 	}
+
+	releaseLock(&winsys_win_list_lock);
 
 	if (working_window->id == win->id)
 	{

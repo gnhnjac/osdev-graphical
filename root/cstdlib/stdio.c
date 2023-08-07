@@ -2,7 +2,7 @@
 #include "stdlib.h"
 #include "syscalls.h"
 
-void printf(const char *fmt, ...)
+void deprecated_printf(const char *fmt, ...)
 {
 
 	va_list valist;
@@ -63,7 +63,7 @@ void printf(const char *fmt, ...)
 
 				default:
 
-					printf("Unknown format type \\%%c", fmt);
+					deprecated_printf("Unknown format type \\%%c", fmt);
 					return;
 			}
 

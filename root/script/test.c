@@ -15,10 +15,10 @@ WINDOW win;
 
 #define BOX_SIZE 5
 
-void some_other_function()
-{
-	return;
-}
+// void some_other_function()
+// {
+// 	return;
+// }
 
 void _main(int argc, char **argv)
 {

@@ -61,10 +61,10 @@ typedef struct _eventHandler
 
 typedef struct _window
 {
-	uint32_t x;
-	uint32_t y;
-	uint32_t width;
-	uint32_t height;
+	int x;
+	int y;
+	int width;
+	int height;
 	void *w_buffer;
 	char *w_name;
 	int id;
@@ -126,9 +126,11 @@ void winsys_save_to_mouse_buffer();
 void winsys_print_mouse();
 void winsys_clear_mouse();
 void winsys_enable_mouse();
+void winsys_move_mouse_operation(int x, int y);
 void winsys_listener();
 WINSYSOP winsys_dequeue_from_winsys_listener();
 void winsys_enqueue_to_winsys_listener(WINSYSOP operation);
+void winsys_enqueue_to_winsys_listener_if_possible(WINSYSOP operation);
 void winsys_move_mouse(int new_x, int new_y);
 PWINDOW winsys_get_working_window();
 int winsys_get_free_id();
@@ -146,6 +148,7 @@ void winsys_display_window_section(PWINDOW win, int x, int y, int width, int hei
 void winsys_display_window_section_operation(PWINDOW win, int x, int y, int width, int height);
 void winsys_display_window_section_exclude_original(PWINDOW win, PWINDOW orig, int x, int y, int width, int height);
 void winsys_display_window(PWINDOW win);
+void winsys_display_window_if_possible(PWINDOW win);
 void winsys_display_window_operation(PWINDOW win);
 void winsys_display_window_exclude_original(PWINDOW win, PWINDOW orig);
 void winsys_display_collided_windows(PWINDOW win);
@@ -161,6 +164,7 @@ bool winsys_check_close_collide(PWINDOW w, int x, int y);
 PWINDOW winsys_get_window_from_collision(int x, int y);
 PWINDOW winsys_get_window_from_title_collision(int x, int y);
 void winsys_move_window(PWINDOW win, int x, int y);
+void winsys_move_window_through_mouse(PWINDOW win, int x, int y);
 void winsys_move_window_operation(PWINDOW win, int x, int y);
 void winsys_remove_window(PWINDOW win);
 void winsys_remove_window_operation(PWINDOW win);
