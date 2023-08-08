@@ -226,7 +226,11 @@ void winsys_enqueue_to_winsys_listener(WINSYSOP operation)
 	{
 
 		if (i == WINSYS_QUEUE_SIZE-1)
+		{
+			releaseLock(&winsys_queue_lock);
 			acquireLock(&winsys_queue_last_lock);
+			acquireLock(&winsys_queue_lock);
+		}
 		
 
 		if (winsys_queue[i].op == WINSYS_EMPTY)

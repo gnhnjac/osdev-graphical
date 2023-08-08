@@ -16,6 +16,8 @@ thread*  _currentTask = 0;
 
 process *kernel_proc;
 
+PWINDOW cpu_usage;
+
 process *get_running_process()
 {
 
@@ -473,9 +475,11 @@ void scheduler_dispatch () {
                 int i = 0;
                 while(i < 3)
                 {
-                    display_psf1_8x16_char_bg(cpu_percentage_str[i],get_screen_x(i+5),0,0xF,0);
+                    gfx_paint_char_bg(cpu_usage, cpu_percentage_str[i],CHAR_WIDTH*i,0,0xF,0);
                     i++;
                 }
+
+                winsys_display_window(cpu_usage);
 
                 idle_task_ticks = 0;
                 total_ticks = 0;
@@ -551,6 +555,10 @@ void scheduler_initialize(void) {
 
         /* create window system process */
         createKernelProcess(winsys_listener, "winsys");
+
+        cpu_usage = winsys_create_win(0,50,3*CHAR_WIDTH,CHAR_HEIGHT, "", false);
+        cpu_usage->has_frame = false;
+        winsys_move_window(cpu_usage,5*CHAR_WIDTH,0);
 
 
         /* register isr */
