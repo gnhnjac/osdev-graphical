@@ -15,23 +15,23 @@ WINDOW win;
 
 #define BOX_SIZE 5
 
-// void some_other_function()
-// {
-// 	return;
-// }
+void some_other_function()
+{
+	return;
+}
 
 void _main(int argc, char **argv)
 {
 	printf("\nreceived argc: %U\n",argc);
 
-	//while(*argv)
-	//{
+	while(*argv)
+	{
 
-	printf("%s\n",*argv);
+		printf("%s\n",*argv);
 
-		//argv++;
+		argv++;
 
-	//}
+	}
 
 	win.w_name = "move mouse";
 	win.event_handler.event_mask = GENERAL_EVENT_MOUSE;

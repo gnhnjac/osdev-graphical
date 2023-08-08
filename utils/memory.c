@@ -11,6 +11,14 @@ void memcpy (char* dest , const char* source , int count) {
 	}
 }
 
+/* Copy bytes from one place to another . */
+void memcpy_dword (uint32_t* dest , const uint32_t* source , int count) {
+
+   for (int i =0; i < count; i++) {
+      *(dest + i) = *(source + i);
+   }
+}
+
 void strcpy(char *dest, const char *source)
 {
 

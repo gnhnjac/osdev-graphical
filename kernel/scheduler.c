@@ -479,7 +479,7 @@ void scheduler_dispatch () {
                     i++;
                 }
 
-                winsys_display_window(cpu_usage);
+                winsys_display_window_if_possible(cpu_usage);
 
                 idle_task_ticks = 0;
                 total_ticks = 0;

@@ -667,7 +667,7 @@ void winsys_paint_window_section(PWINDOW win, int x, int y, int width, int heigh
 		winsys_disable_mouse();
 
 	outb(0x3C4, MEMORY_PLANE_WRITE_ENABLE);
-
+	outb(0x3CE,0x8);
 	for (int i = max_y; i < lim_y; i++)
 	{
 
@@ -701,7 +701,6 @@ void winsys_paint_window_section(PWINDOW win, int x, int y, int width, int heigh
 						if (color_mask == 0)
 							color = 15-color;
 
-						outb(0x3CE,0x8);
 						outb(0x3CF,0xFF);
 
 						if (color != 0xF)
@@ -735,7 +734,6 @@ void winsys_paint_window_section(PWINDOW win, int x, int y, int width, int heigh
 					if (mask == 0)
 						continue;
 
-					outb(0x3CE,0x8);
 					outb(0x3CF,mask);
 
 					if (color != 0xF)
@@ -766,7 +764,6 @@ void winsys_paint_window_section(PWINDOW win, int x, int y, int width, int heigh
 
 			uint8_t mask = (0x80>>(x%PIXELS_PER_BYTE));
 
-			outb(0x3CE,0x8);
 			outb(0x3CF,mask);
 
 			if (color != 0xF)

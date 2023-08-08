@@ -100,6 +100,7 @@ void mouse_handler()
 	#endif
 	uint8_t zmov = inb(PS_DATA);
 
+	irq_send_eoi(12);
 
 	if (!mouse_enabled || !mouse_installed)
 		return;
@@ -153,7 +154,7 @@ void mouse_handler()
 		else
 		{
 
-			winsys_move_window_through_mouse(dragging_window,MOUSEX+WIN_FRAME_SIZE,MOUSEY+TITLE_BAR_HEIGHT);
+			winsys_move_window(dragging_window,MOUSEX+WIN_FRAME_SIZE,MOUSEY+TITLE_BAR_HEIGHT);
 			dragging_window = 0;
 
 		}

@@ -224,12 +224,38 @@ void handle_command(char *cmd_buff)
 		kfree(cmd);
 		handle_kill(cmd_buff);
 	}
+	else if(strcmp(cmd,"time"))
+	{
+		kfree(cmd);
+		handle_time(cmd_buff);
+	}
 	else
 	{
 
 		printf("Unknown command '%s'. type 'help' for a list of available commands.",cmd);
 		kfree(cmd);
 	}
+
+}
+
+void handle_time(char *cmd_buff)
+{
+
+	uint32_t ticks = get_ticks();
+
+	char *real_cmd = cmd_buff;
+
+	while(*real_cmd && *real_cmd != ' ')
+		real_cmd++;
+
+	if (!(*real_cmd))
+		return;
+	else
+		real_cmd++;
+
+	handle_command(real_cmd);
+
+	printf("\nelapsed time: %dms",(get_ticks()-ticks)*(1000/PHASE));
 
 }
 
@@ -730,6 +756,7 @@ char *help_strings[] = {
 	"Prints out the list of processes\nUsage: ps",
 	"Opens a 16 color bmp image for viewing\nUsage: img PATH",
 	"Kills the process with id PID\nUsage: kill PID",
+	"Prints elapsed time of command\nUsage: time COMMAND",
 };
 
 void handle_help(char *cmd_buff)
@@ -744,7 +771,7 @@ void handle_help(char *cmd_buff)
 	}
 	else if (param_count == 1)
 	{
-		print("Available commands:\nhelp\nreboot\nshutdown\nls\ncd\nmkdir\ntouch\nwrite\ncat\ncls\nrm\nsize\nconcat\nstats\nexec\nexecbg\nps\nimg\nkill");
+		print("Available commands:\nhelp\nreboot\nshutdown\nls\ncd\nmkdir\ntouch\nwrite\ncat\ncls\nrm\nsize\nconcat\nstats\nexec\nexecbg\nps\nimg\nkill\ntime");
 	}
 	else
 	{
@@ -807,6 +834,8 @@ int get_help_index(char *cmd)
 		return 17;
 	if(strcmp(cmd,"kill"))
 		return 18;
+	if(strcmp(cmd,"time"))
+		return 19;
 
 	return -1;
 

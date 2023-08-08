@@ -20,6 +20,7 @@ void get_shell_input(char *buff, int buff_size);
 void free_path();
 void shell_main();
 void handle_command(char *cmd_buff);
+void handle_time(char *cmd_buff);
 void handle_kill(char *cmd_buff);
 void handle_img(char *cmd_buff);
 char *join_path(char* p, char* ext);

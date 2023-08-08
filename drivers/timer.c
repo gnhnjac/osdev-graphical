@@ -39,6 +39,13 @@ void timer_handler()
     update_time();
 }
 
+unsigned int get_ticks()
+{
+
+    return timer_ticks;
+
+}
+
 /* Sets up the system clock by installing the timer handler
 *  into IRQ0 */
 void timer_install()
