@@ -668,6 +668,8 @@ void winsys_paint_window_section(PWINDOW win, int x, int y, int width, int heigh
 
 	outb(0x3C4, MEMORY_PLANE_WRITE_ENABLE);
 	outb(0x3CE,0x8);
+	int prev_color_mask = -1;
+	int prev_pixel_mask = -1;
 	for (int i = max_y; i < lim_y; i++)
 	{
 
@@ -701,18 +703,29 @@ void winsys_paint_window_section(PWINDOW win, int x, int y, int width, int heigh
 						if (color_mask == 0)
 							color = 15-color;
 
-						outb(0x3CF,0xFF);
+						if (prev_pixel_mask != 0xFF)
+						{
+							outb(0x3CF,0xFF);
+							prev_pixel_mask = 0xFF;
+						}
 
 						if (color != 0xF)
 						{
-							outb(0x3C5, 0xF);
+							if (prev_color_mask != 0xF)
+							{
+								outb(0x3C5, 0xF);
+								prev_color_mask = 0xF;
+							}
 
 							vram[vram_off] = 0;
 						}
 						if (color != 0)
 						{
-							outb(0x3C5, color);
-
+							if (prev_color_mask != color)
+							{
+								outb(0x3C5, color);
+								prev_color_mask = color;
+							}
 							vram[vram_off] = 0xFF;
 						}
 						break;
@@ -734,17 +747,29 @@ void winsys_paint_window_section(PWINDOW win, int x, int y, int width, int heigh
 					if (mask == 0)
 						continue;
 
-					outb(0x3CF,mask);
+					if (prev_pixel_mask != mask)
+					{
+						outb(0x3CF,mask);
+						prev_pixel_mask = mask;
+					}
 
 					if (color != 0xF)
 					{
-						outb(0x3C5, 0xF);
+						if (prev_color_mask != 0xF)
+						{
+							outb(0x3C5, 0xF);
+							prev_color_mask = 0xF;
+						}
 
 						vram[vram_off] &= ~mask;
 					}
 					if (color != 0)
 					{
-						outb(0x3C5, color);
+						if (prev_color_mask != color)
+						{
+							outb(0x3C5, color);
+							prev_color_mask = color;
+						}
 
 						vram[vram_off] |= mask;
 					}
@@ -764,17 +789,29 @@ void winsys_paint_window_section(PWINDOW win, int x, int y, int width, int heigh
 
 			uint8_t mask = (0x80>>(x%PIXELS_PER_BYTE));
 
-			outb(0x3CF,mask);
+			if (prev_pixel_mask != mask)
+			{
+				outb(0x3CF,mask);
+				prev_pixel_mask = mask;
+			}
 
 			if (color != 0xF)
 			{
-				outb(0x3C5, 0xF);
+				if (prev_color_mask != 0xF)
+				{
+					outb(0x3C5, 0xF);
+					prev_color_mask = 0xF;
+				}
 
 				vram[vram_off] &= ~mask;
 			}
 			if (color != 0)
 			{
-				outb(0x3C5, color);
+				if (prev_color_mask != color)
+				{
+					outb(0x3C5, color);
+					prev_color_mask = color;
+				}
 
 				vram[vram_off] |= mask;
 			}
@@ -2034,7 +2071,15 @@ void gfx_open_bmp16(char *path, int wx, int wy)
 
 	uint8_t two_pixels;
 	uint8_t padding_bytes = 4-(width/2+width%2)%4;
-	uint32_t padding_buff;
+	if (padding_bytes == 4)
+		padding_bytes = 0;
+	
+	uint32_t img_buffer_size = width*height/2;
+	img_buffer_size += padding_bytes*height + img_buffer_size%2;
+	char *img_buffer = kmalloc(img_buffer_size);
+	for (int i = 0; i < 4; i++)
+		volReadFile(&bmp,img_buffer+i*(img_buffer_size/4),img_buffer_size/4);
+	uint32_t img_buffer_ptr = 0;
 
 	uint8_t *buff = (uint8_t *)((uint32_t)win->w_buffer + ((height-1)*win->width)/2);
 	for (int i = 0; i < height; i++)
@@ -2044,7 +2089,10 @@ void gfx_open_bmp16(char *path, int wx, int wy)
 		{
 
 			if (pix_count % 2 == 0)
-				volReadFile(&bmp,(char *)&two_pixels,1);
+			{
+				two_pixels = img_buffer[img_buffer_ptr++];
+				//volReadFile(&bmp,(char *)&two_pixels,1);
+			}
 			else
 				two_pixels >>= 4;
 
@@ -2057,14 +2105,14 @@ void gfx_open_bmp16(char *path, int wx, int wy)
 
 		}
 
-		if (padding_bytes != 4)
-		{
-			volReadFile(&bmp,(char *)&padding_buff,padding_bytes);
-		}
+		img_buffer_ptr += padding_bytes;
+		//volReadFile(&bmp,(char *)&padding_buff,padding_bytes);
 
 		buff -= win->width/2;
 
 	}
+
+	kfree(img_buffer);
 
 	winsys_display_window_section(win,0,0,win->width,win->height);
 	volCloseFile(&bmp);
@@ -2112,9 +2160,17 @@ void gfx_paint_bmp16(PWINDOW win, char *path, int x, int y)
 
 	uint8_t two_pixels;
 	uint8_t padding_bytes = 4-(width/2+width%2)%4;
-	uint32_t padding_buff;
+	if (padding_bytes == 4)
+		padding_bytes = 0;
+	
+	uint32_t img_buffer_size = width*height/2;
+	img_buffer_size += padding_bytes*height + img_buffer_size%2;
+	char *img_buffer = kmalloc(img_buffer_size);
+	for (int i = 0; i < 4; i++)
+		volReadFile(&bmp,img_buffer+i*(img_buffer_size/4),img_buffer_size/4);
+	uint32_t img_buffer_ptr = 0;
 
-	uint8_t *buff = (uint8_t *)((uint32_t)win->w_buffer + ((y+height-1)*win->width)/2);
+	uint8_t *buff = (uint8_t *)((uint32_t)win->w_buffer + ((height-1)*win->width)/2);
 	for (int i = 0; i < height; i++)
 	{
 		int pix_count = 0;
@@ -2122,27 +2178,30 @@ void gfx_paint_bmp16(PWINDOW win, char *path, int x, int y)
 		{
 
 			if (pix_count % 2 == 0)
-				volReadFile(&bmp,(char *)&two_pixels,1);
+			{
+				two_pixels = img_buffer[img_buffer_ptr++];
+				//volReadFile(&bmp,(char *)&two_pixels,1);
+			}
 			else
 				two_pixels >>= 4;
 
 			uint8_t color = two_pixels & 0xF;
 
-			gfx_set_pixel_at_linear_off(win,x+j,y+height-i-1,buff+(x+j)/2,color);
-			//gfx_set_pixel(win,x+j,y+height-i-1,color);
+			gfx_set_pixel_at_linear_off(win,j,height-i-1,buff+j/2,color);
+			//gfx_set_pixel(win,j,height-i-1,color);
 
 			pix_count++;
 
 		}
 
-		if (padding_bytes != 4)
-		{
-			volReadFile(&bmp,(char *)&padding_buff,padding_bytes);
-		}
+		img_buffer_ptr += padding_bytes;
+		//volReadFile(&bmp,(char *)&padding_buff,padding_bytes);
 
 		buff -= win->width/2;
 
 	}
+
+	kfree(img_buffer);
 
 	volCloseFile(&bmp);
 

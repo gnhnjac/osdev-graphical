@@ -1,5 +1,6 @@
 #include "gfx.h"
 #include "syscalls.h"
+#include "stdlib.h"
 #include "stdio.h"
 
 void gfx_paint_char(PWINDOW win, char c, int x, int y, uint8_t fgcolor, void *font_buff)
@@ -106,6 +107,28 @@ void gfx_set_pixel(PWINDOW win,int x, int y,uint8_t color)
 
 }
 
+void gfx_set_pixel_at_linear_off(PWINDOW win,int x, int y, uint8_t *off, uint8_t color)
+{
+
+	if (x >= win->width || y >= win->height || !win)
+		return;
+
+	uint8_t *buff = off;
+
+	uint8_t color_mask = color;
+	uint8_t cancel_mask = 0xF0;
+
+	if (x % 2)
+	{
+		color_mask <<= 4;
+		cancel_mask >>= 4;
+	}
+
+	*buff &= cancel_mask;
+	*buff |= color_mask;
+
+}
+
 void gfx_fill_rect(PWINDOW win, int x, int y, int width, int height, uint8_t color)
 {
 
@@ -193,9 +216,17 @@ void gfx_paint_bmp16(PWINDOW win, char *path, int x, int y)
 
 	uint8_t two_pixels;
 	uint8_t padding_bytes = 4-(width/2+width%2)%4;
-	uint32_t padding_buff;
+	if (padding_bytes == 4)
+		padding_bytes = 0;
+	
+	uint32_t img_buffer_size = width*height/2;
+	img_buffer_size += padding_bytes*height + img_buffer_size%2;
+	char *img_buffer = malloc(img_buffer_size);
+	for (int i = 0; i < 4; i++)
+		fread(fd,img_buffer+i*(img_buffer_size/4),img_buffer_size/4);
+	uint32_t img_buffer_ptr = 0;
 
-	uint8_t *buff = (uint8_t *)((uint32_t)win->w_buffer + ((y+height-1)*win->width)/2);
+	uint8_t *buff = (uint8_t *)((uint32_t)win->w_buffer + ((height-1)*win->width)/2);
 	for (int i = 0; i < height; i++)
 	{
 		int pix_count = 0;
@@ -203,26 +234,30 @@ void gfx_paint_bmp16(PWINDOW win, char *path, int x, int y)
 		{
 
 			if (pix_count % 2 == 0)
-				fread(fd,(char *)&two_pixels,1);
+			{
+				two_pixels = img_buffer[img_buffer_ptr++];
+				//volReadFile(&bmp,(char *)&two_pixels,1);
+			}
 			else
 				two_pixels >>= 4;
 
 			uint8_t color = two_pixels & 0xF;
 
-			gfx_set_pixel(win,x+j,y+height-i-1,color);
+			gfx_set_pixel_at_linear_off(win,j,height-i-1,buff+j/2,color);
+			//gfx_set_pixel(win,j,height-i-1,color);
 
 			pix_count++;
 
 		}
 
-		if (padding_bytes != 4)
-		{
-			fread(fd,(char *)&padding_buff,padding_bytes);
-		}
+		img_buffer_ptr += padding_bytes;
+		//volReadFile(&bmp,(char *)&padding_buff,padding_bytes);
 
 		buff -= win->width/2;
 
 	}
+
+	free(img_buffer);
 
 	fclose(fd);
 
