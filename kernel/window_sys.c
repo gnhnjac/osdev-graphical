@@ -1063,24 +1063,26 @@ void winsys_display_collided_windows(PWINDOW win)
 	{	
 		if (tmp != win && winsys_check_collide(win,tmp))
 		{
+
 			winsys_paint_window(tmp);
-			int overlap_x = max(win->x-WIN_FRAME_SIZE, tmp->x);
 
-			int overlap_y = max(win->y-TITLE_BAR_HEIGHT, tmp->y);
+			// int overlap_x = max(win->x-WIN_FRAME_SIZE, tmp->x);
 
-			int overlap_w = min(win->x+win->width+WIN_FRAME_SIZE*2,tmp->x+tmp->width)-overlap_x;
+			// int overlap_y = max(win->y-TITLE_BAR_HEIGHT, tmp->y);
 
-			int overlap_h = min(win->y+win->height+TITLE_BAR_HEIGHT+WIN_FRAME_SIZE, tmp->y+tmp->height)-overlap_y;
-			if (overlap_w > 0 && overlap_h > 0)
-				winsys_paint_window_section(tmp,overlap_x-tmp->x,overlap_y-tmp->y,overlap_w,overlap_h);
+			// int overlap_w = min(win->x+win->width+WIN_FRAME_SIZE*2,tmp->x+tmp->width)-overlap_x;
+
+			// int overlap_h = min(win->y+win->height+TITLE_BAR_HEIGHT+WIN_FRAME_SIZE, tmp->y+tmp->height)-overlap_y;
+			// if (overlap_w > 0 && overlap_h > 0)
+			// 	winsys_paint_window_section(tmp,overlap_x-tmp->x,overlap_y-tmp->y,overlap_w,overlap_h);
 			
-			bool is_title_colliding = winsys_check_collide_rect_rect(win->x-WIN_FRAME_SIZE,win->y-TITLE_BAR_HEIGHT,win->width+WIN_FRAME_SIZE*2,win->height+TITLE_BAR_HEIGHT+WIN_FRAME_SIZE,tmp->x-WIN_FRAME_SIZE,tmp->y-TITLE_BAR_HEIGHT, tmp->width + WIN_FRAME_SIZE*2, TITLE_BAR_HEIGHT);
+			// bool is_title_colliding = winsys_check_collide_rect_rect(win->x-WIN_FRAME_SIZE,win->y-TITLE_BAR_HEIGHT,win->width+WIN_FRAME_SIZE*2,win->height+TITLE_BAR_HEIGHT+WIN_FRAME_SIZE,tmp->x-WIN_FRAME_SIZE,tmp->y-TITLE_BAR_HEIGHT, tmp->width + WIN_FRAME_SIZE*2, TITLE_BAR_HEIGHT);
 
-			if (is_title_colliding && tmp->has_frame)
-				winsys_paint_window_frame(tmp);
+			// if (is_title_colliding && tmp->has_frame)
+			// 	winsys_paint_window_frame(tmp);
 
-			if (prev && prev->has_frame)
-				winsys_paint_window_section(tmp,prev->x-WIN_FRAME_SIZE-tmp->x,prev->y-TITLE_BAR_HEIGHT-tmp->y,prev->width+WIN_FRAME_SIZE*2,TITLE_BAR_HEIGHT);
+			// if (prev && prev->has_frame)
+			// 	winsys_paint_window_section(tmp,prev->x-WIN_FRAME_SIZE-tmp->x,prev->y-TITLE_BAR_HEIGHT-tmp->y,prev->width+WIN_FRAME_SIZE*2,TITLE_BAR_HEIGHT);
 
 		}
 
