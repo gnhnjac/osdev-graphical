@@ -1057,7 +1057,7 @@ void winsys_display_collided_windows(PWINDOW win)
 	//acquireLock(&winsys_win_list_lock);
 
 	PWINDOW tmp = win_list;
-	PWINDOW prev = 0;
+	//PWINDOW prev = 0;
 
 	while(tmp)
 	{	
@@ -1086,7 +1086,7 @@ void winsys_display_collided_windows(PWINDOW win)
 
 		}
 
-		prev = tmp;
+		//prev = tmp;
 		tmp = tmp->next;
 
 	}
