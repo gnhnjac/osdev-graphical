@@ -107,6 +107,21 @@ void volReadFile (PFILE file, unsigned char* Buffer, unsigned int Length) {
 	}
 }
 
+void volWriteFile (PFILE file, unsigned char* Buffer, unsigned int Length) {
+
+	if (file)
+	{
+		if (_FileSystems [file->deviceID])
+		{
+			static lock_t vfs_write_spinlock = ATOMIC_LOCK_INIT;
+
+			acquireLock(&vfs_write_spinlock);
+			_FileSystems[file->deviceID]->Write(file,Buffer,Length);
+			releaseLock(&vfs_write_spinlock);
+		}
+	}
+}
+
 void volCreateFile (PFILE file, char *fname, uint32_t flags) {
 
 	if (file)

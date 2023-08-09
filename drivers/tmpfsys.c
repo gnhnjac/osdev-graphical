@@ -31,6 +31,7 @@ void tfsys_init()
 	strcpy (_FSysTmp.Name, "TMPFSYS");
 	_FSysTmp.Open      = tfsys_open;
 	_FSysTmp.Read      = tfsys_read;
+	_FSysTmp.Write     = tfsys_write;
 	_FSysTmp.Close     = tfsys_close;
 	_FSysTmp.OpenDir   = tfsys_open_dir;
 	_FSysTmp.Create    = tfsys_create;
@@ -60,26 +61,26 @@ void touch(char *name, uint32_t parent_fid)
 
 }
 
-void concat(char *name, uint32_t fid1, uint32_t fid2, uint32_t pid)
-{
+// void concat(char *name, uint32_t fid1, uint32_t fid2, uint32_t pid)
+// {
 
-	touch(name, pid);
+// 	touch(name, pid);
 
-	uint32_t new_fid = get_fid_by_name(name,pid);
+// 	uint32_t new_fid = get_fid_by_name(name,pid);
 
-	for(int i = 0; i < size(fid1); i++)
-	{
-		char c = get_nth_char(fid1, i);
-		write(new_fid, &c, 1);
-	}
+// 	for(int i = 0; i < size(fid1); i++)
+// 	{
+// 		char c = get_nth_char(fid1, i);
+// 		write(new_fid, &c, 1);
+// 	}
 
-	for(int i = 0; i < size(fid2); i++)
-	{
-		char c = get_nth_char(fid2, i);
-		write(new_fid, &c, 1);
-	}
+// 	for(int i = 0; i < size(fid2); i++)
+// 	{
+// 		char c = get_nth_char(fid2, i);
+// 		write(new_fid, &c, 1);
+// 	}
 
-}
+// }
 
 uint32_t get_fid_by_name(char *name, uint32_t fid)
 {
@@ -112,15 +113,13 @@ void reset_file(uint32_t fid)
 	meta->data_pointer = 0;
 }
 
-// raw refers to whether to take note to escape characters and backspaces.
-void write(uint32_t fid, char *chr, int raw)
+void tfsys_write(PFILE file, unsigned char* Buffer, unsigned int Length)
 {
 
-	if (*chr == 27 && !raw) // esc
-		return;
+	if (file->position == 0)
+		reset_file(file->id);
 
-
-	block_metadata *meta = get_faddr_by_id(fid);
+	block_metadata *meta = get_faddr_by_id(file->id);
 	char *ptr = (char *)((char *)meta+META_SIZE);
 
 	while (meta->data_pointer == BLOCK_SIZE-META_SIZE)
@@ -131,46 +130,49 @@ void write(uint32_t fid, char *chr, int raw)
 		ptr = (char *)((char *)meta+META_SIZE);
 	}
 
-	if(*chr == '\b' && !raw) // backspace
+	while(Length > 0)
 	{
 
-		if (meta->data_pointer == 0)
+		*(ptr + meta->data_pointer) = *Buffer;
+
+		Length--;
+		Buffer++;
+		meta->data_pointer++;
+		file->position++;
+
+		if(meta->data_pointer == BLOCK_SIZE-META_SIZE)
 		{
-			if(meta->type == File)
-				return;
-			if(meta->parent_block->type == File || meta->parent_block->type == SubFile)
-			{
-
-				meta->parent_block->data_pointer -= 1;
-				free_block(meta->bid);
-			}
-		} 
-		else
-		{
-
-			meta->data_pointer-=1;
-			return;
-
+			extend_file(meta->fid);
+			meta = meta->child_block;
+			ptr = (char *)((char *)meta+META_SIZE);
 		}
 
 	}
 
-	*(ptr + meta->data_pointer) = *chr;
-
-	meta->data_pointer += 1;
+	file->fileLength += Length;
 
 }
 
-void tfsys_read(PFILE file, unsigned char* Buffer, unsigned int Length )
+void tfsys_read(PFILE file, unsigned char* Buffer, unsigned int Length)
 {
 	block_metadata *meta = get_faddr_by_id(file->id);
+
+	if (file->position + Length >= file->fileLength)
+	{
+		file->eof = 1;
+
+		if (file->position + Length > file->fileLength)
+			return;
+
+	}
+
 	char *ptr = (char *)((char *)meta+META_SIZE);
 	uint32_t read = 0;
 	while(meta && read < meta->data_pointer && Length > 0)
 	{
 		if (read >= file->position)
 		{
-			sprintf(Buffer, "%c",*ptr);
+			*Buffer = *ptr;
 			Buffer++;
 			Length--;
 			file->position++;
@@ -188,7 +190,7 @@ void tfsys_read(PFILE file, unsigned char* Buffer, unsigned int Length )
 
 	}
 
-	if (!meta)
+	if (!meta || meta->data_pointer == 0)
 		file->eof = 1;
 
 }
@@ -273,7 +275,7 @@ uint32_t get_bid_by_faddr(block_metadata *base)
 block_metadata *create_block(block_metadata *parent_block, block_type type, char *name)
 {	
 
-	block_metadata *metadata = (block_metadata *)kmalloc(100);
+	block_metadata *metadata = (block_metadata *)kmalloc(sizeof(block_metadata));
 
 	metadata->parent_block = parent_block;
 
@@ -309,8 +311,8 @@ block_metadata *create_block(block_metadata *parent_block, block_type type, char
 
 	if(type == Dir)
 	{
-		block_metadata *false_dir = (block_metadata *)kmalloc(100);
-		block_metadata *false_parent = (block_metadata *)kmalloc(100);
+		block_metadata *false_dir = (block_metadata *)kmalloc(sizeof(block_metadata));
+		block_metadata *false_parent = (block_metadata *)kmalloc(sizeof(block_metadata));
 		memcpy((char *)false_dir,(char *)metadata,META_SIZE);
 		memcpy((char *)false_parent,(char *)parent_block,META_SIZE);
 		strcpy(false_dir->name,".");
@@ -330,7 +332,7 @@ block_metadata *create_block(block_metadata *parent_block, block_type type, char
 
 void add_record_to_dir(block_metadata *f_meta, block_metadata *p_data)
 {
-	dir_record *record = (dir_record *)kmalloc(100);
+	dir_record *record = (dir_record *)kmalloc(sizeof(dir_record));
 	record->fid = f_meta->fid;
 	memcpy(record->name,f_meta->name,10);
 	record->occupied = true;
@@ -387,7 +389,7 @@ void remove_record_from_dir(int r_id, int dir_id)
 block_metadata *create_base_dir(char *name)
 {
 
-	block_metadata *metadata = (block_metadata *)kmalloc(100);
+	block_metadata *metadata = (block_metadata *)kmalloc(sizeof(block_metadata));
 
 	metadata->child_block = 0;
 
@@ -410,8 +412,8 @@ block_metadata *create_base_dir(char *name)
 
 	memcpy((char *)base,(char *)metadata,META_SIZE);
 
-	block_metadata *false_dir = (block_metadata *)kmalloc(100);
-	block_metadata *false_parent = (block_metadata *)kmalloc(100);
+	block_metadata *false_dir = (block_metadata *)kmalloc(sizeof(block_metadata));
+	block_metadata *false_parent = (block_metadata *)kmalloc(sizeof(block_metadata));
 
 	memcpy((char *)false_dir,(char *)metadata,META_SIZE);
 	memcpy((char *)false_parent,(char *)metadata->parent_block,META_SIZE);

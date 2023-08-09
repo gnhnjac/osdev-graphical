@@ -677,12 +677,13 @@ void handle_cat(char *cmd_buff)
 
 	if (f.flags == FS_FILE)
 	{
-		char *buff = "x";
+		char *buff = "\x0";
 
 		while (!f.eof)
 		{
 			volReadFile(&f,buff,1);
-			printf("%c",*buff);
+			if (*buff)
+				printf("%c",*buff);
 		}
 	}
 

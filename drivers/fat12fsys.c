@@ -703,6 +703,7 @@ void fat12fsys_init () {
 	_FSysFat.Mount     = fat12fsys_mount;
 	_FSysFat.Open      = fat12fsys_open;
 	_FSysFat.Read      = fat12fsys_read;
+	_FSysFat.Write      = fat12fsys_write;
 	_FSysFat.Close     = fat12fsys_close;
 	_FSysFat.OpenDir   = fat12fsys_open_dir;
 	_FSysFat.Create    = fat12fsys_create;

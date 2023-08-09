@@ -425,10 +425,27 @@ uint32_t fopen(char *path)
 
 }
 
-void fread(uint32_t fd, unsigned char* Buffer, unsigned int Length)
+int fread(uint32_t fd, unsigned char* Buffer, unsigned int Length)
 {
 
-    volReadFile(get_file_by_fd(get_running_process(), fd), Buffer, Length);
+    PFILE f = get_file_by_fd(get_running_process(), fd);
+
+    if (!f)
+        return 0;
+
+    volReadFile(f, Buffer, Length);
+
+    if (f->eof)
+        return 0;
+
+    return 1;
+
+}
+
+void fwrite(uint32_t fd, unsigned char* Buffer, unsigned int Length)
+{
+
+    volWriteFile(get_file_by_fd(get_running_process(), fd), Buffer, Length);
 
 }
 

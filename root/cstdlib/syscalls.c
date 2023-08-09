@@ -130,7 +130,7 @@ void fclose(uint32_t fd)
 
 }
 
-void fread(uint32_t fd, unsigned char* Buffer, unsigned int Length)
+int fread(uint32_t fd, unsigned char* Buffer, unsigned int Length)
 {
 
     __asm__("mov $12, %eax");
@@ -138,6 +138,13 @@ void fread(uint32_t fd, unsigned char* Buffer, unsigned int Length)
 	__asm__("mov %0, %%ecx" : : "m" (Buffer));
 	__asm__("mov %0, %%edx" : : "m" (Length));
 	__asm__("int $0x80");
+
+	uintptr_t return_code = 0;
+
+	__asm__("mov %%eax, %0" : "=m" (return_code));
+
+	return return_code;
+
 
 }
 
@@ -174,6 +181,17 @@ void printf(const char *fmt, ...)
     __asm__("mov $15, %eax");
 	__asm__("mov %0, %%ebx" : : "m" (fmt));
 	__asm__("mov %0, %%ecx" : : "m" (valist));
+	__asm__("int $0x80");
+
+}
+
+void fwrite(uint32_t fd, unsigned char* Buffer, unsigned int Length)
+{
+
+    __asm__("mov $16, %eax");
+	__asm__("mov %0, %%ebx" : : "m" (fd));
+	__asm__("mov %0, %%ecx" : : "m" (Buffer));
+	__asm__("mov %0, %%edx" : : "m" (Length));
 	__asm__("int $0x80");
 
 }

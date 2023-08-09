@@ -58,6 +58,7 @@ FILE volOpenFile (const char* fname);
 PFILELIST volOpenDir (const char* fname);
 void volCloseFile (PFILE file);
 void volReadFile (PFILE file, unsigned char* Buffer, unsigned int Length);
+void volWriteFile (PFILE file, unsigned char* Buffer, unsigned int Length);
 void volCreateFile (PFILE file, char *fname, uint32_t flags);
 void volRegisterFileSystem (PFILESYSTEM fsys, unsigned int deviceID);
 void volUnregisterFileSystem (PFILESYSTEM fsys);
