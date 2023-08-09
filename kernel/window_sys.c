@@ -1053,14 +1053,16 @@ void winsys_display_collided_windows(PWINDOW win)
 	if (!win)
 		return;
 
-	acquireLock(&winsys_win_list_lock);
+	//acquireLock(&winsys_win_list_lock);
 
 	PWINDOW tmp = win_list;
+	PWINDOW prev = 0;
 
 	while(tmp)
 	{	
 		if (tmp != win && winsys_check_collide(win,tmp))
 		{
+			winsys_paint_window(tmp);
 			int overlap_x = max(win->x-WIN_FRAME_SIZE, tmp->x);
 
 			int overlap_y = max(win->y-TITLE_BAR_HEIGHT, tmp->y);
@@ -1076,14 +1078,17 @@ void winsys_display_collided_windows(PWINDOW win)
 			if (is_title_colliding && tmp->has_frame)
 				winsys_paint_window_frame(tmp);
 
+			if (prev && prev->has_frame)
+				winsys_paint_window_section(tmp,prev->x-WIN_FRAME_SIZE-tmp->x,prev->y-TITLE_BAR_HEIGHT-tmp->y,prev->width+WIN_FRAME_SIZE*2,TITLE_BAR_HEIGHT);
+
 		}
 
-
+		prev = tmp;
 		tmp = tmp->next;
 
 	}
 
-	releaseLock(&winsys_win_list_lock);
+	//releaseLock(&winsys_win_list_lock);
 
 }
 
@@ -1628,7 +1633,7 @@ void gfx_set_pixel(PWINDOW win,int x, int y,uint8_t color)
 	uint8_t color_mask = color;
 	uint8_t cancel_mask = 0xF0;
 
-	if (x % 2)
+	if (x % 2 == 0)
 	{
 		color_mask <<= 4;
 		cancel_mask >>= 4;
@@ -1650,7 +1655,7 @@ void gfx_set_pixel_at_linear_off(PWINDOW win,int x, int y, uint8_t *off, uint8_t
 	uint8_t color_mask = color;
 	uint8_t cancel_mask = 0xF0;
 
-	if (x % 2)
+	if (x % 2 == 0)
 	{
 		color_mask <<= 4;
 		cancel_mask >>= 4;
@@ -2200,6 +2205,7 @@ void gfx_paint_bmp16(PWINDOW win, char *path, int x, int y)
 	uint32_t img_buffer_ptr = 0;
 
 	uint8_t *buff = (uint8_t *)((uint32_t)win->w_buffer + ((height-1)*win->width)/2);
+
 	for (int i = 0; i < height; i++)
 	{
 		int pix_count = 0;

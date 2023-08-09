@@ -96,7 +96,7 @@ void gfx_set_pixel(PWINDOW win,int x, int y,uint8_t color)
 	uint8_t color_mask = color;
 	uint8_t cancel_mask = 0xF0;
 
-	if (x % 2)
+	if (x % 2 == 0)
 	{
 		color_mask <<= 4;
 		cancel_mask >>= 4;
@@ -118,7 +118,7 @@ void gfx_set_pixel_at_linear_off(PWINDOW win,int x, int y, uint8_t *off, uint8_t
 	uint8_t color_mask = color;
 	uint8_t cancel_mask = 0xF0;
 
-	if (x % 2)
+	if (x % 2 == 0)
 	{
 		color_mask <<= 4;
 		cancel_mask >>= 4;
