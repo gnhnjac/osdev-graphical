@@ -841,13 +841,12 @@ void handle_cat(char *cmd_buff)
 
 	if (f.flags == FS_FILE)
 	{
-		char *buff = "\x0";
+		char *buff = "x";
 
 		while (!f.eof)
 		{
 			volReadFile(&f,buff,1);
-			if (*buff)
-				printf("%c",*buff);
+			printf("%c",*buff);
 		}
 	}
 
