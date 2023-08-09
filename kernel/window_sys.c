@@ -606,6 +606,7 @@ void winsys_paint_window_frame(PWINDOW win)
 	{
 		fill_rect(win->x,win->y-TITLE_BAR_HEIGHT+WIN_FRAME_SIZE,win->width,TITLE_BAR_HEIGHT-WIN_FRAME_SIZE,WORKING_TITLE_COLOR);
 		fill_rect(win->x,win->y-WIN_FRAME_SIZE,win->width,WIN_FRAME_SIZE,WIN_FRAME_COLOR);
+		fill_rect(win->x,win->y-TITLE_BAR_HEIGHT,win->width,WIN_FRAME_SIZE,WIN_FRAME_COLOR);
 		fill_rect(win->x-WIN_FRAME_SIZE,win->y-TITLE_BAR_HEIGHT,WIN_FRAME_SIZE,win->height+TITLE_BAR_HEIGHT,WIN_FRAME_COLOR);
 		fill_rect(win->x+win->width,win->y-TITLE_BAR_HEIGHT,WIN_FRAME_SIZE,win->height+TITLE_BAR_HEIGHT,WIN_FRAME_COLOR);
 	}
