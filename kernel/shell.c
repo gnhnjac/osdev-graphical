@@ -23,8 +23,82 @@ PWINDOW main_window = 0;
 INPINFO window_input_info_struct;
 PINPINFO window_input_info = 0;
 
+#define CMD_HISTORY_SIZE 10
+
+char *cmd_history[CMD_HISTORY_SIZE] = {0};
+static int cmd_history_ptr = -1;
+
 #define SHELL_ROWS 25
 #define SHELL_COLS 65
+
+static void reset_cmd_history_ptr()
+{
+
+	cmd_history_ptr = -1;
+
+}
+
+static bool increment_cmd_history_ptr() // private
+{
+
+	cmd_history_ptr++;
+
+	if (cmd_history_ptr == CMD_HISTORY_SIZE)
+	{
+
+		cmd_history_ptr--;
+		return false;
+
+	}
+
+	return true;
+
+}
+
+static bool decrement_cmd_history_ptr() // private
+{
+
+	cmd_history_ptr--;
+
+	if (cmd_history_ptr < 0)
+	{
+
+		cmd_history_ptr = 0;
+		return false;
+
+	}
+
+	return true;
+
+}
+
+static char *get_cmd_from_history() // private
+{
+	return cmd_history[cmd_history_ptr];
+}
+
+static void push_cmd_to_history(char *cmd) // private
+{
+
+	if (strcmp(cmd_history[0],cmd))
+	{
+		reset_cmd_history_ptr();
+		return;
+	}
+
+	kfree(cmd_history[CMD_HISTORY_SIZE-1]);
+
+	for (int i = CMD_HISTORY_SIZE-1; i > 0; i--)
+	{	
+		cmd_history[i] = cmd_history[i-1];
+	}
+
+	cmd_history[0] = kmalloc(strlen(cmd)+1);
+	strcpy(cmd_history[0],cmd);
+
+	reset_cmd_history_ptr();
+
+}
 
 static void clear_viewport() // private
 {
@@ -63,7 +137,80 @@ void get_shell_input(char *buff, int buff_size)
 			else
 				c = kbdus[scancode];
 
-			if (gfx_keyboard_input_character(window_input_info,c) != -1)
+			if (scancode == K_UP)
+			{
+
+				bool success = increment_cmd_history_ptr();
+
+				if (success)
+				{
+					char *cmd = get_cmd_from_history();
+					if (cmd)
+					{
+
+						while (gfx_keyboard_input_character(window_input_info,'\b') != -1)
+						{
+							putchar('\b');
+							window_input_info->cursor_input_col = window_input_info->cursor_offset_x;
+							window_input_info->cursor_input_row = window_input_info->cursor_offset_y;
+						}
+						
+						print(cmd);
+
+						window_input_info->cursor_input_col = window_input_info->cursor_offset_x;
+						window_input_info->cursor_input_row = window_input_info->cursor_offset_y;
+
+						while(*cmd)
+						{
+
+							gfx_keyboard_input_character(window_input_info,*cmd);
+							cmd++;
+
+						}
+					}
+					else
+						decrement_cmd_history_ptr();
+				}
+
+			}
+			else if (scancode == K_DOWN)
+			{
+
+
+				bool success = decrement_cmd_history_ptr();
+				if (success)
+				{
+					char *cmd = get_cmd_from_history();
+
+					if (cmd)
+					{
+						while (gfx_keyboard_input_character(window_input_info,'\b') != -1)
+						{
+							putchar('\b');
+							window_input_info->cursor_input_col = window_input_info->cursor_offset_x;
+							window_input_info->cursor_input_row = window_input_info->cursor_offset_y;
+						}
+
+						char *cmd = get_cmd_from_history();
+
+						print(cmd);
+
+						window_input_info->cursor_input_col = window_input_info->cursor_offset_x;
+						window_input_info->cursor_input_row = window_input_info->cursor_offset_y;
+
+						while(*cmd)
+						{
+
+							gfx_keyboard_input_character(window_input_info,*cmd);
+							cmd++;
+						}
+
+					}
+
+				}
+
+			}
+			else if (gfx_keyboard_input_character(window_input_info,c) != -1)
 			{
 				gfx_putchar(main_window, window_input_info, c);
 
@@ -74,6 +221,8 @@ void get_shell_input(char *buff, int buff_size)
 				winsys_display_window_section(main_window,post_x,post_y,CHAR_WIDTH,CHAR_HEIGHT);
 				window_input_info->cursor_input_col = window_input_info->cursor_offset_x;
 				window_input_info->cursor_input_row = window_input_info->cursor_offset_y;
+
+				reset_cmd_history_ptr();
 			}
 
 		}
@@ -86,6 +235,13 @@ void free_path()
 {
 
 	kfree(path);
+
+	for (int i = 0; i < CMD_HISTORY_SIZE; i++)
+	{
+
+		kfree(cmd_history[i]);
+
+	}
 
 }
 
@@ -103,6 +259,13 @@ void shell_main()
 
 	proc->on_terminate = free_path;
 
+	for (int i = 0; i < CMD_HISTORY_SIZE; i++)
+	{
+
+		cmd_history[i] = 0;
+
+	}
+
 	// (need signals and sigterm to handle that stuff instead of temporary on_terminate solution)
 	path = kmalloc(3+1);
 
@@ -113,6 +276,7 @@ void shell_main()
 		printf("\n%s> ",path);
 		char cmd_buff[300];
 		get_shell_input(cmd_buff,300);
+		push_cmd_to_history(cmd_buff);
 		handle_command(cmd_buff);
 	}
 

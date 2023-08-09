@@ -16,6 +16,7 @@
 #define check_flag(flags, n) ((flags) & bit(n))
 
 //refs
+static void reset_cmd_history_ptr();
 void get_shell_input(char *buff, int buff_size);
 void free_path();
 void shell_main();

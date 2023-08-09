@@ -138,6 +138,6 @@ void update_time()
             time_str++;
             off++;
         }
-        winsys_display_window_if_possible(time_window);
+        winsys_display_window_if_possible_lockless(time_window);
     }
 }
