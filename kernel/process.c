@@ -188,10 +188,14 @@ void terminateKernelProcessById (int pid) {
 
 int createProcess(char* exec, char *args) {
 
+    if (!exec)
+        return 0;
+
     pdirectory *prevDir = vmmngr_get_directory();
 
     char *k_args = kmalloc(strlen(args)+1);
-    strcpy(k_args,args);
+    if (args)
+        strcpy(k_args,args);
 
     char *k_exec = kmalloc(strlen(exec)+1);
     strcpy(k_exec,exec);

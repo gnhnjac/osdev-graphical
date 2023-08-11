@@ -365,8 +365,6 @@ static void draw_net() {
 
 
 	}
-	//draw to the display
-	display_window_section(&window,SCREEN_WIDTH / 2,20,5,window.height);
 }
 
 static void draw_ball(uint8_t color) {
@@ -375,15 +373,10 @@ static void draw_ball(uint8_t color) {
 	{
 
 		gfx_fill_rect(&window, ball.x,ball.y,ball.w,ball.h, color);
-		//draw to the display
-		display_window_section(&window,ball.x,ball.y,ball.w,ball.h);
-
 	}
 	else
 	{
-		gfx_fill_rect(&window, ball.x-5,ball.y-5,ball.w+10,ball.h+10, color);
-		//draw to the display
-		display_window_section(&window,ball.x-5,ball.y-5,ball.w+10,ball.h+10);
+		gfx_fill_rect(&window, ball.x,ball.y,ball.w,ball.h, color);
 	}
 }
 
@@ -394,8 +387,6 @@ static void draw_paddle(uint8_t color) {
 	for (i = 0; i < 2; i++) {
 
 		gfx_fill_rect(&window, paddle[i].x,paddle[i].y,paddle[i].w,paddle[i].h, color);
-		//draw to the display
-		display_window_section(&window,paddle[i].x,paddle[i].y,paddle[i].w,paddle[i].h);
 	
 	}
 }
@@ -405,7 +396,6 @@ static void draw_player_0_score() {
 	uint32_t dest_x = (SCREEN_WIDTH / 2) - 12 - CHAR_WIDTH;
 
 	gfx_paint_char_bg(&window,score[0]+'0',dest_x,0,0,0x4,font_buff);
-	display_window_section(&window,dest_x,0,CHAR_WIDTH,CHAR_HEIGHT);
 
 }
 
@@ -414,7 +404,6 @@ static void draw_player_1_score() {
 	uint32_t dest_x = (SCREEN_WIDTH / 2) + 12;
 	
 	gfx_paint_char_bg(&window,score[1]+'0',dest_x,0,0,0x4,font_buff);
-	display_window_section(&window,dest_x,0,CHAR_WIDTH,CHAR_HEIGHT);
 
 }
 
@@ -579,6 +568,8 @@ void _main (int argc, char *args[]) {
 	
 			//draw the score
 			draw_player_1_score();
+
+			display_window_section(&window,0,0,window.width,window.height);
 
 			sleep(1000/60);
 
