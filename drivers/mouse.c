@@ -1,5 +1,4 @@
 #include "low_level.h"
-#include "ps2.h"
 #include "irq.h"
 #include "screen.h"
 #include "mouse.h"

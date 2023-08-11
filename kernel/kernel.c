@@ -7,7 +7,6 @@
 #include "mouse.h"
 #include "shell.h"
 #include "rtl8139.h"
-#include "ps2.h"
 #include "network.h"
 #include "multiboot.h"
 #include "pmm.h"
@@ -96,9 +95,10 @@ void kmain(uint32_t _, multiboot_info* bootinfo, uint32_t _kernel_size) {
 
 	//install_nic();
 
-	ps2_init();
 	timer_install();
+
 	keyboard_install();
+
 	mouse_install();
 
 	// initialize the system call api

@@ -6,7 +6,6 @@
 #include "std.h"
 #include "memory.h"
 #include "mouse.h"
-#include "ps2.h"
 #include "window_sys.h"
 #include "process.h"
 #include "scheduler.h"

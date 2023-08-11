@@ -321,8 +321,8 @@ void vmmngr_initialize () {
 
 	_cur_directory = dir;
 
-	//! identity map 0-4mb->0-4mb
-	vmmngr_mmap(vmmngr_get_directory(), 0x0,0x00000000,1024, I86_PDE_WRITABLE, I86_PTE_WRITABLE);
+	//! identity map 0-4mb->0-4mb (without first 4kb because null referencing)
+	vmmngr_mmap(vmmngr_get_directory(), 0x1000,0x1000,1023, I86_PDE_WRITABLE, I86_PTE_WRITABLE);
  
 	//! virtual map 3gb-3gb+16mb->1-17mb
 	vmmngr_mmap(vmmngr_get_directory(), 0x100000,K_VIRT_BASE,1024*4, I86_PDE_WRITABLE, I86_PTE_WRITABLE);

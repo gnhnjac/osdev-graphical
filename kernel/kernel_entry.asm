@@ -394,6 +394,7 @@ _scheduler_isr:
    mov eax, [__currentTask]
    cmp eax, 0
    jz  interrupt_return
+
    ;
    ; save selectors.
    ;

@@ -95,16 +95,21 @@ int createKernelProcess(void *entry, char *name)
 {
 
     pdirectory *prevDir = vmmngr_get_directory();
+    thread *currTask = get_current_task();
 
     process *kernel_proc = (process *)kcalloc(sizeof(process));
 
     kernel_proc->id            = getFreeID();
     kernel_proc->pageDirectory = create_address_space();
     // temporarily copy stack to new address space
-    void *running_proc_stack = (void *)get_current_task()->kernelESP-PAGE_SIZE;
-    vmmngr_mmap_virt2virt(prevDir,kernel_proc->pageDirectory,running_proc_stack,running_proc_stack,I86_PDE_WRITABLE,I86_PTE_WRITABLE);
-    
-    disable_scheduling();
+    void *running_proc_stack;
+    if (currTask)
+    {
+        running_proc_stack = (void *)currTask->kernelESP-PAGE_SIZE;
+        vmmngr_mmap_virt2virt(prevDir,kernel_proc->pageDirectory,running_proc_stack,running_proc_stack,I86_PDE_WRITABLE,I86_PTE_WRITABLE);
+        disable_scheduling();
+    }
+
     vmmngr_switch_pdirectory(kernel_proc->pageDirectory);
     kernel_proc->priority      = PRIORITY_HIGH;
     kernel_proc->state         = PROCESS_STATE_ACTIVE;
@@ -120,8 +125,12 @@ int createKernelProcess(void *entry, char *name)
     thread *main_thread = (thread *)kcalloc(sizeof(thread));
     thread_create(main_thread, entry, create_kernel_stack(), true);
     vmmngr_switch_pdirectory(prevDir);
-    enable_scheduling();
-    vmmngr_unmap_virt(kernel_proc->pageDirectory,running_proc_stack);
+
+    if (currTask)
+    {
+        enable_scheduling();
+        vmmngr_unmap_virt(kernel_proc->pageDirectory,running_proc_stack);
+    }
 
     main_thread->parent = kernel_proc;
     main_thread->isMain = true;

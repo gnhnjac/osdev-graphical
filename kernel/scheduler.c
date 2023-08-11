@@ -560,7 +560,6 @@ void scheduler_initialize(void) {
         cpu_usage->has_frame = false;
         winsys_move_window(cpu_usage,5*CHAR_WIDTH,0);
 
-
         /* register isr */
         idt_set_gate(32, (void *)scheduler_isr, 0x8E|0x60);
         idt_set_gate(0x81, (void *)scheduler_raw, 0x8E|0x60); // present|32 bit interrupt gate|dpl 3

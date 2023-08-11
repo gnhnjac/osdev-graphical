@@ -19,6 +19,7 @@
 static PWINDOW win_list = 0;
 static PWINDOW working_window = 0;
 static WINSYSOP winsys_queue[WINSYS_QUEUE_SIZE] = {0};
+static int winsys_queue_index = 0;
 static lock_t winsys_queue_last_lock = ATOMIC_LOCK_INIT;
 static lock_t winsys_queue_lock = ATOMIC_LOCK_INIT;
 static lock_t winsys_win_list_lock = ATOMIC_LOCK_INIT;
@@ -190,7 +191,7 @@ void winsys_listener()
 	{
 
 
-		while(winsys_queue[0].op == WINSYS_EMPTY)
+		while(winsys_queue_index == 0)
 			__asm__("pause");
 
 		winsys_do_operation();
@@ -215,7 +216,9 @@ WINSYSOP winsys_dequeue_from_winsys_listener()
 
 	}
 
-	winsys_queue[WINSYS_QUEUE_SIZE-1].op = WINSYS_EMPTY;
+	//winsys_queue[WINSYS_QUEUE_SIZE-1].op = WINSYS_EMPTY;
+
+	winsys_queue_index--;
 
 	releaseLock(&winsys_queue_lock);
 
@@ -240,29 +243,21 @@ void winsys_enqueue_to_winsys_listener(WINSYSOP operation)
 	mid_operation = true;
 	acquireLock(&winsys_queue_lock);
 
-	for (int i = 0; i < WINSYS_QUEUE_SIZE; i++)
+	if (winsys_queue_index >= WINSYS_QUEUE_SIZE-1)
 	{
+		releaseLock(&winsys_queue_lock);
 
-		if (i == WINSYS_QUEUE_SIZE-1)
-		{
-			releaseLock(&winsys_queue_lock);
+		if (winsys_queue_index == WINSYS_QUEUE_SIZE && running_proc->id == winsys_pid)
+			winsys_do_operation();
 
-			if (winsys_queue[i].op != WINSYS_EMPTY && running_proc->id == winsys_pid)
-				winsys_do_operation();
-
-			acquireLock(&winsys_queue_last_lock);
-			acquireLock(&winsys_queue_lock);
-		}
-		
-
-		if (winsys_queue[i].op == WINSYS_EMPTY)
-		{
-			winsys_queue[i] = operation;
-			releaseLock(&winsys_queue_lock);
-			mid_operation = false;
-			return;
-		}
+		acquireLock(&winsys_queue_last_lock);
+		acquireLock(&winsys_queue_lock);
 	}
+
+	winsys_queue[winsys_queue_index] = operation;
+	winsys_queue_index++;
+	releaseLock(&winsys_queue_lock);
+	mid_operation = false;
 
 }
 
@@ -280,16 +275,10 @@ void winsys_enqueue_to_winsys_listener_if_possible(WINSYSOP operation)
 	mid_operation = true;
 	acquireLock(&winsys_queue_lock);
 
-	for (int i = 0; i < WINSYS_QUEUE_SIZE; i++)
-	{	
-
-		if (winsys_queue[i].op == WINSYS_EMPTY)
-		{
-			winsys_queue[i] = operation;
-			releaseLock(&winsys_queue_lock);
-			mid_operation = false;
-			return;
-		}
+	if (winsys_queue_index < WINSYS_QUEUE_SIZE)
+	{
+		winsys_queue[winsys_queue_index] = operation;
+		winsys_queue_index++;
 	}
 
 	releaseLock(&winsys_queue_lock);
@@ -300,16 +289,13 @@ void winsys_enqueue_to_winsys_listener_if_possible(WINSYSOP operation)
 void winsys_enqueue_to_winsys_listener_if_possible_lockless(WINSYSOP operation)
 {
 
-	if (!winsys_initialized || mid_operation)
+	if (!winsys_initialized || winsys_queue_lock)
 		return;
 
-	for (int i = 0; i < WINSYS_QUEUE_SIZE-1; i++) // don't occupy last slot
-	{	
-		if (winsys_queue[i].op == WINSYS_EMPTY)
-		{
-			winsys_queue[i] = operation;
-			return;
-		}
+	if (winsys_queue_index < WINSYS_QUEUE_SIZE-1)
+	{
+		winsys_queue[winsys_queue_index] = operation;
+		winsys_queue_index++;
 	}
 
 }
@@ -418,7 +404,8 @@ PWINDOW winsys_create_win(int x, int y, int width, int height, char *w_name, boo
 	win->width = width;
 	win->height = height;
 	win->closable = is_closable;
-	win->parent_pid = get_running_process()->id;
+	if (get_running_process())
+		win->parent_pid = get_running_process()->id;
 	win->is_user = false;
 	win->has_frame = true;
 
@@ -577,7 +564,7 @@ int winsys_set_working_window_operation(int wid)
 			tmp2->next = tmp;
 			tmp->next = 0;
 
-			if (winsys_get_window_by_id(old_working->id))
+			if (old_working && winsys_get_window_by_id(old_working->id))
 				winsys_display_window_operation(old_working);
 
 			winsys_display_window_operation(working_window);
@@ -1057,38 +1044,49 @@ void winsys_display_collided_windows(PWINDOW win)
 	//acquireLock(&winsys_win_list_lock);
 
 	PWINDOW tmp = win_list;
-	//PWINDOW prev = 0;
+	PWINDOW prev = 0;
 
 	while(tmp)
 	{	
 		if (tmp != win && winsys_check_collide(win,tmp))
 		{
 
-			winsys_paint_window(tmp);
+			//winsys_paint_window(tmp);
 
-			// int overlap_x = max(win->x-WIN_FRAME_SIZE, tmp->x);
+			int overlap_x = max(win->x-WIN_FRAME_SIZE, tmp->x);
 
-			// int overlap_y = max(win->y-TITLE_BAR_HEIGHT, tmp->y);
+			int overlap_y = max(win->y-TITLE_BAR_HEIGHT, tmp->y);
 
-			// int overlap_w = min(win->x+win->width+WIN_FRAME_SIZE*2,tmp->x+tmp->width)-overlap_x;
+			int overlap_w = min(win->x+win->width+WIN_FRAME_SIZE*2,tmp->x+tmp->width)-overlap_x;
 
-			// int overlap_h = min(win->y+win->height+TITLE_BAR_HEIGHT+WIN_FRAME_SIZE, tmp->y+tmp->height)-overlap_y;
-			// if (overlap_w > 0 && overlap_h > 0)
-			// 	winsys_paint_window_section(tmp,overlap_x-tmp->x,overlap_y-tmp->y,overlap_w,overlap_h);
+			int overlap_h = min(win->y+win->height+TITLE_BAR_HEIGHT+WIN_FRAME_SIZE, tmp->y+tmp->height)-overlap_y;
+			if (overlap_w > 0 && overlap_h > 0)
+				winsys_paint_window_section(tmp,overlap_x-tmp->x,overlap_y-tmp->y,overlap_w,overlap_h);
 			
-			// bool is_title_colliding = winsys_check_collide_rect_rect(win->x-WIN_FRAME_SIZE,win->y-TITLE_BAR_HEIGHT,win->width+WIN_FRAME_SIZE*2,win->height+TITLE_BAR_HEIGHT+WIN_FRAME_SIZE,tmp->x-WIN_FRAME_SIZE,tmp->y-TITLE_BAR_HEIGHT, tmp->width + WIN_FRAME_SIZE*2, TITLE_BAR_HEIGHT);
+			//bool is_title_colliding = winsys_check_collide_rect_rect(win->x-WIN_FRAME_SIZE,win->y-TITLE_BAR_HEIGHT,win->width+WIN_FRAME_SIZE*2,win->height+TITLE_BAR_HEIGHT+WIN_FRAME_SIZE,tmp->x-WIN_FRAME_SIZE,tmp->y-TITLE_BAR_HEIGHT, tmp->width + WIN_FRAME_SIZE*2, TITLE_BAR_HEIGHT);
 
-			// if (is_title_colliding && tmp->has_frame)
-			// 	winsys_paint_window_frame(tmp);
-
-			// if (prev && prev->has_frame)
-			// 	winsys_paint_window_section(tmp,prev->x-WIN_FRAME_SIZE-tmp->x,prev->y-TITLE_BAR_HEIGHT-tmp->y,prev->width+WIN_FRAME_SIZE*2,TITLE_BAR_HEIGHT);
-
+			//if (is_title_colliding && tmp->has_frame)
+			if (tmp->has_frame)
+				winsys_paint_window_frame(tmp);
 		}
 
-		//prev = tmp;
-		tmp = tmp->next;
+		if (tmp != win && prev && prev->has_frame)
+		{
 
+			int overlap_x = max(prev->x-WIN_FRAME_SIZE, tmp->x);
+
+			int overlap_y = max(prev->y-TITLE_BAR_HEIGHT, tmp->y);
+
+			int overlap_w = min(prev->x+prev->width+WIN_FRAME_SIZE*2,tmp->x+tmp->width)-overlap_x;
+
+			int overlap_h = min(prev->y+prev->height+TITLE_BAR_HEIGHT+WIN_FRAME_SIZE, tmp->y+tmp->height)-overlap_y;
+
+			winsys_paint_window_section(tmp,overlap_x-tmp->x,overlap_y-tmp->y,overlap_w,overlap_h);
+		}
+
+		prev = tmp;
+
+		tmp = tmp->next;
 	}
 
 	//releaseLock(&winsys_win_list_lock);
@@ -1233,7 +1231,7 @@ PWINDOW winsys_get_window_from_collision(int x, int y)
 
 	while(tmp)
 	{
-		while(!winsys_check_collide_coords(tmp,x,y) && tmp)
+		while(tmp && !winsys_check_collide_coords(tmp,x,y))
 			tmp = tmp->next;
 		if (!tmp)
 			break;
@@ -1419,7 +1417,6 @@ void winsys_remove_windows_by_pid(int pid)
 		tmp = tmp->next;
 		if (to_remove->parent_pid == pid)
 		{
-			winsys_remove_window(to_remove);
 			if (to_remove->is_user)
 			{
 
@@ -1429,8 +1426,9 @@ void winsys_remove_windows_by_pid(int pid)
 
 				for (int i = 0; i < get_win_page_amt(to_remove); i++)
 					vmmngr_free_virt(getProcessByID(to_remove->parent_pid)->pageDirectory, (void *) to_remove->w_buffer + i*PAGE_SIZE);
-
 			}
+
+			winsys_remove_window(to_remove);
 			return;
 		}
 
@@ -1451,6 +1449,7 @@ void winsys_remove_window_user(PWINDOW win)
 
 	winsys_clear_whole_window(win);
 
+	// maybe move this remove window to remove window by id if it's user because after freeing the w_buffer winsys might draw it again if it's there
 	acquireLock(&winsys_win_list_lock);
 
 	PWINDOW tmp = win_list;
