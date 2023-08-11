@@ -611,7 +611,7 @@ void winsys_paint_window_frame(PWINDOW win)
 	uint32_t name_y = win->y-(TITLE_BAR_HEIGHT+CHAR_HEIGHT)/2;
 	uint32_t name_x = win->x;
 
-	while (*tmp)
+	while (*tmp && name_x+CHAR_WIDTH*2 < win->x+win->width)
 	{
 		display_psf1_8x16_char(*tmp, name_x, name_y, TITLE_NAME_COLOR);
 
