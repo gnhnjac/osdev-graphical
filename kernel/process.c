@@ -194,6 +194,7 @@ int createProcess(char* exec, char *args) {
     pdirectory *prevDir = vmmngr_get_directory();
 
     char *k_args = kmalloc(strlen(args)+1);
+    *k_args = 0;
     if (args)
         strcpy(k_args,args);
 
