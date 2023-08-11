@@ -964,6 +964,7 @@ void *insert_argv_to_process_stack(char *args, void *esp)
 }
 
 extern uint32_t read_eip();
+extern int return_null();
 
 int fork()
 {
@@ -1089,20 +1090,12 @@ int fork()
         th->priority = parent_task->priority;
 
         insert_thread_to_proc(parent_task->parent,th);
-        queue_insert(*th);
+        queue_insert_prioritized(*th);
 
-        frame->eip = read_eip();
+        frame->eip = (uint32_t)return_null;
 
-        if (_currentTask) // if were parent this should never apply because we disabled scheduling
-        {
-                return 0;
-        }
-        else
-        {
-
-                enable_scheduling();
-                return child_tid;
-        }
+        enable_scheduling();
+        return child_tid;
 
 }
 

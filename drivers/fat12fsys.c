@@ -84,7 +84,7 @@ bool ToDosFileName(char *filename, char DosFileName[11 + 1])
 
 	if (strlen(Filename) > 8 || strlen(Ext) > 3)
 	{
-		printf("ToDosFileName: Error, filename or ext too large");
+		//printf("ToDosFileName: Error, filename or ext too large");
 		kfree(Filename);
 		kfree(Ext);
 		return false;

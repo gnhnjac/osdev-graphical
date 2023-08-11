@@ -11,6 +11,12 @@ _read_eip:
    pop eax
    jmp eax
 
+global _return_null
+_return_null:
+   mov eax, 0
+   leave
+   ret
+
 ; vmm and pmm data
 
 global _vmmngr_flush_tlb_entry

@@ -15,7 +15,6 @@ void cycle(int col, int cycler_start)
 		display_window_section(&win,col*CHAR_WIDTH,0,CHAR_WIDTH,CHAR_HEIGHT);
 		sleep(300);
 		cycler = (cycler + 1)%26;
-
 	}
 
 }
