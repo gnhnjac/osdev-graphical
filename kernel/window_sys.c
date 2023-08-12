@@ -200,11 +200,9 @@ void winsys_listener()
 
 }
 
-static bool mid_operation = false;
-
 WINSYSOP winsys_dequeue_from_winsys_listener()
 {
-	mid_operation = true;
+
 	acquireLock(&winsys_queue_lock);
 
 	WINSYSOP op = winsys_queue[0];
@@ -223,7 +221,6 @@ WINSYSOP winsys_dequeue_from_winsys_listener()
 	releaseLock(&winsys_queue_lock);
 
 	releaseLock(&winsys_queue_last_lock);
-	mid_operation = false;
 
 	return op;
 
@@ -237,10 +234,9 @@ void winsys_enqueue_to_winsys_listener(WINSYSOP operation)
 
 	process *running_proc = get_running_process();
 
-	if (mid_operation && running_proc && running_proc->id == winsys_pid)
+	if (winsys_queue_lock && running_proc && running_proc->id == winsys_pid)
 		releaseLock(&winsys_queue_lock);
 
-	mid_operation = true;
 	acquireLock(&winsys_queue_lock);
 
 	if (winsys_queue_index >= WINSYS_QUEUE_SIZE-1)
@@ -257,7 +253,6 @@ void winsys_enqueue_to_winsys_listener(WINSYSOP operation)
 	winsys_queue[winsys_queue_index] = operation;
 	winsys_queue_index++;
 	releaseLock(&winsys_queue_lock);
-	mid_operation = false;
 
 }
 
@@ -269,10 +264,9 @@ void winsys_enqueue_to_winsys_listener_if_possible(WINSYSOP operation)
 
 	process *running_proc = get_running_process();
 
-	if (mid_operation && running_proc && running_proc->id == winsys_pid)
+	if (winsys_queue_lock && running_proc && running_proc->id == winsys_pid)
 		releaseLock(&winsys_queue_lock);
 
-	mid_operation = true;
 	acquireLock(&winsys_queue_lock);
 
 	if (winsys_queue_index < WINSYS_QUEUE_SIZE)
@@ -282,7 +276,6 @@ void winsys_enqueue_to_winsys_listener_if_possible(WINSYSOP operation)
 	}
 
 	releaseLock(&winsys_queue_lock);
-	mid_operation = false;
 
 }
 
@@ -666,7 +659,7 @@ static int winsys_current_painting_process_pid = 0;
 void winsys_paint_window_section(PWINDOW win, int x, int y, int width, int height)
 {
 
-	if (!win || x+width > win->width || y+height > win->height)
+	if (!win || x+width > win->width || y+height > win->height || x >= win->width || y >= win->height)
 		return;
 
 	pdirectory *winDir;
@@ -676,7 +669,7 @@ void winsys_paint_window_section(PWINDOW win, int x, int y, int width, int heigh
 		winsys_current_painting_process_pid = win->parent_pid;
 		winDir = getProcessByID(win->parent_pid)->pageDirectory;
 		#define TMP_WIN_BUF_VIRT 0xB0000000
-		tmp_win_buf_base = find_user_space_pages((void *)TMP_WIN_BUF_VIRT,get_win_page_amt(win));
+		tmp_win_buf_base = (void *)TMP_WIN_BUF_VIRT;//find_user_space_pages((void *)TMP_WIN_BUF_VIRT,get_win_page_amt(win));
 		for (int i = 0; i < get_win_page_amt(win); i++)
 			vmmngr_mmap_virt2virt(winDir, vmmngr_get_directory(), win->w_buffer + i*PAGE_SIZE, (void *)((uint32_t)tmp_win_buf_base + i*PAGE_SIZE), I86_PDE_WRITABLE, I86_PTE_WRITABLE);
 	}
@@ -687,12 +680,12 @@ void winsys_paint_window_section(PWINDOW win, int x, int y, int width, int heigh
 	int max_x = max(x,0);
 	int max_y = max(y,0);
 
-	uint32_t lim_x = min(x+win->width,max_x+min_width);
-	uint32_t lim_y = min(y+win->height,max_y+min_height);
+	uint32_t lim_x = min(win->x+win->width,max_x+min_width);
+	uint32_t lim_y = min(win->y+win->height,max_y+min_height);
 
 	uint8_t *buff;
 	if (win->is_user)
-		buff = (uint8_t *)TMP_WIN_BUF_VIRT;
+		buff = (uint8_t *)tmp_win_buf_base;
 	else
 		buff = (uint8_t *)win->w_buffer;
 
@@ -868,7 +861,10 @@ void winsys_paint_window_section(PWINDOW win, int x, int y, int width, int heigh
 	if (win->is_user)
 	{
 		for (int i = 0; i < get_win_page_amt(win); i++)
+		{
 			vmmngr_unmap_virt(vmmngr_get_directory(), (void *) tmp_win_buf_base + i*PAGE_SIZE); // MEMORY WILL LEAK SINCE WE ARE NOT FREEING THE PAGE TABLE!! thats fine though as it's only if its called from a kernel proc
+			vmmngr_flush_tlb_entry((virtual_addr) tmp_win_buf_base + i*PAGE_SIZE); // flush cached entries
+		}
 		winsys_current_painting_process_pid = 0;
 	}
 
@@ -934,11 +930,15 @@ void winsys_display_window_section_operation(PWINDOW win, int x, int y, int widt
 
 			}
 
-			bool is_title_colliding = winsys_check_collide_rect_rect(win->x,win->y,win->width,win->height,tmp->x-WIN_FRAME_SIZE,tmp->y-TITLE_BAR_HEIGHT, tmp->width + WIN_FRAME_SIZE*2, TITLE_BAR_HEIGHT);
+		}
 
-			if (is_title_colliding && tmp->has_frame)
-				winsys_paint_window_frame(tmp);
+		bool is_title_colliding = winsys_check_collide_rect_rect(win->x,win->y,win->width,win->height,tmp->x-WIN_FRAME_SIZE,tmp->y-TITLE_BAR_HEIGHT, tmp->width + WIN_FRAME_SIZE*2, TITLE_BAR_HEIGHT);
 
+		if (is_title_colliding && tmp->has_frame)
+		{
+			winsys_disable_mouse();
+			winsys_paint_window_frame(tmp);
+			winsys_enable_mouse();
 		}
 
 		tmp = tmp->next;
@@ -1048,7 +1048,7 @@ void winsys_display_collided_windows(PWINDOW win)
 
 	while(tmp)
 	{	
-		if (tmp != win && winsys_check_collide(win,tmp))
+		if (tmp != win && winsys_check_collide_whole(win,tmp))
 		{
 
 			//winsys_paint_window(tmp);
@@ -1119,6 +1119,29 @@ void winsys_clear_whole_window(PWINDOW win)
 }
 
 bool winsys_check_collide(PWINDOW w1, PWINDOW w2)
+{
+
+	if (!w1 || !w2)
+		return false;
+
+	int w1_x = w1->x;
+	int w1_y = w1->y;
+	int w1_w = w1->width;
+	int w1_h = w1->height;
+
+	int w2_x = w2->x;
+	int w2_y = w2->y;
+	int w2_w = w2->width;
+	int w2_h = w2->height;
+
+	return w2_x + w2_w > w1_x &&
+		   w2_y + w2_h > w1_y &&
+		   w1_x + w1_w > w2_x &&
+		   w1_y + w1_h > w2_y;
+
+}
+
+bool winsys_check_collide_whole(PWINDOW w1, PWINDOW w2)
 {
 
 	if (!w1 || !w2)
@@ -1420,7 +1443,10 @@ void winsys_remove_windows_by_pid(int pid)
 			if (to_remove->is_user)
 			{
 
-				// wait for winsys to finish drawing the process
+				if (winsys_current_painting_process_pid == to_remove->parent_pid && get_running_process()->id == winsys_pid)
+					return;
+
+				// wait for winsys to finish drawing the process, problem if it's the winsys process
 				while(winsys_current_painting_process_pid == to_remove->parent_pid)
 					__asm__("pause");
 

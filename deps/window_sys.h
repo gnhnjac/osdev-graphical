@@ -245,6 +245,7 @@ void winsys_clear_window(PWINDOW win);
 void winsys_clear_window_frame(PWINDOW win);
 void winsys_clear_whole_window(PWINDOW win);
 bool winsys_check_collide(PWINDOW w1, PWINDOW w2);
+bool winsys_check_collide_whole(PWINDOW w1, PWINDOW w2);
 bool winsys_check_collide_win_rect(PWINDOW w1, int w2_x, int w2_y, int w2_w, int w2_h);
 bool winsys_check_collide_rect_rect(int w1_x, int w1_y, int w1_w, int w1_h, int w2_x, int w2_y, int w2_w, int w2_h);
 bool winsys_check_collide_coords(PWINDOW w, int x, int y);

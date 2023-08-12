@@ -22,14 +22,8 @@ _return_null:
 global _vmmngr_flush_tlb_entry
 
 _vmmngr_flush_tlb_entry:
-   push ebp
-   mov ebp, esp
-   %define addr [ebp+8]
-   cli
-   invlpg addr
-   sti
-
-   pop ebp
+   mov eax, [esp+4]
+   invlpg [eax]
    ret
 
 global _pmmngr_paging_enable

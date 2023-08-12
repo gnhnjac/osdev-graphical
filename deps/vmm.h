@@ -39,6 +39,7 @@ typedef struct {
 	pd_entry m_entries[PAGES_PER_DIR];
 } pdirectory;
 
+extern void vmmngr_flush_tlb_entry (virtual_addr addr);
 //refs
 //! current directory table (global);
 bool vmmngr_alloc_page (pt_entry* e, uint32_t pte_flags);

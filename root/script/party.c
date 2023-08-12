@@ -42,7 +42,8 @@ void _main()
 
 	}
 
-	sleep(10000);
+	while(1)
+		sleep(10000);
 
 	terminate();
 	__builtin_unreachable();
