@@ -1070,7 +1070,7 @@ void winsys_display_collided_windows(PWINDOW win)
 				winsys_paint_window_frame(tmp);
 		}
 
-		if (tmp != win && prev && prev->has_frame)
+		if (tmp != win && prev && prev != win && prev->has_frame)
 		{
 
 			int overlap_x = max(prev->x-WIN_FRAME_SIZE, tmp->x);
@@ -1081,7 +1081,8 @@ void winsys_display_collided_windows(PWINDOW win)
 
 			int overlap_h = min(prev->y+prev->height+TITLE_BAR_HEIGHT+WIN_FRAME_SIZE, tmp->y+tmp->height)-overlap_y;
 
-			winsys_paint_window_section(tmp,overlap_x-tmp->x,overlap_y-tmp->y,overlap_w,overlap_h);
+			if (overlap_w > 0 && overlap_h > 0)
+				winsys_paint_window_section(tmp,overlap_x-tmp->x,overlap_y-tmp->y,overlap_w,overlap_h);
 		}
 
 		prev = tmp;
