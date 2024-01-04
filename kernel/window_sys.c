@@ -20,6 +20,8 @@ static PWINDOW win_list = 0;
 static PWINDOW working_window = 0;
 static WINSYSOP winsys_queue[WINSYS_QUEUE_SIZE] = {0};
 static int winsys_queue_index = 0;
+static int winsys_queue_start = 0;
+static int winsys_queue_end = 0;
 static lock_t winsys_queue_last_lock = ATOMIC_LOCK_INIT;
 static lock_t winsys_queue_lock = ATOMIC_LOCK_INIT;
 static lock_t winsys_win_list_lock = ATOMIC_LOCK_INIT;
@@ -205,14 +207,9 @@ WINSYSOP winsys_dequeue_from_winsys_listener()
 
 	acquireLock(&winsys_queue_lock);
 
-	WINSYSOP op = winsys_queue[0];
+	WINSYSOP op = winsys_queue[winsys_queue_start];
 
-	for (int i = 0; i < WINSYS_QUEUE_SIZE-1; i++)
-	{
-
-		winsys_queue[i] = winsys_queue[i+1];
-
-	}
+	winsys_queue_start = (winsys_queue_start + 1) % WINSYS_QUEUE_SIZE;
 
 	//winsys_queue[WINSYS_QUEUE_SIZE-1].op = WINSYS_EMPTY;
 
@@ -250,8 +247,9 @@ void winsys_enqueue_to_winsys_listener(WINSYSOP operation)
 		acquireLock(&winsys_queue_lock);
 	}
 
-	winsys_queue[winsys_queue_index] = operation;
+	winsys_queue[winsys_queue_end] = operation;
 	winsys_queue_index++;
+	winsys_queue_end = (winsys_queue_end + 1) % WINSYS_QUEUE_SIZE;
 	releaseLock(&winsys_queue_lock);
 
 }
@@ -271,7 +269,8 @@ void winsys_enqueue_to_winsys_listener_if_possible(WINSYSOP operation)
 
 	if (winsys_queue_index < WINSYS_QUEUE_SIZE)
 	{
-		winsys_queue[winsys_queue_index] = operation;
+		winsys_queue[winsys_queue_end] = operation;
+		winsys_queue_end = (winsys_queue_end + 1) % WINSYS_QUEUE_SIZE;
 		winsys_queue_index++;
 	}
 
@@ -287,7 +286,8 @@ void winsys_enqueue_to_winsys_listener_if_possible_lockless(WINSYSOP operation)
 
 	if (winsys_queue_index < WINSYS_QUEUE_SIZE-1)
 	{
-		winsys_queue[winsys_queue_index] = operation;
+		winsys_queue[winsys_queue_end] = operation;
+		winsys_queue_end = (winsys_queue_end + 1) % WINSYS_QUEUE_SIZE;
 		winsys_queue_index++;
 	}
 
