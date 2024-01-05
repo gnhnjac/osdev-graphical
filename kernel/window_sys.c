@@ -558,9 +558,9 @@ int winsys_set_working_window_operation(int wid)
 			tmp->next = 0;
 
 			if (old_working && winsys_get_window_by_id(old_working->id))
-				winsys_display_window_operation(old_working);
+				winsys_paint_window(old_working);
 
-			winsys_display_window_operation(working_window);
+			winsys_paint_window(working_window);
 
 			releaseLock(&winsys_win_list_lock);
 
@@ -1070,7 +1070,7 @@ void winsys_display_collided_windows(PWINDOW win)
 				winsys_paint_window_frame(tmp);
 		}
 
-		if (tmp != win && prev && prev != win && prev->has_frame)
+		if (tmp != win && prev && prev != win && prev->has_frame && winsys_check_collide_whole(win,prev))
 		{
 
 			int overlap_x = max(prev->x-WIN_FRAME_SIZE, tmp->x);
@@ -1356,7 +1356,7 @@ void winsys_move_window_operation(PWINDOW win, int x, int y)
 	if (working_window != win)
 		winsys_set_working_window_operation(win->id);
 	else
-		winsys_display_window_operation(win);
+		winsys_paint_window(win);
 
 }
 
