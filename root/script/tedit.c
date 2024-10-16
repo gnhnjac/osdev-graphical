@@ -80,8 +80,18 @@ void write_file(int fd, PTextRegion tr)
 
 }
 
-void display_file(PWINDOW win, PLineTextRegion ltr, char* font)
+void display_file(PWINDOW win, PLineTextRegion ltr, size_t top_row, size_t left_col, char* font)
 {
+
+	while (ltr->line != top_row)
+	{
+
+		if (ltr->line > top_row)
+			ltr = ltr->prev_line;
+		else
+			ltr = ltr->next_line;
+
+	}
 
 	PTextRegion cur_text_region = &ltr->r;
 	size_t cur_pos = 0;
@@ -97,9 +107,14 @@ void display_file(PWINDOW win, PLineTextRegion ltr, char* font)
 			c = cur_text_region->buffer[cur_pos];
 
 			if (c != '\r' && c != '\n')
-				gfx_paint_char_bg(win,c,cur_pos*CHAR_WIDTH,ltr->line*CHAR_HEIGHT,0,0xF,font);
+			{
+				if (cur_line_pos >= left_col) 
+					gfx_paint_char_bg(win,c,(cur_line_pos-left_col)*CHAR_WIDTH,ltr->line*CHAR_HEIGHT,0,0xF,font);
+			}
 			else
+			{
 				break;
+			}
 
 			cur_pos++;
 			cur_line_pos++;
@@ -112,7 +127,7 @@ void display_file(PWINDOW win, PLineTextRegion ltr, char* font)
 
 			}
 
-			if (cur_line_pos*CHAR_WIDTH >= WIDTH)
+			if (cur_line_pos >= left_col && (cur_line_pos-left_col)*CHAR_WIDTH >= WIDTH)
 				break;
 
 		}
@@ -205,7 +220,7 @@ void _main(int argc, char **argv)
 	PLineTextRegion cur_line_text_region = base_text_region;
 	PTextRegion cur_text_region = &cur_line_text_region->r;
 	size_t top_row = 0;
-	size_t cur_col = 0;
+	size_t left_col = 0;
 
 	fclose(file_desc);
 
@@ -214,7 +229,7 @@ void _main(int argc, char **argv)
 	create_window(&window,100,100,WIDTH,HEIGHT);
 	load_font((void *)font_buff);
 
-	display_file(&window,cur_line_text_region,font_buff);
+	display_file(&window,cur_line_text_region,top_row,left_col,font_buff);
 
 	while(1)
 	{
