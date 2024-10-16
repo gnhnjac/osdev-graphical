@@ -269,6 +269,8 @@ void shell_main()
 	// (need signals and sigterm to handle that stuff instead of temporary on_terminate solution)
 	path = kmalloc(3+1);
 
+	//handle_exec("exec a:\\script\\tedit.exe a:\\home\\hello.txt");
+
 	strcpy(path,"a:\\");
 
 	while(true)
