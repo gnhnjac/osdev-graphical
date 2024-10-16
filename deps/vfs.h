@@ -9,10 +9,12 @@ typedef struct _FILE {
 	uint32_t    id;
 	uint32_t    eof;
 	uint32_t    position;
+	uint32_t abs_position;
 	uint32_t    currentCluster;
 	uint32_t    deviceID;
 	uint16_t    TimeCreated;
 	uint16_t    DateCreated;
+	int32_t parentCluster;
 
 }FILE, *PFILE;
 

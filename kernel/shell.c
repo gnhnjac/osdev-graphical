@@ -846,7 +846,9 @@ void handle_cat(char *cmd_buff)
 		while (!f.eof)
 		{
 			volReadFile(&f,buff,1);
-			printf("%c",*buff);
+
+			if (!f.eof)
+				printf("%c",*buff);
 		}
 	}
 

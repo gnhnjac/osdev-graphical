@@ -3,30 +3,136 @@
 #include "stdlib.h"
 #include "gfx.h"
 #include "string.h"
+#include "tedit.h"
 
-#define TEXT_REGION_BUFFER_SIZE 128
-
-typedef struct _TextRegion
-{
-
-	char buffer[TEXT_REGION_BUFFER_SIZE];
-	struct _TextRegion *next;
-
-} TextRegion, *PTextRegion;
+#define WIDTH 400
+#define HEIGHT 300
 
 PTextRegion alloc_text_region()
 {
 
-	PTextRegion r = (PTextRegion)malloc(sizeof(TextRegion));
-
-	memset((char *)r,0,sizeof(TextRegion));
-
-	return r;
+	return (PTextRegion)calloc(sizeof(TextRegion));
 
 }
 
-#define WIDTH 400
-#define HEIGHT 300
+PLineTextRegion alloc_line_text_region()
+{
+
+	return (PLineTextRegion)calloc(sizeof(LineTextRegion));
+
+}
+
+
+PLineTextRegion load_file(int fd)
+{
+
+	PLineTextRegion base_text_region = alloc_line_text_region();
+	PLineTextRegion cur_line_text_region = base_text_region;
+	PTextRegion cur_text_region = &base_text_region->r;
+
+	while(true)
+	{
+
+		char c;
+
+		if (!fread(fd, &c, 1))
+			break;
+
+		cur_text_region->buffer[cur_text_region->pos++] = c;
+
+		if (cur_text_region->pos == TEXT_REGION_BUFFER_SIZE)
+		{
+
+			cur_text_region->next = alloc_text_region();
+			cur_text_region->next->prev = cur_text_region;
+			cur_text_region = cur_text_region->next;
+
+		}
+
+		if (c == '\n')
+		{
+
+			cur_line_text_region->next_line = alloc_line_text_region();
+			cur_line_text_region->next_line->prev_line = cur_line_text_region;
+			cur_line_text_region->next_line->line = cur_line_text_region->line + 1;
+			cur_line_text_region = cur_line_text_region->next_line;
+			cur_text_region = &cur_line_text_region->r;
+
+		}
+
+	}
+
+	return base_text_region;
+
+}
+
+void write_file(int fd, PTextRegion tr)
+{
+
+	while(tr)
+	{
+
+		fwrite(fd,tr->buffer,tr->pos);
+
+		tr = tr->next;
+
+	}
+
+}
+
+void display_file(PWINDOW win, PLineTextRegion ltr, char* font)
+{
+
+	PTextRegion cur_text_region = &ltr->r;
+	size_t cur_pos = 0;
+	size_t cur_line_pos = 0;
+
+	while (ltr)
+	{
+		while(cur_text_region)
+		{
+
+			char c;
+
+			c = cur_text_region->buffer[cur_pos];
+
+			if (c != '\r' && c != '\n')
+				gfx_paint_char_bg(win,c,cur_pos*CHAR_WIDTH,ltr->line*CHAR_HEIGHT,0,0xF,font);
+			else
+				break;
+
+			cur_pos++;
+			cur_line_pos++;
+
+			if (cur_pos >= cur_text_region->pos)
+			{
+
+				cur_text_region = cur_text_region->next;
+				cur_pos = 0;
+
+			}
+
+			if (cur_line_pos*CHAR_WIDTH >= WIDTH)
+				break;
+
+		}
+
+		ltr = ltr->next_line;
+		if (ltr)
+		{
+			cur_text_region = &ltr->r;
+			cur_pos = 0;
+			cur_line_pos = 0;
+
+			if (ltr->line*CHAR_HEIGHT > HEIGHT)
+				break;
+		}
+
+	}
+
+	display_window_section(win,0,0,WIDTH,HEIGHT);
+
+}
 
 // us keyboard layout scancode->ascii
 unsigned char kbdus[128] =
@@ -44,7 +150,7 @@ unsigned char kbdus[128] =
   '*',
     0,	/* Alt */
   ' ',	/* Space bar */
-    0,	/* Caps lock */
+    0,	/* poss lock */
     0,	/* 59 - F1 key ... > */
     0,   0,   0,   0,   0,   0,   0,   0,
     0,	/* < ... F10 */
@@ -95,19 +201,20 @@ void _main(int argc, char **argv)
 
 	}
 
-	PTextRegion base_text_region = alloc_text_region();
-
-	uint32_t ptr = 0;
-	while(fread(file_desc, base_text_region->buffer + (ptr++),1));
+	PLineTextRegion base_text_region = load_file(file_desc);
+	PLineTextRegion cur_line_text_region = base_text_region;
+	PTextRegion cur_text_region = &cur_line_text_region->r;
+	size_t top_row = 0;
+	size_t cur_col = 0;
 
 	fclose(file_desc);
-
-	file_desc = fopen(filepath);
 
 	window.w_name = "text editor";
 	window.event_handler.event_mask = GENERAL_EVENT_KBD;
 	create_window(&window,100,100,WIDTH,HEIGHT);
 	load_font((void *)font_buff);
+
+	display_file(&window,cur_line_text_region,font_buff);
 
 	while(1)
 	{
@@ -127,16 +234,17 @@ void _main(int argc, char **argv)
 				break;
 
 			if (kbdus[scancode])
-				base_text_region->buffer[0] = kbdus[scancode];
+				cur_text_region->buffer[cur_text_region->pos++] = kbdus[scancode];
 
 		}
 
 	}
 
-	fwrite(file_desc,base_text_region->buffer,TEXT_REGION_BUFFER_SIZE);
+	file_desc = fopen(filepath);
+	write_file(file_desc,&base_text_region->r);
+	fclose(file_desc);
 
 	remove_window(&window);
-	fclose(file_desc);
 
 	terminate();
 	__builtin_unreachable();

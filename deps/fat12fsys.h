@@ -104,6 +104,7 @@ bool ToDosFileName(char *filename, char DosFileName[11 + 1]);
 FILE fat12fsys_root_open (char* FileName);
 void fat12fsys_create(FILE kFile, char* FileName, uint32_t flags);
 unsigned int fat12fsys_occupy_free_cluster(unsigned int chain_cluster);
+void fat12fsys_update_flen(FILE f, uint32_t new_len);
 void fat12fsys_read(PFILE file, unsigned char* Buffer, unsigned int Length);
 void fat12fsys_write(PFILE file, unsigned char* Buffer, unsigned int Length);
 void fat12fsys_rw (PFILE file, unsigned char* Buffer, unsigned int Length, floppy_dir dir);

@@ -151,7 +151,9 @@ FILE fat12fsys_root_open (char* FileName) {
 				file.position = 0;
 				file.fileLength     = directory->FileSize;
 				file.DateCreated = directory->DateCreated;
-				file.TimeCreated = directory->TimeCreated;  
+				file.TimeCreated = directory->TimeCreated;
+				file.parentCluster = _MountInfo.rootOffset + sector - 31;
+				file.abs_position = 0;
 
 				//! set file type
 				if (directory->Attrib == 0x10)
@@ -212,8 +214,8 @@ void fat12fsys_create(FILE kFile, char* FileName, uint32_t flags)
 			if (kFile.eof)
 				break;
 			buf = kmalloc(512);
-			fat12fsys_read (&kFile, buf, 512);
 			memcpy((char *)&tmpkFile,(const char *)&kFile, sizeof(FILE));
+			fat12fsys_read (&kFile, buf, 512);
 		}
 
 		//! set directory
@@ -387,6 +389,48 @@ unsigned int fat12fsys_occupy_free_cluster(unsigned int chain_cluster)
 
 }
 
+void fat12fsys_update_flen(FILE f, uint32_t new_len)
+{
+
+	uint32_t parentSector = f.parentCluster + 31;
+
+	char DosFileName[11 + 1];
+	if (!ToDosFileName (f.name, DosFileName))
+		return;
+
+	unsigned char *tmp = (unsigned char*) flpydsk_read_sector ( parentSector );
+	unsigned char *buf = kmalloc(512);
+	memcpy(buf, tmp, 512);
+
+	//! set directory
+	PDIRECTORY pkDir = (PDIRECTORY) buf;
+
+	//! 16 entries in buffer (per sector of the directory)
+	for (unsigned int i = 0; i < 16; i++) {
+
+		//! get current filename
+		char name[11 + 1];
+		memcpy (name, pkDir->Filename, 11);
+		name[11]=0;
+
+		//! find a match?
+		if (strcmp (DosFileName, name)) {
+			//! found it, change file len
+			pkDir->FileSize = new_len;    
+
+			// write changes to disk
+			flpydsk_write_sector ( parentSector, buf );
+			kfree(buf);
+			return;
+
+		}
+
+		pkDir++;
+
+	}
+
+}
+
 void fat12fsys_read(PFILE file, unsigned char* Buffer, unsigned int Length)
 {
 
@@ -397,14 +441,26 @@ void fat12fsys_read(PFILE file, unsigned char* Buffer, unsigned int Length)
 void fat12fsys_write(PFILE file, unsigned char* Buffer, unsigned int Length)
 {
 
+	if (file->flags != FS_DIRECTORY)
+	{
+		file->abs_position += Length;
+
+		if (file->abs_position > file->fileLength)
+		{
+
+			file->fileLength = file->abs_position;
+
+			fat12fsys_update_flen(*file,file->abs_position);
+
+		}
+	}
+
 	fat12fsys_rw(file,Buffer,Length,floppy_dir_write);
 
 }
 
 void fat12fsys_rw (PFILE file, unsigned char* Buffer, unsigned int Length, floppy_dir dir) {
 
-	if (Length > file->fileLength && file->flags != FS_DIRECTORY)
-		Length = file->fileLength;
 
 	if (file && Length) {
 		//! starting physical sector
@@ -439,7 +495,7 @@ void fat12fsys_rw (PFILE file, unsigned char* Buffer, unsigned int Length, flopp
 
 			file->position += Length;
 
-			if (file->position < SECTOR_SIZE && (file->position < file->fileLength && file->flags != FS_DIRECTORY))
+			if (file->position < SECTOR_SIZE && (file->position <= file->fileLength && file->flags != FS_DIRECTORY))
 				return;
 
 		}
@@ -493,7 +549,7 @@ void fat12fsys_rw (PFILE file, unsigned char* Buffer, unsigned int Length, flopp
 
 		file->position = 0;
 
-		fat12fsys_read(file,Buffer+(SECTOR_SIZE-old_pos),Length);
+		fat12fsys_rw(file,Buffer+(SECTOR_SIZE-old_pos),Length,dir);
 
 	}
 }
@@ -512,11 +568,14 @@ FILE fat12fsys_subdir_open (FILE kFile, char* filename)
 		return file;
 	}
 
+	FILE tmpkFile;
+
 	//! read directory
 	while (! kFile.eof ) {
 
 		//! read directory
 		unsigned char buf[512];
+		memcpy((char *)&tmpkFile,(const char *)&kFile, sizeof(FILE));
 		fat12fsys_read (&kFile, buf, 512);
 
 		//! set directory
@@ -541,6 +600,7 @@ FILE fat12fsys_subdir_open (FILE kFile, char* filename)
 				file.position =     0;
 				file.DateCreated = pkDir->DateCreated;
 				file.TimeCreated = pkDir->TimeCreated;
+				file.parentCluster = tmpkFile.currentCluster;
 
 				//! set file type
 				if (pkDir->Attrib == 0x10)
