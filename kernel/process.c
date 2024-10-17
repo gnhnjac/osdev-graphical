@@ -178,6 +178,9 @@ void terminateKernelProcessById (int pid) {
 
     }
 
+    kfree(proc->name);
+    kfree(proc);
+
     enable_scheduling();
 
     //printf_term(proc->term,"\nKernel Process %d terminated.\n",proc->id);
@@ -216,6 +219,8 @@ int createProcess(char* exec, char *args) {
         clear_kernel_space(addressSpace);
         vmmngr_free_pdir(addressSpace);
         enable_scheduling();
+        kfree(k_args);
+        kfree(k_exec);
         return 0;
     }
 

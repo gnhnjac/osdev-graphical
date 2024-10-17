@@ -18,6 +18,7 @@
 #include "math.h"
 
 char *path = 0; // current path
+char *env_path = "a:\\bin;";
 
 PWINDOW main_window = 0;
 INPINFO window_input_info_struct;
@@ -269,13 +270,15 @@ void shell_main()
 	// (need signals and sigterm to handle that stuff instead of temporary on_terminate solution)
 	path = kmalloc(3+1);
 
-	//handle_exec("exec a:\\script\\tedit.exe a:\\home\\hello.txt");
-
 	strcpy(path,"a:\\");
+	handle_cd("cd home");
 
 	while(true)
 	{
-		printf("\n%s> ",path);
+		if (memcmp(path,"a:\\home",7))
+			printf("\n~> ");
+		else
+			printf("\n%s> ",path);
 		char cmd_buff[300];
 		get_shell_input(cmd_buff,300);
 		push_cmd_to_history(cmd_buff);
@@ -523,6 +526,34 @@ void handle_exec(char *cmd_buff)
 
 	int pid = createProcess(new_path,args);
 
+	if (!pid)
+	{
+
+		int path_count = count_substrings(env_path, ';');
+
+		for (int i = 0; i < path_count; i++)
+		{
+
+			char *subpath = seperate_and_take(env_path, ';',i);
+			char *env_new_path = join_path(subpath, param);
+
+			pid = createProcess(env_new_path,args);
+
+			kfree(subpath);
+			kfree(env_new_path);
+
+			if (pid)
+			{
+				break;
+			}
+
+		}
+
+		if (!pid)
+			printf("process %s doesn't exist", new_path);
+
+	}
+	
 	kfree(new_path);
 	kfree(param);
 
@@ -552,6 +583,34 @@ void handle_execbg(char *cmd_buff)
 
 
 	int pid = createProcess(new_path,args);
+
+	if (!pid)
+	{
+
+		int path_count = count_substrings(env_path, ';');
+
+		for (int i = 0; i < path_count; i++)
+		{
+
+			char *subpath = seperate_and_take(env_path, ';',i);
+			char *env_new_path = join_path(subpath, param);
+
+			pid = createProcess(env_new_path,args);
+
+			kfree(subpath);
+			kfree(env_new_path);
+
+			if (pid)
+			{
+				break;
+			}
+
+		}
+
+		if (!pid)
+			printf("process %s doesn't exist", new_path);
+
+	}
 
 	kfree(new_path);
 	kfree(param);

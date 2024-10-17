@@ -45,7 +45,6 @@ PImageInfo load_executable(pdirectory *pdir, char *path)
 	    )
 	{
 		volCloseFile(&exec);
-    	kfree(dosHeader);
         return 0;
 	}
 

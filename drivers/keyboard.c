@@ -293,6 +293,8 @@ void keyboard_handler()
         kbd_event.event_data |= 0x100;
       if (check_shift())
         kbd_event.event_data |= 0x200;
+      if (check_alt())
+        kbd_event.event_data |= 0x400;
 
       winsys_enqueue_to_event_handler(win_event_handler, kbd_event);
 

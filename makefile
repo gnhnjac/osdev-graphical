@@ -4,7 +4,7 @@ C_SOURCES = $(wildcard kernel/*.c drivers/*.c utils/*.c)
 HEADERS = $(wildcard deps/*.h)
 ASM_FILES = $(wildcard boot/routines/*.asm)
 
-ROOT_C_SOURCES = $(wildcard root/script/*.c)
+ROOT_C_SOURCES = $(wildcard root/script/*.c root/bin/*.c)
 ROOT_C_EXE = ${ROOT_C_SOURCES:.c=.exe}
 
 ROOT_C_LIB = $(wildcard root/cstdlib/*.c)
