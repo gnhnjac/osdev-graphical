@@ -199,7 +199,7 @@ void mouse_handler()
 		int16_t win_relx = MOUSEX-working_win->x;
 		int16_t win_rely = MOUSEY-working_win->y;
 
-		mouse_event.event_data = win_relx | (win_rely<<16);
+		mouse_event.event_data = (uint16_t)win_relx | ((uint16_t)win_rely<<16);
 
 		winsys_enqueue_to_event_handler(win_event_handler, mouse_event);
 

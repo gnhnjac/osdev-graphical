@@ -33,8 +33,6 @@ void handle_cd(char *cmd_buff);
 void handle_mkdir(char *cmd_buff);
 void handle_touch(char *cmd_buff);
 void handle_concat(char *cmd_buff);
-void handle_write(char *cmd_buff);
-void handle_cat(char *cmd_buff);
 void handle_rm(char *cmd_buff);
 void handle_size(char *cmd_buff);
 void handle_help(char *cmd_buff);

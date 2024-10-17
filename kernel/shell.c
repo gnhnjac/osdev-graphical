@@ -331,16 +331,6 @@ void handle_command(char *cmd_buff)
 		kfree(cmd);
 		handle_touch(cmd_buff);
 	}
-	else if(strcmp(cmd, "write"))
-	{
-		kfree(cmd);
-		handle_write(cmd_buff);
-	}
-	else if(strcmp(cmd, "cat"))
-	{
-		kfree(cmd);
-		handle_cat(cmd_buff);
-	}
 	else if(strcmp(cmd,"cls"))
 	{
 		kfree(cmd);
@@ -357,11 +347,6 @@ void handle_command(char *cmd_buff)
 	{
 		kfree(cmd);
 		handle_size(cmd_buff);
-	}
-	else if(strcmp(cmd,"concat"))
-	{
-		kfree(cmd);
-		handle_concat(cmd_buff);
 	}
 	else if(strcmp(cmd,"stats"))
 	{
@@ -401,7 +386,38 @@ void handle_command(char *cmd_buff)
 	else
 	{
 
-		printf("Unknown command '%s'. type 'help' for a list of available commands.",cmd);
+		// handle case in which command is an executable in path
+
+		int pid = 0;
+
+		int path_count = count_substrings(env_path, ';');
+
+		for (int i = 0; i < path_count; i++)
+		{
+
+			char *subpath = seperate_and_take(env_path, ';',i);
+			char *env_new_path = join_path(subpath, cmd);
+			char *env_path_with_exe = (char *)kmalloc(strlen(env_new_path)+4 + 1);
+			strcpy(env_path_with_exe,env_new_path);
+			strcpy(env_path_with_exe+strlen(env_new_path),".exe");
+			kfree(env_new_path);
+
+			pid = createProcess(env_path_with_exe,cmd_buff);
+
+			kfree(subpath);
+			kfree(env_path_with_exe);
+
+			if (pid)
+			{
+				break;
+			}
+
+		}
+
+		if (!pid)
+			printf("Unknown command '%s'. type 'help' for a list of available commands.",cmd);
+		else
+			waitForProcessToFinish(pid);
 		kfree(cmd);
 	}
 
@@ -464,7 +480,7 @@ void handle_img(char *cmd_buff)
 	strip_from_end(param, ' ');
 	char *new_path = join_path(path,param);
 
-	gfx_open_bmp16(new_path,PIXEL_WIDTH/2,PIXEL_HEIGHT/2);;
+	gfx_open_bmp16(new_path,PIXEL_WIDTH/2,PIXEL_HEIGHT/2);
 
 	kfree(new_path);
 	kfree(param);
@@ -812,110 +828,6 @@ void handle_concat(char *cmd_buff)
 	// kfree(param);
 	// kfree(param2);
 	// kfree(param3);
-	
-}
-
-void handle_write(char *cmd_buff)
-{
-
-	// int param_count = count_substrings(cmd_buff, ' '); // including cmd
-
-	// if (param_count < 2 || param_count > 3)
-	// 	return;
-
-	// int override = 0;
-
-	// if(param_count == 3)
-	// {
-
-	// 	char *option = seperate_and_take(cmd_buff, ' ', 2);
-
-	// 	if (strcmp(option, "-o"))
-	// 	{
-	// 		override = 1;
-	// 	}
-	// 	else
-	// 	{
-	// 		printf("unknown option %s", option);
-	// 		kfree(option);
-	// 		return;
-	// 	}
-
-	// 	kfree(option);
-
-	// }
-
-	// char *param = seperate_and_take(cmd_buff, ' ', 1);
-	// strip_from_start(param, ' ');
-	// strip_from_end(param, ' ');
-
-	// clear_viewport();
-
-
-	// uint32_t file_fid = get_fid_by_name(param,fid);
-	
-	// if(file_fid == fid)
-	// {
-	// 	handle_touch(cmd_buff);
-	// 	file_fid = get_fid_by_name(param,fid);
-	// }
-	// else if(!override)
-	// {
-	// 	cat(file_fid);
-	// }
-	// else
-	// {
-	// 	reset_file(file_fid);
-	// }
-
-	// char buff[1];
-
-	// do
-	// {
-	// 	getchar(-1,-1,buff);
-
-	// 	while(is_taking_char())
-	// 		continue;
- 
-	// 	write(file_fid,buff, 0);
-
-	// } while (*buff != 27); // 27 is escape ascii
-
-	// kfree(param);
-	
-}
-
-void handle_cat(char *cmd_buff)
-{
-
-	int param_count = count_substrings(cmd_buff, ' '); // including cmd
-
-	if (param_count != 2)
-		return;
-
-	char *param = seperate_and_take(cmd_buff, ' ', 1);
-	strip_from_start(param, ' ');
-	strip_from_end(param, ' ');
-
-	char *file_path = join_path(path,param);
-	FILE f = volOpenFile(file_path);
-
-	if (f.flags == FS_FILE)
-	{
-		char *buff = "x";
-
-		while (!f.eof)
-		{
-			volReadFile(&f,buff,1);
-
-			if (!f.eof)
-				printf("%c",*buff);
-		}
-	}
-
-	volCloseFile(&f);
-	kfree(param);
-	kfree(file_path);
 	
 }
 

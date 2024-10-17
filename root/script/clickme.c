@@ -30,7 +30,7 @@ void _main()
 			if (mx >= 0 && mx < win.width &&  my >= 0 && my < win.height)
 			{
 
-				exec("a:\\script\\clickme.exe",0);
+				exec("a:\\script\\clickme",0);
 
 				break;
 

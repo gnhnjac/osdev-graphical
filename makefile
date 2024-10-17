@@ -63,7 +63,8 @@ kernel.sys: kernel/kernel_entry.o ${OBJ}
 
 # Rule for building root c files
 %.exe: %.c ${ROOT_C_LIB}
-	@gcc -fno-builtin -m32 -nostdlib -e __main -I ./root/cstdlib $^ -o $@
+	@gcc -fno-builtin -m32 -nostdlib -e __main -I ./root/cstdlib $^ -o $@.exe
+	@ren $(subst /,\,$@).exe $(@F)
 
 
 # Build our kernel entry object file.
