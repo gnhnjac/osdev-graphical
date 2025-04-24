@@ -20,7 +20,7 @@ Compiled using windows and gcc.
 
 - pit timer
 
-- Shell gui
+- Shell gui + text editor (tedit)
 
 - VMM and PMM (and kheap memory allocation)
 
@@ -45,8 +45,9 @@ Compiled using windows and gcc.
 	- window system operations (see examples in root/script)
 	- file operations
 	- dynamic memory allocation
+	- and more...
 
-- 16 color vga 640x480 mode graphics
+- rgb vbe custom resolution graphics
 
 ## BUILD
 
@@ -73,5 +74,7 @@ type help in the shell to get a list of commands, type "help COMMAND" to get hel
 3GB + 3MB-5MB -> KHEAP
 
 3GB + 5MB-6MB -> RAM FS
+
+3GB + 0xD0MB -> FRAMEBUFFER
 
 ![Screenshot of the operating system](os-screenshot.png "The AKOS Operating System")
