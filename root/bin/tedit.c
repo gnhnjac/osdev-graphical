@@ -5,8 +5,8 @@
 #include "string.h"
 #include "tedit.h"
 
-#define WIDTH 400
-#define HEIGHT 300
+#define WIDTH 800
+#define HEIGHT 500
 #define STATUS_HEIGHT CHAR_HEIGHT
 
 PTextRegion alloc_text_region()
@@ -102,7 +102,7 @@ void display_status(PWINDOW win, char* font, size_t top_line, size_t left_col, s
 	while(cursor_line_buf[i])
 	{
 
-		gfx_paint_char_bg(win,cursor_line_buf[i],i*CHAR_WIDTH,HEIGHT,0,0xF,font);
+		gfx_paint_char_bg(win,cursor_line_buf[i],i*CHAR_WIDTH,HEIGHT,0,0xFFFFFF,font);
 
 		i++;
 		//cursor_line_buf++;
@@ -113,7 +113,7 @@ void display_status(PWINDOW win, char* font, size_t top_line, size_t left_col, s
 	while(cursor_col_buf[j])
 	{
 
-		gfx_paint_char_bg(win,cursor_col_buf[j],i*CHAR_WIDTH,HEIGHT,0,0xF,font);
+		gfx_paint_char_bg(win,cursor_col_buf[j],i*CHAR_WIDTH,HEIGHT,0,0xFFFFFF,font);
 
 		i++;
 		j++;
@@ -121,7 +121,7 @@ void display_status(PWINDOW win, char* font, size_t top_line, size_t left_col, s
 	}
 
 	if (is_insert)
-		gfx_paint_char_bg(win,'i',(i + 1)*CHAR_WIDTH,HEIGHT,0xF,0,font);
+		gfx_paint_char_bg(win,'i',(i + 1)*CHAR_WIDTH,HEIGHT,0xFFFFFF,0,font);
 
 	display_window_section(win,0,HEIGHT,WIDTH,STATUS_HEIGHT);
 
@@ -158,7 +158,7 @@ void display_file(PWINDOW win, char* font, PLineTextRegion ltr, size_t top_line,
 			if (c != '\r' && c != '\n')
 			{
 				if (cur_line_pos >= left_col && ltr->line >= top_line && c != '\x00') 
-					gfx_paint_char_bg(win,c,(cur_line_pos-left_col)*CHAR_WIDTH,(ltr->line-top_line)*CHAR_HEIGHT,0,0xF,font);
+					gfx_paint_char_bg(win,c,(cur_line_pos-left_col)*CHAR_WIDTH,(ltr->line-top_line)*CHAR_HEIGHT,0,0xFFFFFF,font);
 			}
 			else
 			{
@@ -196,7 +196,7 @@ void display_file(PWINDOW win, char* font, PLineTextRegion ltr, size_t top_line,
 
 	int screen_cursor_row = (cursor_line-top_line)*CHAR_HEIGHT;
 	int screen_cursor_col = (cursor_col-left_col)*CHAR_WIDTH;
-	gfx_fill_rect(win,screen_cursor_col,screen_cursor_row,2,CHAR_HEIGHT,0xF);
+	gfx_fill_rect(win,screen_cursor_col,screen_cursor_row,2,CHAR_HEIGHT,0xFFFFFF);
 
 	display_window_section(win,0,0,WIDTH,HEIGHT);
 
@@ -264,7 +264,7 @@ bool advance_cursor_right(PLineTextRegion *p_ltr, PTextRegion *p_tr, size_t *p_c
 	size_t cursor_col = *p_cursor_col;
 
 
-	if ((cursor_col%TEXT_REGION_BUFFER_SIZE == tr->pos-2 && tr->buffer[tr->pos-1] == '\n') || (cursor_col%TEXT_REGION_BUFFER_SIZE == tr->pos && tr->buffer[tr->pos-1] != '\n'))
+	if ((cursor_col%TEXT_REGION_BUFFER_SIZE == tr->pos-1 && tr->buffer[tr->pos-1] == '\n') || (cursor_col%TEXT_REGION_BUFFER_SIZE == tr->pos && tr->buffer[tr->pos-1] != '\n'))
 	{
 
 		if (ltr->next_line)
@@ -316,12 +316,20 @@ bool advance_cursor_up(PLineTextRegion *p_ltr, PTextRegion *p_tr, size_t *p_curs
 		tr = &ltr->prev_line->r;
 		size_t pos_read = 0;
 		while(tr->next && pos_read < cursor_col)
+		{
 			pos_read += tr->pos;
+			tr = tr->next;
+		}
 		pos_read += tr->pos;
 		if (pos_read < cursor_col)
-			cursor_col = pos_read-2;
+		{
+			if (tr->buffer[tr->pos-1] == '\n')
+				cursor_col = pos_read-1;
+			else
+				cursor_col = pos_read;
+		}
 		else if (cursor_col <= pos_read && cursor_col > pos_read - 2)
-			cursor_col = pos_read-2;
+			cursor_col = pos_read-1;
 		*p_tr = tr;
 		*p_cursor_col = cursor_col;
 		*p_cursor_line = cursor_line - 1;
@@ -355,17 +363,20 @@ bool advance_cursor_down(PLineTextRegion *p_ltr, PTextRegion *p_tr, size_t *p_cu
 		tr = &ltr->next_line->r;
 		size_t pos_read = 0;
 		while(tr->next && pos_read < cursor_col)
+		{
 			pos_read += tr->pos;
+			tr = tr->next;
+		}
 		pos_read += tr->pos;
 		if (pos_read < cursor_col)
 		{
 			if (tr->buffer[tr->pos-1] == '\n')
-				cursor_col = pos_read-2;
+				cursor_col = pos_read-1;
 			else
 				cursor_col = pos_read;
 		}
 		else if(cursor_col <= pos_read && cursor_col > pos_read - 2)
-			cursor_col = pos_read-2;
+			cursor_col = pos_read-1;
 
 		*p_tr = tr;
 		*p_cursor_col = cursor_col;

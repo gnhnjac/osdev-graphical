@@ -2,6 +2,7 @@
 #include "vmm.h"
 #include "memory.h"
 #include "screen.h"
+#include "graphics.h"
 
 //! current directory table (global)
 pdirectory*	_cur_directory=0;
@@ -326,6 +327,9 @@ void vmmngr_initialize () {
  
 	//! virtual map 3gb-3gb+16mb->1-17mb
 	vmmngr_mmap(vmmngr_get_directory(), 0x100000,K_VIRT_BASE,1024*4, I86_PDE_WRITABLE, I86_PTE_WRITABLE);
+
+	//! virtual map 3gb+0xD0mb to frame buffer 0xCD000000
+	vmmngr_mmap(vmmngr_get_directory(), 0xFD000000,K_VIRT_BASE+0xD000000,PIXEL_WIDTH*PIXEL_HEIGHT*3/1024, I86_PDE_WRITABLE, I86_PTE_WRITABLE);
 
 	// switch to our page directory
 	vmmngr_switch_pdirectory (dir);

@@ -134,7 +134,7 @@ void update_time()
         while(*time_str)
         {
 
-            gfx_paint_char_bg(time_window, *time_str,off*CHAR_WIDTH,0,0xF,0);
+            gfx_paint_char_bg(time_window, *time_str,off*CHAR_WIDTH,0,0xFFFFFF,0);
             time_str++;
             off++;
         }

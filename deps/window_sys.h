@@ -200,13 +200,13 @@ typedef enum _keyCodes {
 
 #define WINSYS_QUEUE_SIZE 20
 
-#define TITLE_BAR_HEIGHT 20
-#define WIN_FRAME_SIZE 1
-#define WIN_FRAME_COLOR 0x8
-#define TITLE_NAME_COLOR 0xF
-#define WORKING_TITLE_COLOR 0x9
+#define TITLE_BAR_HEIGHT 30
+#define WIN_FRAME_SIZE 2
+#define WIN_FRAME_COLOR 0x555555
+#define TITLE_NAME_COLOR 0xFFFFFF
+#define WORKING_TITLE_COLOR 0x5555ff
 
-#define BG_COLOR 0x7
+#define BG_COLOR 0xa8a8a8
 
 //refs
 void winsys_disable_mouse();
@@ -263,11 +263,10 @@ void winsys_remove_window_user(PWINDOW win);
 void winsys_enqueue_to_event_handler(PEVENTHAND handler, EVENT e);
 EVENT winsys_dequeue_from_event_handler(PEVENTHAND handler);
 void winsys_dequeue_from_event_handler_user(PWINDOW win, PEVENT event_buff);
-void gfx_paint_char(PWINDOW win, char c, int x, int y, uint8_t fgcolor);
-void gfx_paint_char_bg(PWINDOW win, char c, int x, int y, uint8_t bgcolor, uint8_t fgcolor);
-void gfx_set_pixel(PWINDOW win,int x, int y,uint8_t color);
-void gfx_set_pixel_at_linear_off(PWINDOW win,int x, int y, uint8_t *off, uint8_t color);
-void gfx_fill_rect(PWINDOW win, int x, int y, int width, int height, uint8_t color);
+void gfx_paint_char(PWINDOW win, char c, int x, int y, uint32_t fgcolor);
+void gfx_paint_char_bg(PWINDOW win, char c, int x, int y, uint32_t bgcolor, uint32_t fgcolor);
+void gfx_set_pixel(PWINDOW win,int x, int y,uint32_t color);
+void gfx_fill_rect(PWINDOW win, int x, int y, int width, int height, uint32_t color);
 void gfx_clear_win(PWINDOW win);
 int gfx_get_win_x(int col);
 int gfx_get_win_y(int row);
@@ -275,7 +274,7 @@ int gfx_get_logical_row(int y);
 int gfx_get_logical_col(int x);
 void gfx_putchar(PWINDOW win, PINPINFO inp_info, char c);
 void gfx_print(PWINDOW win, PINPINFO inp_info, char *s);
-void gfx_print_color(PWINDOW win, PINPINFO inp_info, char *s, uint8_t color);
+void gfx_print_color(PWINDOW win, PINPINFO inp_info, char *s, uint32_t color);
 void gfx_print_char(PWINDOW win, PINPINFO inp_info, const char character, int row, int col, char color);
 void gfx_vprintf(PWINDOW win, PINPINFO inp_info,const char *fmt, va_list valist);
 void gfx_printf(PWINDOW win, PINPINFO inp_info,const char *fmt, ...);

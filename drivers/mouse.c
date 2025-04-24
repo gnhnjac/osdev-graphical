@@ -152,7 +152,7 @@ void mouse_handler()
 		}
 		else
 		{
-			winsys_move_window(dragging_window,MOUSEX+WIN_FRAME_SIZE,MOUSEY+TITLE_BAR_HEIGHT);
+			winsys_move_window(dragging_window,MOUSEX - dragging_window->width/2 ,MOUSEY+TITLE_BAR_HEIGHT/2);
 			dragging_window = 0;
 
 		}

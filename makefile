@@ -5,7 +5,7 @@ HEADERS = $(wildcard deps/*.h)
 ASM_FILES = $(wildcard boot/routines/*.asm)
 
 ROOT_C_SOURCES = $(wildcard root/script/*.c root/bin/*.c)
-ROOT_C_EXE = ${ROOT_C_SOURCES:.c=.exe}
+ROOT_C_EXE = $(patsubst %.c,%.exe,$(ROOT_C_SOURCES))
 
 ROOT_C_LIB = $(wildcard root/cstdlib/*.c)
 
@@ -63,9 +63,7 @@ kernel.sys: kernel/kernel_entry.o ${OBJ}
 
 # Rule for building root c files
 %.exe: %.c ${ROOT_C_LIB}
-	@gcc -fno-builtin -m32 -nostdlib -e __main -I ./root/cstdlib $^ -o $@.exe
-	@ren $(subst /,\,$@).exe $(@F)
-
+	@gcc -fno-builtin -m32 -nostdlib -e __main -I ./root/cstdlib $^ -o $@
 
 # Build our kernel entry object file.
 #$< is the first dependancy and $@ is the target file

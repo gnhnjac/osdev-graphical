@@ -475,7 +475,7 @@ void scheduler_dispatch () {
                 int i = 0;
                 while(i < 3)
                 {
-                    gfx_paint_char_bg(cpu_usage, cpu_percentage_str[i],CHAR_WIDTH*i,0,0xF,0);
+                    gfx_paint_char_bg(cpu_usage, cpu_percentage_str[i],CHAR_WIDTH*i,0,0xFFFFFF,0);
                     i++;
                 }
 
@@ -638,12 +638,12 @@ void cycle_colors()
   int cycler = 0;
   while(1)
   {
-          gfx_paint_char_bg(akos_window,'a', 0,0, 0xf, (cycler+3)%15);
-          gfx_paint_char_bg(akos_window,'k', 1*CHAR_WIDTH,0, 0xf, (cycler+2)%15);
-          gfx_paint_char_bg(akos_window,'o', 2*CHAR_WIDTH,0, 0xf, (cycler+1)%15);
-          gfx_paint_char_bg(akos_window,'s', 3*CHAR_WIDTH,0, 0xf, cycler);
+          gfx_paint_char_bg(akos_window,'a', 0,0, 0xFFFFFF, (cycler)%255 + (cycler+50)%255 << 8 + (cycler+100)%255 << 16);
+          gfx_paint_char_bg(akos_window,'k', 1*CHAR_WIDTH,0, 0xFFFFFF, (cycler+20)%255 +(cycler+40)%255  << 8 +(cycler+150)%255 << 16);
+          gfx_paint_char_bg(akos_window,'o', 2*CHAR_WIDTH,0, 0xFFFFFF, (cycler+200)%255 +(cycler+100)%255  << 8 +(cycler+10)%255 << 16);
+          gfx_paint_char_bg(akos_window,'s', 3*CHAR_WIDTH,0, 0xFFFFFF, (cycler+200)%255 +(cycler)%255  << 8 +(cycler+60)%255 << 16);
           winsys_display_window(akos_window);
-          cycler = (cycler + 1) % 15;
+          cycler = (cycler + 100) % 255;
           thread_sleep(200);
   } 
 

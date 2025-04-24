@@ -3,14 +3,14 @@
 #include "stdlib.h"
 #include "stdio.h"
 
-void gfx_paint_char(PWINDOW win, char c, int x, int y, uint8_t fgcolor, void *font_buff)
+void gfx_paint_char(PWINDOW win, char c, int x, int y, uint32_t fgcolor, void *font_buff)
 {
 
-	if (x+CHAR_WIDTH > win->width || y+CHAR_HEIGHT > win->height)
+	if (x+CHAR_WIDTH > win->width || y+CHAR_HEIGHT > win->height || x < 0 || y < 0)
 		return;
 
 	uint8_t *src = font_buff + c * 16;
-	uint8_t *dest = (uint8_t *)win->w_buffer + (y * win->width + x)/2;
+	uint8_t *dest = (uint8_t *)win->w_buffer + (y * win->width + x)*3;
 
 	for(int row = 0; row < 16; row++) {
 
@@ -20,17 +20,11 @@ void gfx_paint_char(PWINDOW win, char c, int x, int y, uint8_t fgcolor, void *fo
 		{
 			if(col%2)
 			{
-				uint8_t color_mask = fgcolor;
-				uint8_t cancel_mask = 0xF0;
 
-				if (bit % 2)
-				{
-					color_mask <<= 4;
-					cancel_mask >>= 4;
-				}
+				*(uint32_t *)(dest + bit*3) &= 0xFF000000;
 
-				dest[bit/2] &= cancel_mask;
-				dest[bit/2] |= color_mask;
+				*(uint32_t *)(dest + bit*3) |= fgcolor&0xffffff;
+
 			}
 				
 			col /= 2;
@@ -38,19 +32,19 @@ void gfx_paint_char(PWINDOW win, char c, int x, int y, uint8_t fgcolor, void *fo
 		}
 
 		src++;
-		dest += win->width/2;
+		dest += win->width*3;
 	}
 
 }
 
-void gfx_paint_char_bg(PWINDOW win, char c, int x, int y, uint8_t bgcolor, uint8_t fgcolor, void *font_buff)
+void gfx_paint_char_bg(PWINDOW win, char c, int x, int y, uint32_t bgcolor, uint32_t fgcolor, void *font_buff)
 {
 
-	if (x+CHAR_WIDTH > win->width || y+CHAR_HEIGHT > win->height)
+	if (x+CHAR_WIDTH > win->width || y+CHAR_HEIGHT > win->height || x < 0 || y < 0)
 		return;
 
 	uint8_t *src = font_buff + c * 16;
-	uint8_t *dest = (uint8_t *)win->w_buffer + (y * win->width + x)/2;
+	uint8_t *dest = (uint8_t *)win->w_buffer + (y * win->width + x)*3;
 
 	for(int row = 0; row < 16; row++) {
 
@@ -58,78 +52,38 @@ void gfx_paint_char_bg(PWINDOW win, char c, int x, int y, uint8_t bgcolor, uint8
 
 		for (int bit = 0; bit < 8; bit++)
 		{
-			uint8_t color_mask;
-			uint8_t cancel_mask = 0xF0;
 
-			if(col%2)
-				color_mask = fgcolor;
-			else
-				color_mask = bgcolor;
+			uint32_t color = (col % 2) ? fgcolor : bgcolor;
 
-			if (bit % 2)
-			{
-				color_mask <<= 4;
-				cancel_mask >>= 4;
-			}
+			*(uint32_t *)(dest + bit*3) &= 0xFF000000;
 
-			dest[bit/2] &= cancel_mask;
-			dest[bit/2] |= color_mask;
+			*(uint32_t *)(dest + bit*3) |= color&0xffffff;
 				
 			col /= 2;
 
 		}
 
 		src++;
-		dest += win->width/2;
+		dest += win->width*3;
 	}
 
 }
 
-void gfx_set_pixel(PWINDOW win,int x, int y,uint8_t color)
+void gfx_set_pixel(PWINDOW win,int x, int y,uint32_t color)
 {
 
-	if (x >= win->width || y >= win->height || !win)
+	if (x >= win->width || y >= win->height || x < 0 || y < 0 || !win)
 		return;
 
-	uint8_t *buff = (uint8_t *)((uint32_t)win->w_buffer + (y*win->width + x)/2);
+	uint8_t *buff = (uint8_t *)((uint32_t)win->w_buffer + (y*win->width + x)*3);
 
-	uint8_t color_mask = color;
-	uint8_t cancel_mask = 0xF0;
+	*(uint32_t *)buff &= 0xFF000000;
 
-	if (x % 2 == 0)
-	{
-		color_mask <<= 4;
-		cancel_mask >>= 4;
-	}
-
-	*buff &= cancel_mask;
-	*buff |= color_mask;
+	*(uint32_t *)buff |= color&0xffffff;
 
 }
 
-void gfx_set_pixel_at_linear_off(PWINDOW win,int x, int y, uint8_t *off, uint8_t color)
-{
-
-	if (x >= win->width || y >= win->height || !win)
-		return;
-
-	uint8_t *buff = off;
-
-	uint8_t color_mask = color;
-	uint8_t cancel_mask = 0xF0;
-
-	if (x % 2 == 0)
-	{
-		color_mask <<= 4;
-		cancel_mask >>= 4;
-	}
-
-	*buff &= cancel_mask;
-	*buff |= color_mask;
-
-}
-
-void gfx_fill_rect(PWINDOW win, int x, int y, int width, int height, uint8_t color)
+void gfx_fill_rect(PWINDOW win, int x, int y, int width, int height, uint32_t color)
 {
 
 	if (x >= win->width || y >= win->height || (!win))
@@ -140,29 +94,27 @@ void gfx_fill_rect(PWINDOW win, int x, int y, int width, int height, uint8_t col
 	if (y + height >= win->height)
 		height = win->height - y;
 
-	uint8_t *buff = (uint8_t *)((uint32_t)win->w_buffer + (y*win->width + x)/2);
+	uint8_t *buff = (uint8_t *)((uint32_t)win->w_buffer + (y*win->width + x)*3);
 
 	for (int i = 0; i < height; i++)
 	{
 
+		if (y + i >= win->width || y + i < 0)
+				continue;
+
 		for (int j = 0; j < width; j++)
 		{
 
-			uint8_t color_mask = color;
-			uint8_t cancel_mask = 0xF0;
+			if (x + j >= win->height || x + j < 0)
+				continue;
 
-			if (j % 2)
-			{
-				color_mask <<= 4;
-				cancel_mask >>= 4;
-			}
+			*(uint32_t *)(buff + j*3) &= 0xFF000000;
 
-			buff[j/2] &= cancel_mask;
-			buff[j/2] |= color_mask;
+			*(uint32_t *)(buff + j*3) |= color&0xffffff;
 
 		}
 
-		buff += win->width/2;
+		buff += win->width*3;
 
 	}
 
@@ -174,6 +126,25 @@ void gfx_clear_win(PWINDOW win)
 	gfx_fill_rect(win,0,0,win->width,win->height,0);
 
 }
+
+uint32_t vga_palette[16] = {
+    0x00000000, // 0: Black
+    0x000000AA, // 1: Blue
+    0x0000AA00, // 2: Green
+    0x0000AAAA, // 3: Cyan
+    0x00AA0000, // 4: Red
+    0x00AA00AA, // 5: Magenta
+    0x00AA5500, // 6: Brown / Dark Yellow
+    0x00AAAAAA, // 7: Light Gray
+    0x00555555, // 8: Dark Gray
+    0x005555FF, // 9: Bright Blue
+    0x0055FF55, // 10: Bright Green
+    0x0055FFFF, // 11: Bright Cyan
+    0x00FF5555, // 12: Bright Red
+    0x00FF55FF, // 13: Bright Magenta
+    0x00FFFF55, // 14: Yellow
+    0x00FFFFFF  // 15: White
+};
 
 void gfx_paint_bmp16(PWINDOW win, char *path, int x, int y)
 {
@@ -226,7 +197,7 @@ void gfx_paint_bmp16(PWINDOW win, char *path, int x, int y)
 		fread(fd,img_buffer+i*(img_buffer_size/4),img_buffer_size/4);
 	uint32_t img_buffer_ptr = 0;
 
-	uint8_t *buff = (uint8_t *)((uint32_t)win->w_buffer + ((height-1)*win->width)/2);
+	uint8_t *buff = (uint8_t *)((uint32_t)win->w_buffer + ((height-1)*win->width)*3);
 	for (int i = 0; i < height; i++)
 	{
 		int pix_count = 0;
@@ -241,9 +212,11 @@ void gfx_paint_bmp16(PWINDOW win, char *path, int x, int y)
 			else
 				two_pixels >>= 4;
 
-			uint8_t color = two_pixels & 0xF;
+			uint32_t color = vga_palette[two_pixels & 0xF];
 
-			gfx_set_pixel_at_linear_off(win,j,height-i-1,buff+j/2,color);
+			*(uint32_t *)(buff + j*3) &= 0xFF000000;
+
+			*(uint32_t *)(buff + j*3) |= color&0xffffff;
 			//gfx_set_pixel(win,j,height-i-1,color);
 
 			pix_count++;
@@ -253,7 +226,7 @@ void gfx_paint_bmp16(PWINDOW win, char *path, int x, int y)
 		img_buffer_ptr += padding_bytes;
 		//volReadFile(&bmp,(char *)&padding_buff,padding_bytes);
 
-		buff -= win->width/2;
+		buff -= win->width*3;
 
 	}
 

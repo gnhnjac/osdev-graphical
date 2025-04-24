@@ -38,6 +38,15 @@ void init_psf1_8x16()
 
 }
 
+void graphics_init()
+{
+
+	init_psf1_8x16();
+	if (!load_psf1_8x16("a:\\font.psf"))
+		return;
+
+}
+
 uint8_t *get_font_buffer()
 {
 
@@ -149,38 +158,34 @@ void display_psf1_8x16_char_bg_linear(char c, int x, int y, int bgcolor, int fgc
 void display_psf1_8x16_char(char c, int x, int y, uint8_t fgcolor)
 {
 
-	if (x+CHAR_WIDTH > PIXEL_WIDTH || y+CHAR_HEIGHT > PIXEL_HEIGHT)
+	if (x+CHAR_WIDTH > PIXEL_WIDTH || y+CHAR_HEIGHT > PIXEL_HEIGHT || x < 0 || y < 0)
 		return;
 
 	uint8_t *src = font_buff + c * 16;
-	uint8_t *dest = (uint8_t *)VIDEO_ADDRESS + (y * PIXEL_WIDTH + x)/PIXELS_PER_BYTE;
-
-	outb(0x3C4, MEMORY_PLANE_WRITE_ENABLE);
-	outb(0x3CE,0x8);
 	for(int row = 0; row < 16; row++) {
 
-		uint8_t mask_lower = reverse((*src)<<(x%8));
-		uint8_t mask_upper = reverse((*src)>>(8-x%8));
+		uint8_t tmp = *src;
 
-		outb(0x3C5, 0xF);
-		outb(0x3CF,mask_lower);
-		dest[0] &= ~mask_lower;
-		outb(0x3CF,mask_upper);
-		dest[1] &= ~mask_upper;
-		outb(0x3C5, fgcolor);
-		outb(0x3CF,mask_lower);
-		dest[0] |= mask_lower;
-		outb(0x3CF,mask_upper);
-		dest[1] |= mask_upper;
+		for(int j = 0; j < 8; j++)
+		{
 
+			if (tmp%2)
+				set_pixel(x+j,y+row,fgcolor);
+
+			tmp /= 2;
+
+		}
+		
 		src++;
-		dest += PIXEL_WIDTH/PIXELS_PER_BYTE;
 	}
 
 }
 
 void display_psf1_8x16_char_bg(char c, int x, int y, int bgcolor, int fgcolor)
 {
+
+	if (x+CHAR_WIDTH > PIXEL_WIDTH || y+CHAR_HEIGHT > PIXEL_HEIGHT || x < 0 || y < 0)
+		return;
 
 	uint8_t *src = font_buff + c * 16;
 	for(int row = 0; row < 16; row++) {
@@ -201,22 +206,24 @@ void display_psf1_8x16_char_bg(char c, int x, int y, int bgcolor, int fgcolor)
 
 }
 
-void fill_rect_linear(int x, int y, int width, int height, uint8_t color)
+void fill_rect_linear(int x, int y, int width, int height, uint32_t color)
 {
 
-	uint8_t *vram = (uint8_t *)VIDEO_ADDRESS + y * PIXEL_WIDTH + x;
+	uint8_t *vram = (uint8_t *)VIDEO_ADDRESS + (y * PIXEL_WIDTH + x)*3;
 
-	for (int i = 0; i < width; i++)
+	for (int i = 0; i < height; i++)
 	{
 
-		for (int j = 0; j < height; j++)
+		for (int j = 0; j < width; j++)
 		{
 
-			vram[j*PIXEL_WIDTH] = color;
+			*(uint32_t *)(vram + j*3) &= 0xFF000000;
+
+			*(uint32_t *)(vram + j*3) |= color&0xffffff;
 
 		}
 
-		vram += 1;
+		vram += PIXEL_WIDTH*3;
 
 	}
 
@@ -233,7 +240,7 @@ void outline_rect(int x, int y, int width, int height, int size, uint8_t color)
 
 }
 
-void fill_rect(int x, int y, int width, int height, uint8_t color)
+void fill_rect(int x, int y, int width, int height, uint32_t color)
 {
 
 	if (x >= PIXEL_WIDTH || y >= PIXEL_HEIGHT)
@@ -244,31 +251,29 @@ void fill_rect(int x, int y, int width, int height, uint8_t color)
 	if (y + height >= PIXEL_HEIGHT)
 		height = PIXEL_HEIGHT - y;
 
-	uint8_t *vram = (uint8_t *)VIDEO_ADDRESS + y*PIXEL_WIDTH/PIXELS_PER_BYTE;
-	outb(0x3C4, MEMORY_PLANE_WRITE_ENABLE);
-	outb(0x3CE,0x8);
+	uint8_t *vram = (uint8_t *)VIDEO_ADDRESS + (y*PIXEL_WIDTH + x)*3;
+
 	for (int i = 0; i < height; i++)
 	{
 
-		for (int j = 0; j < width; j++)
+		if (y + i < PIXEL_HEIGHT && y + i >= 0)
 		{
-			uint8_t mask;
-			if (j+PIXELS_PER_BYTE < width && (x+j) % PIXELS_PER_BYTE == 0)
+
+			for (int j = 0; j < width; j++)
 			{
-				mask = 0xFF;
-				j += PIXELS_PER_BYTE-1;
+
+				if (x + j >= PIXEL_WIDTH || x + j < 0)
+					continue;
+
+				*(uint32_t *)(vram + j*3) &= 0xFF000000;
+
+				*(uint32_t *)(vram + j*3) |= color&0xffffff;
+
 			}
-			else
-				mask = (0x80>>((x+j)%PIXELS_PER_BYTE));
-			outb(0x3CF,mask);
-			outb(0x3C5, 0xF);
-			vram[(x+j)/PIXELS_PER_BYTE] &= ~mask;
-			outb(0x3C5, color);
-			vram[(x+j)/PIXELS_PER_BYTE] |= mask;
 
 		}
 
-		vram += PIXEL_WIDTH/PIXELS_PER_BYTE;
+		vram += PIXEL_WIDTH*3;
 
 	}
 	
@@ -304,66 +309,26 @@ void outline_circle(int mx, int my, int rad, uint8_t color)
 
 }
 
-void set_pixel (int x, int y, uint8_t color)
+void set_pixel (int x, int y, uint32_t color)
 {
 
-	if (x >= PIXEL_WIDTH || y >= PIXEL_HEIGHT)
+	if (x >= PIXEL_WIDTH || y >= PIXEL_HEIGHT || x < 0 || y < 0)
 		return;
 
-	uint8_t mask = (0x80>>(x%PIXELS_PER_BYTE));
-
-	outb(0x3C4, MEMORY_PLANE_WRITE_ENABLE);
-	outb(0x3CE,0x8);
-	outb(0x3CF,mask);
-
-	uint8_t *vram = (uint8_t *)VIDEO_ADDRESS + (y * PIXEL_WIDTH + x)/PIXELS_PER_BYTE;
-
-	outb(0x3C5, 0xF);
+	uint8_t *vram = (uint8_t *)VIDEO_ADDRESS + (y * PIXEL_WIDTH + x)*3;
 	
-	*vram &= ~mask;
+	*(uint32_t *)vram &= 0xFF000000;
 
-	outb(0x3C5, color);
-
-	*vram |= mask;
+	*(uint32_t *)vram |= color&0xffffff;
 
 }
 
-uint8_t is_planar_bit_activated(int x, int y, uint8_t plane)
+uint32_t get_pixel (int x, int y)
 {
 
-	outb(0x3CE, READ_MAP_SELECT);
-	outb(0x3CF, plane);
-
-	uint8_t byte = *(uint8_t *)((uint8_t *)VIDEO_ADDRESS + (y * PIXEL_WIDTH + x)/PIXELS_PER_BYTE);
-	return byte & (0x80>>(x%PIXELS_PER_BYTE));
-
-}
-
-uint8_t get_pixel (int x, int y)
-{
-
-	if (x >= PIXEL_WIDTH || y >= PIXEL_HEIGHT)
+	if (x >= PIXEL_WIDTH || y >= PIXEL_HEIGHT || x < 0 || y < 0)
 		return 0;
-
-	uint8_t color = 0;
-	uint8_t mask = 0x80>>(x%PIXELS_PER_BYTE);
-	uint8_t *byte = (uint8_t *)(VIDEO_ADDRESS + (y * PIXEL_WIDTH + x)/PIXELS_PER_BYTE);
-
-	outb(0x3CE, READ_MAP_SELECT);
-
-	outb(0x3CF, 0);
-	if (*byte & mask)
-		color |= 1;
-	outb(0x3CF, 1);
-	if (*byte & mask)
-		color |= 2;
-	outb(0x3CF, 2);
-	if (*byte & mask)
-		color |= 4;
-	outb(0x3CF, 3);
-	if (*byte & mask)
-		color |= 8;
-
-	return color;
+	
+	return *(uint32_t *)(VIDEO_ADDRESS + (y * PIXEL_WIDTH + x)*3);
 
 }

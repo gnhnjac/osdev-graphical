@@ -26,10 +26,21 @@ mov	es, ax
 mov	di, 0x3000 + 512*5 ; 3 reserved sectors for the memory map
 call BiosGetMemoryMap
 
-; set video mode to 640x480 16 colors
-mov ah, 0
-mov al, 0x12;0x13
-int 0x10
+push ds
+pop es
+mov di, VesaInfoBlockBuffer
+call get_vesa_info
+
+mov ax, 1920
+mov bx, 1080
+mov cl, 24
+call set_vesa_mode
+
+lea eax, [VesaInfoBlockBuffer]
+mov [boot_info+multiboot_info.vbe_control_info], eax
+
+lea eax, [VesaModeInfoBlockBuffer]
+mov [boot_info+multiboot_info.vbe_mode_info], eax
 
 ; switch to 32 bit protected mode
 call switch_to_pm
@@ -47,15 +58,109 @@ load_kernel: ; note that dx is changed here!
 
 	ret
 
+;	in:
+;		es:di - 512-byte buffer
+get_vesa_info:
+	clc
+	mov ax, 0x4f00
+	int 0x10
+	ret
+
+;	in:
+;		cx - VESA mode number
+;		es:di - 256-byte buffer
+get_vesa_mode_info:
+	clc
+	mov ax, 0x4f01
+	int 0x10
+	ret
+
+
+;	in:
+;		ax - width
+;		bx - height
+;       cl - bits per pixel
+set_vesa_mode:
+
+	push bp
+	mov bp, sp
+
+	%define width [bp-2]
+	%define height [bp-4]
+	%define bpp [bp-6]
+
+	sub sp, 6
+
+	mov width, ax
+	mov height, bx
+	mov bpp, cl
+
+	push word [VesaInfoBlockBuffer + VesaInfoBlock.VideoModesSegment]
+	pop es
+
+	mov bx, [VesaInfoBlockBuffer+VesaInfoBlock.VideoModesOffset]
+
+	mov di, VesaModeInfoBlockBuffer
+
+.find_mode:
+
+	mov cx, [bx]
+	cmp cx, 0xffff
+	je .not_found
+
+	clc
+	mov ax, 0x4f01
+	int 0x10
+
+	mov ax, width
+	cmp [VesaModeInfoBlockBuffer+VesaModeInfoBlock.Width], ax
+	jne .next_mode
+
+	mov ax, height
+	cmp [VesaModeInfoBlockBuffer+VesaModeInfoBlock.Height], ax
+	jne .next_mode
+
+	mov al, bpp
+	cmp [VesaModeInfoBlockBuffer+VesaModeInfoBlock.BitsPerPixel], al
+	jne .next_mode
+
+	jmp .found
+
+.next_mode:
+
+	add bx, 2
+	jmp .find_mode
+
+.not_found:
+
+	mov si, vesa_mode_not_found
+	call print_str_mem_short
+
+	hlt
+
+.found:
+
+	mov ax, 0x4F02
+	mov bx, [bx]
+	int 0x10
+
+	mov sp, bp
+	pop bp
+
+	ret
+
+
+
 bits 32
 BEGIN_PM:
 	
-	;push copy_kernel_msg
-	;call print_str_mem32
+	push copy_kernel_msg
+	call print_str_mem32
 
 	call EnablePaging ; enable paging before we copy our kernel to 0xC0000000
 
 COPY_KERNEL_IMG:
+	
 	xor eax, eax
 	mov	ax, [READ_SECTORS]
  	mov ebx, 512
@@ -84,7 +189,6 @@ COPY_KERNEL_IMG:
  
     cli
 	hlt
-
 
 bits 16
 ; 16 bit rm files
@@ -234,6 +338,74 @@ istruc multiboot_info
 	at multiboot_info.vbe_interface_len,dw 0
 iend
 
+struc VesaInfoBlock				;	VesaInfoBlock_size = 512 bytes
+	.Signature		resb 4		;	must be 'VESA'
+	.Version		resw 1
+	.OEMNamePtr		resd 1
+	.Capabilities		resd 1
+
+	.VideoModesOffset	resw 1
+	.VideoModesSegment	resw 1
+
+	.CountOf64KBlocks	resw 1
+	.OEMSoftwareRevision	resw 1
+	.OEMVendorNamePtr	resd 1
+	.OEMProductNamePtr	resd 1
+	.OEMProductRevisionPtr	resd 1
+	.Reserved		resb 222
+	.OEMData		resb 256
+endstruc
+
+VesaInfoBlockBuffer: istruc VesaInfoBlock
+	at VesaInfoBlock.Signature,				db "VESA"
+	times 508 db 0
+iend
+
+struc VesaModeInfoBlock				;	VesaModeInfoBlock_size = 256 bytes
+	.ModeAttributes		resw 1
+	.FirstWindowAttributes	resb 1
+	.SecondWindowAttributes	resb 1
+	.WindowGranularity	resw 1		;	in KB
+	.WindowSize		resw 1		;	in KB
+	.FirstWindowSegment	resw 1		;	0 if not supported
+	.SecondWindowSegment	resw 1		;	0 if not supported
+	.WindowFunctionPtr	resd 1
+	.BytesPerScanLine	resw 1
+
+	;	Added in Revision 1.2
+	.Width			resw 1		;	in pixels(graphics)/columns(text)
+	.Height			resw 1		;	in pixels(graphics)/columns(text)
+	.CharWidth		resb 1		;	in pixels
+	.CharHeight		resb 1		;	in pixels
+	.PlanesCount		resb 1
+	.BitsPerPixel		resb 1
+	.BanksCount		resb 1
+	.MemoryModel		resb 1		;	http://www.ctyme.com/intr/rb-0274.htm#Table82
+	.BankSize		resb 1		;	in KB
+	.ImagePagesCount	resb 1		;	count - 1
+	.Reserved1		resb 1		;	equals 0 in Revision 1.0-2.0, 1 in 3.0
+
+	.RedMaskSize		resb 1
+	.RedFieldPosition	resb 1
+	.GreenMaskSize		resb 1
+	.GreenFieldPosition	resb 1
+	.BlueMaskSize		resb 1
+	.BlueFieldPosition	resb 1
+	.ReservedMaskSize	resb 1
+	.ReservedMaskPosition	resb 1
+	.DirectColorModeInfo	resb 1
+
+	;	Added in Revision 2.0
+	.LFBAddress		resd 1
+	.OffscreenMemoryOffset	resd 1
+	.OffscreenMemorySize	resw 1		;	in KB
+	.Reserved2		resb 206	;	available in Revision 3.0, but useless for now
+endstruc
+
+VesaModeInfoBlockBuffer:	istruc VesaModeInfoBlock
+		times VesaModeInfoBlock_size db 0
+iend
+
 bits 32
 ; 32 bit pm files
 %include "print_str_mem32.asm"
@@ -241,6 +413,7 @@ bits 32
 %include "enable_paging.asm"
 
 ; variables
+vesa_mode_not_found db 'Vesa mode not found, aborting...', 0xa, 0xd, 0
 load_kernel_msg db 'Loading kernel into memory at 0x10000', 0xa, 0xd, 0
 copy_kernel_msg db 'Copying kernel into virtual memory at 0xC0000000', 0xa, 0xd, 0
 pm_msg db 'Successfully switched to 32-bit protected mode!', 0

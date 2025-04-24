@@ -622,6 +622,15 @@ void clone_kernel_space(pdirectory* out) {
     
     // also copy first 4mb
     memcpy((char *)&out->m_entries[0], (char *)&proc->m_entries[0], 1 * sizeof (pd_entry));
+
+    // also copy graphics framebuffer pages
+
+    uint32_t page_tables_to_copy = PIXEL_WIDTH*PIXEL_HEIGHT*3/0x100000;
+
+    if (PIXEL_WIDTH*PIXEL_HEIGHT*3%0x100000 != 0)
+        page_tables_to_copy++;
+
+    memcpy((char *)&out->m_entries[820], (char *)&proc->m_entries[820], page_tables_to_copy * sizeof (pd_entry));
 }
 
 void clone_kernel_stacks(pdirectory *out)
@@ -636,6 +645,15 @@ void clone_kernel_stacks(pdirectory *out)
 
 void clear_kernel_space(pdirectory *out)
 {
+
+    // clear graphics framebuffer pages
+
+    uint32_t page_tables_to_copy = PIXEL_WIDTH*PIXEL_HEIGHT*3/0x100000;
+
+    if (PIXEL_WIDTH*PIXEL_HEIGHT*3%0x100000 != 0)
+        page_tables_to_copy++;
+
+    memset((char *)&out->m_entries[820], 0, page_tables_to_copy * sizeof (pd_entry));
 
     memset((char *)&out->m_entries[768], 0, 4 * sizeof (pd_entry));
     

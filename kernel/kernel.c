@@ -25,6 +25,7 @@
 #include "scheduler.h"
 #include "graphics.h"
 #include "window_sys.h"
+#include "debug.h"
 
 uint32_t kernel_size=0;
 
@@ -70,7 +71,6 @@ void kmain(uint32_t _, multiboot_info* bootinfo, uint32_t _kernel_size) {
 
 	vmmngr_initialize();
 
-	
 	heap_init();
 
 	//! set drive 0 as current drive
@@ -85,9 +85,7 @@ void kmain(uint32_t _, multiboot_info* bootinfo, uint32_t _kernel_size) {
 	// initialize the temp file system driver
 	tfsys_init();
 
-	init_psf1_8x16();
-	if (!load_psf1_8x16("a:\\font.psf"))
-		return;
+	graphics_init();
 
 	winsys_init();
 

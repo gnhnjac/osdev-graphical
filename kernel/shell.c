@@ -29,8 +29,8 @@ PINPINFO window_input_info = 0;
 char *cmd_history[CMD_HISTORY_SIZE] = {0};
 static int cmd_history_ptr = -1;
 
-#define SHELL_ROWS 25
-#define SHELL_COLS 65
+#define SHELL_ROWS 40
+#define SHELL_COLS 110
 
 static void reset_cmd_history_ptr()
 {

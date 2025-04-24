@@ -1,9 +1,11 @@
+#pragma once
 #include <stdint.h>
 #include <stdarg.h>
+#include "graphics.h"
 
-#define VIDEO_ADDRESS 0xa0000
-#define MAX_ROWS 30
-#define MAX_COLS 80
+#define VIDEO_ADDRESS 0xCD000000
+#define MAX_ROWS PIXEL_HEIGHT/CHAR_HEIGHT
+#define MAX_COLS PIXEL_WIDTH/CHAR_WIDTH
 
 // top bar constants
 #define TOP 1

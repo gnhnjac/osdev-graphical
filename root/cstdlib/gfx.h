@@ -201,9 +201,9 @@ typedef struct _BITMAPINFOHEADER
 
 #pragma pack()
 
-void gfx_paint_char(PWINDOW win, char c, int x, int y, uint8_t fgcolor, void *font_buff);
-void gfx_paint_char_bg(PWINDOW win, char c, int x, int y, uint8_t bgcolor, uint8_t fgcolor, void *font_buff);
-void gfx_set_pixel(PWINDOW win,int x, int y,uint8_t color);
-void gfx_fill_rect(PWINDOW win, int x, int y, int width, int height, uint8_t color);
+void gfx_paint_char(PWINDOW win, char c, int x, int y, uint32_t fgcolor, void *font_buff);
+void gfx_paint_char_bg(PWINDOW win, char c, int x, int y, uint32_t bgcolor, uint32_t fgcolor, void *font_buff);
+void gfx_set_pixel(PWINDOW win,int x, int y,uint32_t color);
+void gfx_fill_rect(PWINDOW win, int x, int y, int width, int height, uint32_t color);
 void gfx_clear_win(PWINDOW win);
 void gfx_paint_bmp16(PWINDOW win, char *path, int x, int y);

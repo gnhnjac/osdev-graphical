@@ -361,13 +361,13 @@ static void draw_net() {
 
 	for(i = 0; i < 15; i++) {
 		
-		gfx_fill_rect(&window, SCREEN_WIDTH / 2,20+30*i,5,15, 0xf);
+		gfx_fill_rect(&window, SCREEN_WIDTH / 2,20+30*i,5,15, 0xffffff);
 
 
 	}
 }
 
-static void draw_ball(uint8_t color) {
+static void draw_ball(uint32_t color) {
 
 	if (color != 0)
 	{
@@ -380,7 +380,7 @@ static void draw_ball(uint8_t color) {
 	}
 }
 
-static void draw_paddle(uint8_t color) {
+static void draw_paddle(uint32_t color) {
 
 	int i;
 
@@ -395,7 +395,7 @@ static void draw_player_0_score() {
 	
 	uint32_t dest_x = (SCREEN_WIDTH / 2) - 12 - CHAR_WIDTH;
 
-	gfx_paint_char_bg(&window,score[0]+'0',dest_x,0,0,0x4,font_buff);
+	gfx_paint_char_bg(&window,score[0]+'0',dest_x,0,0,0x00AA0000,font_buff);
 
 }
 
@@ -403,7 +403,7 @@ static void draw_player_1_score() {
 
 	uint32_t dest_x = (SCREEN_WIDTH / 2) + 12;
 	
-	gfx_paint_char_bg(&window,score[1]+'0',dest_x,0,0,0x4,font_buff);
+	gfx_paint_char_bg(&window,score[1]+'0',dest_x,0,0,0x00AA0000,font_buff);
 
 }
 
@@ -558,10 +558,10 @@ void _main (int argc, char *args[]) {
 			draw_net();
 
 			//draw paddles
-			draw_paddle(0xf);
+			draw_paddle(0xffffff);
 			
 			//* Put the ball on the screen.
-			draw_ball(0xf);
+			draw_ball(0xffffff);
 	
 			//draw the score
 			draw_player_0_score();
@@ -571,7 +571,7 @@ void _main (int argc, char *args[]) {
 
 			display_window_section(&window,0,0,window.width,window.height);
 
-			sleep(1000/60);
+			//sleep(1000/60);
 
 		}
 	}

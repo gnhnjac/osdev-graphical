@@ -358,125 +358,68 @@ void clear_screen()
 int handle_scrolling(int offset_y)
 {
 
-	if (offset_y < MAX_ROWS)
-	{
-		return offset_y;
-	}
+	// deprecated
 
-	disable_mouse();
+	return 1;
+
+	// if (offset_y < MAX_ROWS)
+	// {
+	// 	return offset_y;
+	// }
+
+	// disable_mouse();
 
 
-	uint32_t char_line_size = PIXEL_WIDTH*CHAR_HEIGHT/PIXELS_PER_BYTE;
-	uint32_t scroll_diff_size = SCROLL_ROWS*char_line_size;
-	uint8_t *vram = (uint8_t *)VIDEO_ADDRESS + char_line_size;
+	// uint32_t char_line_size = PIXEL_WIDTH*CHAR_HEIGHT*3;
+	// uint32_t scroll_diff_size = SCROLL_ROWS*char_line_size;
+	// uint8_t *vram = (uint8_t *)VIDEO_ADDRESS + char_line_size;
 
-	uint8_t prev_mask = 0;
+	// uint8_t prev_mask = 0;
 	
-	outb(0x3C4, MEMORY_PLANE_WRITE_ENABLE);
-	outb(0x3C5, 0xF);
+	// outb(0x3C4, MEMORY_PLANE_WRITE_ENABLE);
+	// outb(0x3C5, 0xF);
 
-	for (int i = TOP+SCROLL_ROWS; i < MAX_ROWS; i++)
-	{
+	// for (int i = TOP+SCROLL_ROWS; i < MAX_ROWS; i++)
+	// {
 
-		uint8_t *tmp = vram;
+	// 	uint8_t *tmp = vram;
 
-		for (int j = 0; j < CHAR_HEIGHT; j++)
-		{
+	// 	for (int j = 0; j < CHAR_HEIGHT; j++)
+	// 	{
 
-			for (int k = 0; k < PIXEL_WIDTH; k++)
-			{
+	// 		for (int k = 0; k < PIXEL_WIDTH; k++)
+	// 		{
 
-				uint8_t mask = 0x80>>(k%PIXELS_PER_BYTE);
-				uint32_t off = k/PIXELS_PER_BYTE;
-				uint8_t *color_byte = (uint8_t *)(tmp+off+scroll_diff_size);
-				
-				if (k%PIXELS_PER_BYTE == 0)
-				{
-					outb(0x3CE, READ_MAP_SELECT);
-					outb(0x3CF, 0);
-					if (*color_byte)
-						goto not_totally_black;
-					outb(0x3CF, 1);
-					if (*color_byte)
-						goto not_totally_black;
-					outb(0x3CF, 2);
-					if (*color_byte)
-						goto not_totally_black;
-					outb(0x3CF, 3);
-					if (*color_byte)
-						goto not_totally_black;
+	// 			uint8_t mask = 0x80>>(k%PIXELS_PER_BYTE);
+	// 			uint32_t off = k/PIXELS_PER_BYTE;
+	// 			uint8_t *color_byte = (uint8_t *)(tmp+off+scroll_diff_size);
 
-					k += PIXELS_PER_BYTE-1;
+	// 			tmp[off] &= ~mask;
 
-					if (prev_mask != 0xF)
-					{
-						outb(0x3C5, 0xF);
-						prev_mask = 0xF;
-					}
-					outb(0x3CE,0x8);
-					outb(0x3CF,0xFF);
-					tmp[off] = 0;
+	// 			uint8_t color = 0;
 
-					continue;
-					
-				}
+	// 			tmp[off] |= mask;
 
-				not_totally_black:
+	// 			//set_pixel(j,get_screen_y(i-1)+k,get_pixel(j,get_screen_y(i)+k));
 
-				if (prev_mask != 0xF)
-				{
-					outb(0x3C5, 0xF);
-					prev_mask = 0xF;
-				}
-				outb(0x3CE,0x8);
-				outb(0x3CF,mask);
+	// 		}
 
-				tmp[off] &= ~mask;
+	// 		tmp += PIXEL_WIDTH *3;
 
-				uint8_t color = 0;
+	// 	}
 
-				outb(0x3CE, READ_MAP_SELECT);
-				outb(0x3CF, 0);
-				if (*color_byte & mask)
-					color |= 1;
-				outb(0x3CF, 1);
-				if (*color_byte & mask)
-					color |= 2;
-				outb(0x3CF, 2);
-				if (*color_byte & mask)
-					color |= 4;
-				outb(0x3CF, 3);
-				if (*color_byte & mask)
-					color |= 8;
+	// 	vram += char_line_size;
 
-				if (prev_mask != color)
-				{
-					outb(0x3C5, color);
-					prev_mask = color;
-				}
+	// }
 
-				tmp[off] |= mask;
+	// fill_rect(0,PIXEL_HEIGHT-CHAR_HEIGHT*SCROLL_ROWS,PIXEL_WIDTH,CHAR_HEIGHT*SCROLL_ROWS,0);
 
-				//set_pixel(j,get_screen_y(i-1)+k,get_pixel(j,get_screen_y(i)+k));
+	// offset_y-=SCROLL_ROWS;
 
-			}
+	// enable_mouse();
+	// cursor_input_row -= SCROLL_ROWS;
 
-			tmp += PIXEL_WIDTH / PIXELS_PER_BYTE;
-
-		}
-
-		vram += char_line_size;
-
-	}
-
-	fill_rect(0,PIXEL_HEIGHT-CHAR_HEIGHT*SCROLL_ROWS,PIXEL_WIDTH,CHAR_HEIGHT*SCROLL_ROWS,0);
-
-	offset_y-=SCROLL_ROWS;
-
-	enable_mouse();
-	cursor_input_row -= SCROLL_ROWS;
-
-	return offset_y;
+	// return offset_y;
 
 }
 
@@ -503,15 +446,15 @@ void init_screen()
 	clear_screen();
 
 	// // initialize top bar
-	display_psf1_8x16_char_bg('a', get_screen_x(0), get_screen_y(0), 0xf,0);
-	display_psf1_8x16_char_bg('k', get_screen_x(1), get_screen_y(0), 0xf,0);
-	display_psf1_8x16_char_bg('o', get_screen_x(2), get_screen_y(0), 0xf,0);
-	display_psf1_8x16_char_bg('s', get_screen_x(3), get_screen_y(0), 0xf,0);
+	display_psf1_8x16_char_bg('a', get_screen_x(0), get_screen_y(0), 0xFFFFFF,0);
+	display_psf1_8x16_char_bg('k', get_screen_x(1), get_screen_y(0), 0xFFFFFF,0);
+	display_psf1_8x16_char_bg('o', get_screen_x(2), get_screen_y(0), 0xFFFFFF,0);
+	display_psf1_8x16_char_bg('s', get_screen_x(3), get_screen_y(0), 0xFFFFFF,0);
 
 	for (int i = 4; i < MAX_COLS; i++)
 	{
 
-		display_psf1_8x16_char_bg(' ', get_screen_x(i), get_screen_y(0), 0xf,0);
+		display_psf1_8x16_char_bg(' ', get_screen_x(i), get_screen_y(0), 0xFFFFFF,0);
 
 	}
 
