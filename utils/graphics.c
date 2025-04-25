@@ -155,7 +155,7 @@ void display_psf1_8x16_char_bg_linear(char c, int x, int y, int bgcolor, int fgc
 
 }
 
-void display_psf1_8x16_char(char c, int x, int y, uint8_t fgcolor)
+void display_psf1_8x16_char(char c, int x, int y, uint32_t fgcolor)
 {
 
 	if (x+CHAR_WIDTH > PIXEL_WIDTH || y+CHAR_HEIGHT > PIXEL_HEIGHT || x < 0 || y < 0)
@@ -181,7 +181,7 @@ void display_psf1_8x16_char(char c, int x, int y, uint8_t fgcolor)
 
 }
 
-void display_psf1_8x16_char_bg(char c, int x, int y, int bgcolor, int fgcolor)
+void display_psf1_8x16_char_bg(char c, int x, int y, uint32_t bgcolor, uint32_t fgcolor)
 {
 
 	if (x+CHAR_WIDTH > PIXEL_WIDTH || y+CHAR_HEIGHT > PIXEL_HEIGHT || x < 0 || y < 0)
@@ -206,30 +206,7 @@ void display_psf1_8x16_char_bg(char c, int x, int y, int bgcolor, int fgcolor)
 
 }
 
-void fill_rect_linear(int x, int y, int width, int height, uint32_t color)
-{
-
-	uint8_t *vram = (uint8_t *)VIDEO_ADDRESS + (y * PIXEL_WIDTH + x)*3;
-
-	for (int i = 0; i < height; i++)
-	{
-
-		for (int j = 0; j < width; j++)
-		{
-
-			*(uint32_t *)(vram + j*3) &= 0xFF000000;
-
-			*(uint32_t *)(vram + j*3) |= color&0xffffff;
-
-		}
-
-		vram += PIXEL_WIDTH*3;
-
-	}
-
-}
-
-void outline_rect(int x, int y, int width, int height, int size, uint8_t color)
+void outline_rect(int x, int y, int width, int height, int size, uint32_t color)
 {
 
 	fill_rect(x-size,y-size,width+size*2,size,color);
@@ -237,6 +214,59 @@ void outline_rect(int x, int y, int width, int height, int size, uint8_t color)
 
 	fill_rect(x-size,y,size,height,color);
 	fill_rect(x+width,y,size,height,color);
+
+}
+
+void fill_gradient(int x, int y, int width, int height, uint32_t start_color, uint32_t end_color)
+{
+
+	if (x >= PIXEL_WIDTH || y >= PIXEL_HEIGHT)
+		return;
+
+	if (x + width >= PIXEL_WIDTH)
+		width = PIXEL_WIDTH - x;
+	if (y + height >= PIXEL_HEIGHT)
+		height = PIXEL_HEIGHT - y;
+
+	uint8_t *vram = (uint8_t *)VIDEO_ADDRESS + (y*PIXEL_WIDTH + x)*3;
+
+	int32_t sr = start_color&0xff;
+	int32_t sg = (start_color>>8)&0xff;
+   int32_t sb = (start_color>>16)&0xff;
+
+   int32_t er = end_color&0xff;
+	int32_t eg = (end_color>>8)&0xff;
+   int32_t eb = (end_color>>16)&0xff;
+
+	for (int i = 0; i < height; i++)
+	{
+
+		if (y + i < PIXEL_HEIGHT && y + i >= 0)
+		{
+
+			for (int j = 0; j < width; j++)
+			{
+
+				if (x + j >= PIXEL_WIDTH || x + j < 0)
+					continue;
+
+				int32_t r = sr + (er - sr) * j / width;
+			   int32_t g = sg + (eg - sg) * j / width;
+			   int32_t b = sb + (eb - sb) * j / width;
+
+			   uint32_t color = r | (g << 8) | (b << 16);
+
+				*(uint32_t *)(vram + j*3) &= 0xFF000000;
+
+				*(uint32_t *)(vram + j*3) |= color&0xffffff;
+
+			}
+
+		}
+
+		vram += PIXEL_WIDTH*3;
+
+	}
 
 }
 
@@ -279,7 +309,7 @@ void fill_rect(int x, int y, int width, int height, uint32_t color)
 	
 }
 
-void outline_circle(int mx, int my, int rad, uint8_t color)
+void outline_circle(int mx, int my, int rad, uint32_t color)
 {
 
 	float increment = 1/(float)rad;

@@ -1,4 +1,4 @@
-#include "gfx.h"
+ #include "gfx.h"
 #include "syscalls.h"
 #include "stdlib.h"
 #include "stdio.h"
@@ -99,13 +99,13 @@ void gfx_fill_rect(PWINDOW win, int x, int y, int width, int height, uint32_t co
 	for (int i = 0; i < height; i++)
 	{
 
-		if (y + i >= win->width || y + i < 0)
+		if (y + i >= win->height || y + i < 0)
 				continue;
 
 		for (int j = 0; j < width; j++)
 		{
 
-			if (x + j >= win->height || x + j < 0)
+			if (x + j >= win->width || x + j < 0)
 				continue;
 
 			*(uint32_t *)(buff + j*3) &= 0xFF000000;

@@ -475,7 +475,7 @@ void scheduler_dispatch () {
                 int i = 0;
                 while(i < 3)
                 {
-                    gfx_paint_char_bg(cpu_usage, cpu_percentage_str[i],CHAR_WIDTH*i,0,0xFFFFFF,0);
+                    gfx_paint_char_bg(cpu_usage, cpu_percentage_str[i],CHAR_WIDTH*i,0,WIN_FRAME_COLOR,0);
                     i++;
                 }
 
@@ -628,6 +628,8 @@ void idle_task() {
   while(1) __asm__ ("pause");
 }
 
+extern uint32_t vga_palette[16];
+
 void cycle_colors()
 {
 
@@ -638,12 +640,12 @@ void cycle_colors()
   int cycler = 0;
   while(1)
   {
-          gfx_paint_char_bg(akos_window,'a', 0,0, 0xFFFFFF, (cycler)%255 + (cycler+50)%255 << 8 + (cycler+100)%255 << 16);
-          gfx_paint_char_bg(akos_window,'k', 1*CHAR_WIDTH,0, 0xFFFFFF, (cycler+20)%255 +(cycler+40)%255  << 8 +(cycler+150)%255 << 16);
-          gfx_paint_char_bg(akos_window,'o', 2*CHAR_WIDTH,0, 0xFFFFFF, (cycler+200)%255 +(cycler+100)%255  << 8 +(cycler+10)%255 << 16);
-          gfx_paint_char_bg(akos_window,'s', 3*CHAR_WIDTH,0, 0xFFFFFF, (cycler+200)%255 +(cycler)%255  << 8 +(cycler+60)%255 << 16);
+          gfx_paint_char_bg(akos_window,'a', 0,0, WIN_FRAME_COLOR, vga_palette[cycler]);
+          gfx_paint_char_bg(akos_window,'k', 1*CHAR_WIDTH,0, WIN_FRAME_COLOR, vga_palette[cycler+1]);
+          gfx_paint_char_bg(akos_window,'o', 2*CHAR_WIDTH,0, WIN_FRAME_COLOR, vga_palette[cycler+2]);
+          gfx_paint_char_bg(akos_window,'s', 3*CHAR_WIDTH,0, WIN_FRAME_COLOR, vga_palette[cycler+3]);
           winsys_display_window(akos_window);
-          cycler = (cycler + 100) % 255;
+          cycler = (cycler + 1) % 16;
           thread_sleep(200);
   } 
 
@@ -791,12 +793,10 @@ void *allocate_user_space_pages(int page_amt)
 }
 
 /* find free user space pages for user mode thread. */
-void *find_user_space_pages(void *base, int page_amt)
+void *find_user_space_pages_by_pdir(pdirectory *pdir, void *base, int page_amt)
 {
 
         void *loc;
-
-        pdirectory *pdir = vmmngr_get_directory();
 
         int count = 0;
         int i = 0;
@@ -823,6 +823,14 @@ void *find_user_space_pages(void *base, int page_amt)
 
         return loc;
 
+}
+
+
+/* find free user space pages for user mode thread. */
+void *find_user_space_pages(void *base, int page_amt)
+{
+
+        return find_user_space_pages_by_pdir(vmmngr_get_directory(), base, page_amt);
 }
 
 /* creates thread. */

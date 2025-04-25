@@ -77,4 +77,5 @@ type help in the shell to get a list of commands, type "help COMMAND" to get hel
 
 3GB + 0xD0MB -> FRAMEBUFFER
 
-![Screenshot of the operating system](os-screenshot.png "The AKOS Operating System")
+![Old screenshot of the operating system](os-screenshot.png "The AKOS Operating System")
+![screenshot of the operating system](os-screenshot-new.png "The AKOS Operating System")

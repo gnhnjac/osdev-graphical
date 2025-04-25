@@ -15,13 +15,17 @@ void init_win();
 #define BLOCK_SIZE 100
 void _main()
 {
+
 	load_font((void *)font_buff);
 
 	win.w_name = "tictactoe";
 	win.event_handler.event_mask = GENERAL_EVENT_MOUSE;
 	create_window(&win,100,100,BLOCK_SIZE*3,BLOCK_SIZE*3);
+
 	init_win();
+
 	display_window_section(&win,0,0,win.width,win.height);
+
 	int turn = 0;
 	int count = 0;
 
@@ -56,10 +60,10 @@ void _main()
 			int x = col*BLOCK_SIZE+BLOCK_SIZE/2;
 			int y = row*BLOCK_SIZE+BLOCK_SIZE/2;
 
-			int color = 0xf;
+			int color = 0xffffff;
 
 			if (turn)
-				color = 0x4;
+				color = 0xaa0000;
 
 			gfx_fill_rect(&win,x,y,10,10,color);
 			display_window_section(&win,x,y,10,10);
@@ -77,13 +81,13 @@ void _main()
 
 	}
 
-	int color = 0xf;
+	uint32_t color = 0xffffff;
 
 	if (turn)
-		color = 0x4;
+		color = 0xaa0000;
 
 	if (count == 9)
-		color = 0xd;
+		color = 0x00aa00;
 
 	gfx_fill_rect(&win,0,0,win.width,win.height,color);
 	display_window_section(&win,0,0,win.width,win.height);
@@ -113,10 +117,10 @@ void init_win()
 
 	gfx_fill_rect(&win,0,0,win.width,win.height,0);
 
-	gfx_fill_rect(&win,BLOCK_SIZE,0,1,win.height,0xf);
-	gfx_fill_rect(&win,BLOCK_SIZE*2,0,1,win.height,0xf);
-	gfx_fill_rect(&win,0,BLOCK_SIZE,win.width,1,0xf);
-	gfx_fill_rect(&win,0,BLOCK_SIZE*2,win.width,1,0xf);
+	gfx_fill_rect(&win,BLOCK_SIZE,0,1,win.height,0xffffff);
+	gfx_fill_rect(&win,BLOCK_SIZE*2,0,1,win.height,0xffffff);
+	gfx_fill_rect(&win,0,BLOCK_SIZE,win.width,1,0xffffff);
+	gfx_fill_rect(&win,0,BLOCK_SIZE*2,win.width,1,0xffffff);
 
 }
 

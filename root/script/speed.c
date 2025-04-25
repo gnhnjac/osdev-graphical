@@ -17,7 +17,9 @@ void _main(int argc, char **argv)
 	win.event_handler.event_mask = GENERAL_EVENT_KBD;
 	create_window(&win,100,100,500,500);
 
-	int color = 0;
+	uint8_t r = 0;
+	uint8_t g = 0;
+	uint8_t b = 0;
 	while(1)
 	{
 
@@ -34,10 +36,12 @@ void _main(int argc, char **argv)
 				break;
 		}
 
-		gfx_fill_rect(&win,0,0,500,500,color);
+		gfx_fill_rect(&win,0,0,500,500,r << 16 + g << 8 + b);
 		display_window_section(&win,0,0,500,500);
 
-		color = (color + 1) % 16;
+		r = (r + 20) % 255;
+		g = (r + 50) % 255;
+		b = (r + 60) % 255;
 
 		sleep(30);
 

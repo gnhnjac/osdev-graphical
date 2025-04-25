@@ -446,15 +446,15 @@ void init_screen()
 	clear_screen();
 
 	// // initialize top bar
-	display_psf1_8x16_char_bg('a', get_screen_x(0), get_screen_y(0), 0xFFFFFF,0);
-	display_psf1_8x16_char_bg('k', get_screen_x(1), get_screen_y(0), 0xFFFFFF,0);
-	display_psf1_8x16_char_bg('o', get_screen_x(2), get_screen_y(0), 0xFFFFFF,0);
-	display_psf1_8x16_char_bg('s', get_screen_x(3), get_screen_y(0), 0xFFFFFF,0);
+	display_psf1_8x16_char_bg('a', get_screen_x(0), get_screen_y(0), WIN_FRAME_COLOR,0);
+	display_psf1_8x16_char_bg('k', get_screen_x(1), get_screen_y(0), WIN_FRAME_COLOR,0);
+	display_psf1_8x16_char_bg('o', get_screen_x(2), get_screen_y(0), WIN_FRAME_COLOR,0);
+	display_psf1_8x16_char_bg('s', get_screen_x(3), get_screen_y(0), WIN_FRAME_COLOR,0);
 
 	for (int i = 4; i < MAX_COLS; i++)
 	{
 
-		display_psf1_8x16_char_bg(' ', get_screen_x(i), get_screen_y(0), 0xFFFFFF,0);
+		display_psf1_8x16_char_bg(' ', get_screen_x(i), get_screen_y(0), WIN_FRAME_COLOR,0);
 
 	}
 

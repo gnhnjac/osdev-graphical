@@ -1,8 +1,8 @@
 #pragma once
 #include <stdint.h>
 
-#define PIXEL_WIDTH 1920
-#define PIXEL_HEIGHT 1080
+#define PIXEL_WIDTH 1280
+#define PIXEL_HEIGHT 1024
 
 #define CHAR_WIDTH 8
 #define CHAR_HEIGHT 16
@@ -95,11 +95,11 @@ void load_font_to_buffer(void *buff);
 int load_psf1_8x16(char *path);
 void display_psf1_8x16_char_linear(char c, int x, int y, int fgcolor);
 void display_psf1_8x16_char_bg_linear(char c, int x, int y, int bgcolor, int fgcolor);
-void display_psf1_8x16_char(char c, int x, int y, uint8_t fgcolor);
-void display_psf1_8x16_char_bg(char c, int x, int y, int bgcolor, int fgcolor);
-void fill_rect_linear(int x, int y, int width, int height, uint32_t color);
-void outline_rect(int x, int y, int width, int height, int size, uint8_t color);
+void display_psf1_8x16_char(char c, int x, int y, uint32_t fgcolor);
+void display_psf1_8x16_char_bg(char c, int x, int y, uint32_t bgcolor, uint32_t fgcolor);
+void outline_rect(int x, int y, int width, int height, int size, uint32_t color);
+void fill_gradient(int x, int y, int width, int height, uint32_t start_color, uint32_t end_color);
 void fill_rect(int x, int y, int width, int height, uint32_t color);
-void outline_circle(int mx, int my, int rad, uint8_t color);
+void outline_circle(int mx, int my, int rad, uint32_t color);
 void set_pixel (int x, int y, uint32_t color);
 uint32_t get_pixel (int x, int y);

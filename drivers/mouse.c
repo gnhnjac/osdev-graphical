@@ -8,6 +8,7 @@
 #include "process.h"
 #include "window_sys.h"
 #include "scheduler.h"
+#include "math.h"
 
 static int16_t PREVX = 0;
 static int16_t PREVY = 0;
@@ -106,6 +107,7 @@ void mouse_handler()
 
 	int8_t rel_x = xmov - ((flags << 4) & 0x100); // produce 2s complement only if the neg bit is set
 	int8_t rel_y = ymov - ((flags << 3) & 0x100); // produce 2s complement only if the neg bit is set
+
 	// handle mouse mvmt
 
 	MOUSEX += rel_x*2;
@@ -139,23 +141,11 @@ void mouse_handler()
 	int left_click = flags & 1;
 	int right_click = flags & 2;
 
+	if (!rel_x && !rel_y && !left_click && !right_click)
+		return;
+
 	if (right_click)
 	{	
-
-		if (!dragging_window)
-		{
-			PWINDOW win = winsys_get_window_from_title_collision(MOUSEX,MOUSEY);
-			if (win)
-			{
-				dragging_window = win;
-			}
-		}
-		else
-		{
-			winsys_move_window(dragging_window,MOUSEX - dragging_window->width/2 ,MOUSEY+TITLE_BAR_HEIGHT/2);
-			dragging_window = 0;
-
-		}
 
 		// for(int i = 0; i < 20; i+=2)
 		// {
@@ -172,6 +162,30 @@ void mouse_handler()
 		PWINDOW win = winsys_get_window_from_collision(MOUSEX, MOUSEY);
 		if (win && winsys_get_working_window() != win)
 			winsys_set_working_window(win->id);
+		else
+		{
+			if (!dragging_window)
+			{
+				PWINDOW win = winsys_get_window_from_title_collision(MOUSEX,MOUSEY);
+				if (win)
+				{
+					dragging_window = win;
+				}
+			}
+			else
+			{
+				winsys_move_window(dragging_window,MOUSEX - dragging_window->width/2 ,max(MOUSEY+TITLE_BAR_HEIGHT/2, CHAR_HEIGHT+TITLE_BAR_HEIGHT));
+
+			}
+		}
+
+	}
+	else
+	{
+
+		debug_printf("%d,%d,%d\n",rel_x,rel_y,left_click);
+
+		dragging_window = 0;
 
 	}
 

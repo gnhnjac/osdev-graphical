@@ -69,6 +69,7 @@ typedef struct _window
 	uint32_t width;
 	uint32_t height;
 	void *w_buffer;
+    void *wsys_buffer;
 	char *w_name;
 	int id;
 	int parent_pid;

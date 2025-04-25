@@ -8,30 +8,21 @@ int remap(int OldValue, int OldMin, int OldMax, int NewMin, int NewMax)
 int max(int a, int b)
 {
 
-	if (a > b)
-		return a;
-
-	return b;
+	return (a > b) ? a : b;
 
 }
 
 int min(int a, int b)
 {
 
-	if (a < b)
-		return a;
-
-	return b;
+	return (a < b) ? a : b;
 
 }
 
 int abs(int n)
 {
 
-    if (n < 0)
-        return -n;
-
-    return n;
+    return (n < 0) ? -n : n;
 
 }
 

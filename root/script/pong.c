@@ -314,7 +314,7 @@ static void move_paddle(int d) {
 		
 		} else { 
 		
-			paddle[1].y += 5;
+			paddle[1].y += 10;
 		}
 	}
 	
@@ -327,7 +327,7 @@ static void move_paddle(int d) {
 
 		} else {
 		
-			paddle[1].y -= 5;
+			paddle[1].y -= 10;
 		}
 	}
 }
@@ -571,7 +571,7 @@ void _main (int argc, char *args[]) {
 
 			display_window_section(&window,0,0,window.width,window.height);
 
-			//sleep(1000/60);
+			sleep(1000/60);
 
 		}
 	}

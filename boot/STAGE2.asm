@@ -31,8 +31,9 @@ pop es
 mov di, VesaInfoBlockBuffer
 call get_vesa_info
 
-mov ax, 1920
-mov bx, 1080
+; go to vesa mode with specified resolution
+mov ax, 1280
+mov bx, 1024
 mov cl, 24
 call set_vesa_mode
 

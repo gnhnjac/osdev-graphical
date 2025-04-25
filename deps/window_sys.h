@@ -66,6 +66,7 @@ typedef struct _window
 	int width;
 	int height;
 	void *w_buffer;
+   void *wsys_buffer;
 	char *w_name;
 	int id;
 	int parent_pid;
@@ -202,11 +203,12 @@ typedef enum _keyCodes {
 
 #define TITLE_BAR_HEIGHT 30
 #define WIN_FRAME_SIZE 2
-#define WIN_FRAME_COLOR 0x555555
+#define WIN_FRAME_COLOR 0xdfdfdf
 #define TITLE_NAME_COLOR 0xFFFFFF
-#define WORKING_TITLE_COLOR 0x5555ff
+#define WORKING_TITLE_COLOR_LEFT 0x1b671a
+#define WORKING_TITLE_COLOR_RIGHT 0xb3c8df
 
-#define BG_COLOR 0xa8a8a8
+#define BG_COLOR 0x247171
 
 //refs
 void winsys_disable_mouse();
@@ -265,7 +267,7 @@ EVENT winsys_dequeue_from_event_handler(PEVENTHAND handler);
 void winsys_dequeue_from_event_handler_user(PWINDOW win, PEVENT event_buff);
 void gfx_paint_char(PWINDOW win, char c, int x, int y, uint32_t fgcolor);
 void gfx_paint_char_bg(PWINDOW win, char c, int x, int y, uint32_t bgcolor, uint32_t fgcolor);
-void gfx_set_pixel(PWINDOW win,int x, int y,uint32_t color);
+void gfx_set_pixel(PWINDOW win, int x, int y, uint32_t color);
 void gfx_fill_rect(PWINDOW win, int x, int y, int width, int height, uint32_t color);
 void gfx_clear_win(PWINDOW win);
 int gfx_get_win_x(int col);
@@ -276,8 +278,8 @@ void gfx_putchar(PWINDOW win, PINPINFO inp_info, char c);
 void gfx_print(PWINDOW win, PINPINFO inp_info, char *s);
 void gfx_print_color(PWINDOW win, PINPINFO inp_info, char *s, uint32_t color);
 void gfx_print_char(PWINDOW win, PINPINFO inp_info, const char character, int row, int col, char color);
-void gfx_vprintf(PWINDOW win, PINPINFO inp_info,const char *fmt, va_list valist);
-void gfx_printf(PWINDOW win, PINPINFO inp_info,const char *fmt, ...);
+void gfx_vprintf(PWINDOW win, PINPINFO inp_info, const char *fmt, va_list valist);
+void gfx_printf(PWINDOW win, PINPINFO inp_info, const char *fmt, ...);
 void gfx_keyboard_input(PINPINFO inp_info, int col, int row, char *buffer, int bf_size);
 int gfx_keyboard_input_character(PINPINFO inp_info, char character);
 int gfx_handle_scrolling(PWINDOW win, PINPINFO inp_info, int offset_y);

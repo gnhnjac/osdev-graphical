@@ -33,6 +33,13 @@ void strcpy(char *dest, const char *source)
 
 }
 
+void memset_dword (uint32_t* dest , uint32_t val , int count) {
+
+   for (int i =0; i < count; i++) {
+      *(dest + i) = val;
+   }
+}
+
 char *memset(char *dest, unsigned char val, int count)
 {
     /* set 'count' bytes in 'dest' to 'val'. */
