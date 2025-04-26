@@ -74,9 +74,7 @@ void winsys_save_to_mouse_buffer()
 	for (int i = 0; i < 18; i++)
 	{
 
-		memcpy_dword(&mouse_placeholder_buffer[i], vram, 10 * 3 / 4);
-
-		memcpy(&mouse_placeholder_buffer[i] + 10 * 3 - 10 * 3 % 4, vram + 10 * 3 - 10 * 3 % 4, 10 * 3 % 4);
+		memcpy(&mouse_placeholder_buffer[i], vram, 10 * 3);
 
 		vram += PIXEL_WIDTH*3;
 
@@ -112,9 +110,7 @@ void winsys_clear_mouse()
 	for (int i = 0; i < 18; i++)
 	{
 
-		memcpy_dword(vram, &mouse_placeholder_buffer[i], 10 * 3 / 4);
-
-		memcpy(vram + 10 * 3 - 10 * 3 % 4, &mouse_placeholder_buffer[i] + 10 * 3 - 10 * 3 % 4, 10 * 3 % 4);
+		memcpy(vram, &mouse_placeholder_buffer[i], 10 * 3);
 
 		vram += PIXEL_WIDTH*3;
 
@@ -651,8 +647,6 @@ void winsys_paint_window(PWINDOW win)
 
 }
 
-static int winsys_current_painting_process_pid = 0;
-
 void winsys_paint_window_section(PWINDOW win, int x, int y, int width, int height)
 {
 
@@ -671,7 +665,6 @@ void winsys_paint_window_section(PWINDOW win, int x, int y, int width, int heigh
 	uint8_t *buff;
 	if (win->is_user)
 	{
-		winsys_current_painting_process_pid = win->parent_pid;
 		buff = (uint8_t *)win->wsys_buffer;
 	}
 	else
@@ -702,9 +695,6 @@ void winsys_paint_window_section(PWINDOW win, int x, int y, int width, int heigh
 
 	if (hide_mouse)
 		winsys_enable_mouse();
-
-	if (win->is_user)
-		winsys_current_painting_process_pid = 0;
 
 	//winsys_paint_window_frame(win);
 
@@ -1161,25 +1151,6 @@ void winsys_move_window(PWINDOW win, int x, int y)
 
 }
 
-void winsys_move_window_through_mouse(PWINDOW win, int x, int y)
-{
-
-	if (!win)
-		return;
-
-	WINSYSOP move_window_operation = {
-
-		.op = WINSYS_MOVE_WINDOW,
-		.wid = win->id,
-		.x = x,
-		.y = y
-
-	};
-
-	winsys_enqueue_to_winsys_listener_if_possible(move_window_operation);
-
-}
-
 void winsys_move_window_operation(PWINDOW win, int x, int y)
 {
 
@@ -1280,20 +1251,6 @@ void winsys_remove_windows_by_pid(int pid)
 		if (to_remove->parent_pid == pid)
 		{
 
-			if (to_remove->is_user)
-			{
-
-				if (winsys_current_painting_process_pid == to_remove->parent_pid && get_running_process()->id == winsys_pid)
-					return;
-
-				// wait for winsys to finish drawing the process, problem if it's the winsys process
-				while(winsys_current_painting_process_pid == to_remove->parent_pid)
-					__asm__("pause");
-
-				for (int i = 0; i < get_win_page_amt(to_remove); i++)
-					vmmngr_free_virt(getProcessByID(to_remove->parent_pid)->pageDirectory, (void *) to_remove->w_buffer + i*PAGE_SIZE);
-			}
-
 			winsys_remove_window(to_remove);
 			return;
 		}
@@ -1311,7 +1268,7 @@ void winsys_remove_window_user(PWINDOW win)
 	// remove the shared memory buffer associated with this window
 	for (int i = 0; i < get_win_page_amt(win); i++)
 	{
-		vmmngr_unmap_virt(vmmngr_get_directory(), win->wsys_buffer + i * PAGE_SIZE); // MEMORY WILL LEAK SINCE WE ARE NOT FREEING THE PAGE TABLE!! thats fine though as it's only if its called from a kernel proc
+		vmmngr_free_virt(vmmngr_get_directory(), win->wsys_buffer + i * PAGE_SIZE); // MEMORY WILL LEAK SINCE WE ARE NOT FREEING THE PAGE TABLE!! thats fine though as it's only if its called from a kernel proc
 		vmmngr_flush_tlb_entry((virtual_addr) win->wsys_buffer + i * PAGE_SIZE); // flush cached entries
 	}
 

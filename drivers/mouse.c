@@ -182,9 +182,7 @@ void mouse_handler()
 	}
 	else
 	{
-
-		debug_printf("%d,%d,%d\n",rel_x,rel_y,left_click);
-
+		
 		dragging_window = 0;
 
 	}

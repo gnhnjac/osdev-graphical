@@ -205,8 +205,8 @@ typedef enum _keyCodes {
 #define WIN_FRAME_SIZE 2
 #define WIN_FRAME_COLOR 0xdfdfdf
 #define TITLE_NAME_COLOR 0xFFFFFF
-#define WORKING_TITLE_COLOR_LEFT 0x1b671a
-#define WORKING_TITLE_COLOR_RIGHT 0xb3c8df
+#define WORKING_TITLE_COLOR_LEFT 0x7b
+#define WORKING_TITLE_COLOR_RIGHT 0x1b88d4
 
 #define BG_COLOR 0x247171
 
@@ -256,7 +256,6 @@ bool winsys_check_close_collide(PWINDOW w, int x, int y);
 PWINDOW winsys_get_window_from_collision(int x, int y);
 PWINDOW winsys_get_window_from_title_collision(int x, int y);
 void winsys_move_window(PWINDOW win, int x, int y);
-void winsys_move_window_through_mouse(PWINDOW win, int x, int y);
 void winsys_move_window_operation(PWINDOW win, int x, int y);
 void winsys_remove_window(PWINDOW win);
 void winsys_remove_window_operation(PWINDOW win);
