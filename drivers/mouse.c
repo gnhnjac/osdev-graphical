@@ -221,7 +221,7 @@ void mouse_handler()
 	}
 	
 	if (rel_x != 0 || rel_y != 0)
-		winsys_move_mouse(MOUSEX, MOUSEY);
+		winsys_move_mouse_operation(MOUSEX, MOUSEY);
 
 }
 

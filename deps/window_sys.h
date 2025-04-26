@@ -90,12 +90,11 @@ typedef enum _winsysOperation
 {
 
 	WINSYS_EMPTY = 0,
-	WINSYS_MOVE_MOUSE = 1,
-	WINSYS_DISPLAY_WINDOW_SECTION = 2,
-	WINSYS_DISPLAY_WINDOW = 3,
-	WINSYS_MOVE_WINDOW = 4,
-	WINSYS_SET_WORKING_WINDOW = 5,
-	WINSYS_REMOVE_WINDOW = 6,
+	WINSYS_DISPLAY_WINDOW_SECTION,
+	WINSYS_DISPLAY_WINDOW,
+	WINSYS_MOVE_WINDOW,
+	WINSYS_SET_WORKING_WINDOW,
+	WINSYS_REMOVE_WINDOW,
 
 } winsysOperation;
 
@@ -217,13 +216,10 @@ void winsys_print_mouse();
 void winsys_clear_mouse();
 void winsys_enable_mouse();
 void winsys_move_mouse_operation(int x, int y);
-void winsys_do_operation();
+void winsys_do_operation(WINSYSOP op_handle);
 void winsys_listener();
 WINSYSOP winsys_dequeue_from_winsys_listener();
 void winsys_enqueue_to_winsys_listener(WINSYSOP operation);
-void winsys_enqueue_to_winsys_listener_if_possible(WINSYSOP operation);
-void winsys_enqueue_to_winsys_listener_if_possible_lockless(WINSYSOP operation);
-void winsys_move_mouse(int new_x, int new_y);
 PWINDOW winsys_get_working_window();
 int winsys_get_free_id();
 PWINDOW winsys_get_window_by_id(int wid);
@@ -239,8 +235,6 @@ void winsys_paint_window_section(PWINDOW win, int x, int y, int width, int heigh
 void winsys_display_window_section(PWINDOW win, int x, int y, int width, int height);
 void winsys_display_window_section_operation(PWINDOW win, int x, int y, int width, int height);
 void winsys_display_window(PWINDOW win);
-void winsys_display_window_if_possible(PWINDOW win);
-void winsys_display_window_if_possible_lockless(PWINDOW win);
 void winsys_display_window_operation(PWINDOW win);
 void winsys_display_collided_windows(PWINDOW win);
 void winsys_clear_window(PWINDOW win);

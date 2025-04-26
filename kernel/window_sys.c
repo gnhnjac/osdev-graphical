@@ -138,18 +138,10 @@ void winsys_move_mouse_operation(int x, int y)
 
 }
 
-void winsys_do_operation()
+void winsys_do_operation(WINSYSOP op_handle)
 {
 
-	WINSYSOP op_handle = winsys_dequeue_from_winsys_listener();
-
-	if (op_handle.op == WINSYS_MOVE_MOUSE)
-	{
-
-		winsys_move_mouse_operation(op_handle.x, op_handle.y);
-
-	}
-	else if (op_handle.op == WINSYS_DISPLAY_WINDOW)
+	if (op_handle.op == WINSYS_DISPLAY_WINDOW)
 	{
 
 		winsys_display_window_operation(winsys_get_window_by_id(op_handle.wid));
@@ -193,7 +185,7 @@ void winsys_listener()
 		while (winsys_queue_index == 0)
 			__asm__("pause");
 
-		winsys_do_operation();
+		winsys_do_operation(winsys_dequeue_from_winsys_listener());
 
 	}
 
@@ -202,7 +194,8 @@ void winsys_listener()
 WINSYSOP winsys_dequeue_from_winsys_listener()
 {
 
-	acquireLock(&winsys_queue_lock);
+	if (winsys_queue_index < WINSYS_QUEUE_SIZE)
+		acquireLock(&winsys_queue_lock);
 
 	WINSYSOP op = winsys_queue[winsys_queue_start];
 
@@ -213,8 +206,6 @@ WINSYSOP winsys_dequeue_from_winsys_listener()
 	winsys_queue_index--;
 
 	releaseLock(&winsys_queue_lock);
-
-	releaseLock(&winsys_queue_last_lock);
 
 	return op;
 
@@ -229,79 +220,19 @@ void winsys_enqueue_to_winsys_listener(WINSYSOP operation)
 	process *running_proc = get_running_process();
 
 	if (winsys_queue_lock && running_proc && running_proc->id == winsys_pid)
-		releaseLock(&winsys_queue_lock);
+	{
+		// we can't schedule while handling an isr... and we only get here from the mouse interrupt... so just discard this event
+		return;
+	}
 
 	acquireLock(&winsys_queue_lock);
-
-	if (winsys_queue_index >= WINSYS_QUEUE_SIZE - 1)
-	{
-		releaseLock(&winsys_queue_lock);
-
-		if (winsys_queue_index == WINSYS_QUEUE_SIZE && running_proc->id == winsys_pid)
-			winsys_do_operation();
-
-		acquireLock(&winsys_queue_last_lock);
-		acquireLock(&winsys_queue_lock);
-	}
 
 	winsys_queue[winsys_queue_end] = operation;
-	winsys_queue_index++;
 	winsys_queue_end = (winsys_queue_end + 1) % WINSYS_QUEUE_SIZE;
-	releaseLock(&winsys_queue_lock);
-
-}
-
-void winsys_enqueue_to_winsys_listener_if_possible(WINSYSOP operation)
-{
-
-	if (!winsys_initialized)
-		return;
-
-	process *running_proc = get_running_process();
-
-	if (winsys_queue_lock && running_proc && running_proc->id == winsys_pid)
-		releaseLock(&winsys_queue_lock);
-
-	acquireLock(&winsys_queue_lock);
+	winsys_queue_index++;
 
 	if (winsys_queue_index < WINSYS_QUEUE_SIZE)
-	{
-		winsys_queue[winsys_queue_end] = operation;
-		winsys_queue_end = (winsys_queue_end + 1) % WINSYS_QUEUE_SIZE;
-		winsys_queue_index++;
-	}
-
-	releaseLock(&winsys_queue_lock);
-
-}
-
-void winsys_enqueue_to_winsys_listener_if_possible_lockless(WINSYSOP operation)
-{
-
-	if (!winsys_initialized || winsys_queue_lock)
-		return;
-
-	if (winsys_queue_index < WINSYS_QUEUE_SIZE - 1)
-	{
-		winsys_queue[winsys_queue_end] = operation;
-		winsys_queue_end = (winsys_queue_end + 1) % WINSYS_QUEUE_SIZE;
-		winsys_queue_index++;
-	}
-
-}
-
-void winsys_move_mouse(int new_x, int new_y)
-{
-
-	WINSYSOP mouse_move_operation = {
-
-		.op = WINSYS_MOVE_MOUSE,
-		.x = new_x,
-		.y = new_y
-
-	};
-
-	winsys_enqueue_to_winsys_listener_if_possible(mouse_move_operation);
+		releaseLock(&winsys_queue_lock);
 
 }
 
@@ -789,40 +720,6 @@ void winsys_display_window(PWINDOW win)
 	};
 
 	winsys_enqueue_to_winsys_listener(display_window_operation);
-
-}
-
-void winsys_display_window_if_possible(PWINDOW win)
-{
-
-	if (!win)
-		return;
-
-	WINSYSOP display_window_operation = {
-
-		.op = WINSYS_DISPLAY_WINDOW,
-		.wid = win->id
-
-	};
-
-	winsys_enqueue_to_winsys_listener_if_possible(display_window_operation);
-
-}
-
-void winsys_display_window_if_possible_lockless(PWINDOW win)
-{
-
-	if (!win)
-		return;
-
-	WINSYSOP display_window_operation = {
-
-		.op = WINSYS_DISPLAY_WINDOW,
-		.wid = win->id
-
-	};
-
-	winsys_enqueue_to_winsys_listener_if_possible_lockless(display_window_operation);
 
 }
 

@@ -223,6 +223,18 @@ void fill_gradient(int x, int y, int width, int height, uint32_t start_color, ui
 	if (x >= PIXEL_WIDTH || y >= PIXEL_HEIGHT)
 		return;
 
+	if (x < 0)
+	{
+		width += x;
+		x = 0;
+	}
+
+	if (y < 0)
+	{
+		height += y;
+		y = 0;
+	}
+
 	if (x + width >= PIXEL_WIDTH)
 		width = PIXEL_WIDTH - x;
 	if (y + height >= PIXEL_HEIGHT)
@@ -241,26 +253,18 @@ void fill_gradient(int x, int y, int width, int height, uint32_t start_color, ui
 	for (int i = 0; i < height; i++)
 	{
 
-		if (y + i < PIXEL_HEIGHT && y + i >= 0)
+		for (int j = 0; j < width; j++)
 		{
 
-			for (int j = 0; j < width; j++)
-			{
+			int32_t r = sr + (er - sr) * j / width;
+			int32_t g = sg + (eg - sg) * j / width;
+			int32_t b = sb + (eb - sb) * j / width;
 
-				if (x + j >= PIXEL_WIDTH || x + j < 0)
-					continue;
+			uint32_t color = r | (g << 8) | (b << 16);
 
-				int32_t r = sr + (er - sr) * j / width;
-			   int32_t g = sg + (eg - sg) * j / width;
-			   int32_t b = sb + (eb - sb) * j / width;
+			*(uint32_t *)(vram + j*3) &= 0xFF000000;
 
-			   uint32_t color = r | (g << 8) | (b << 16);
-
-				*(uint32_t *)(vram + j*3) &= 0xFF000000;
-
-				*(uint32_t *)(vram + j*3) |= color&0xffffff;
-
-			}
+			*(uint32_t *)(vram + j*3) |= color&0xffffff;
 
 		}
 
@@ -276,6 +280,18 @@ void fill_rect(int x, int y, int width, int height, uint32_t color)
 	if (x >= PIXEL_WIDTH || y >= PIXEL_HEIGHT)
 		return;
 
+	if (x < 0)
+	{
+		width += x;
+		x = 0;
+	}
+
+	if (y < 0)
+	{
+		height += y;
+		y = 0;
+	}
+
 	if (x + width >= PIXEL_WIDTH)
 		width = PIXEL_WIDTH - x;
 	if (y + height >= PIXEL_HEIGHT)
@@ -286,24 +302,20 @@ void fill_rect(int x, int y, int width, int height, uint32_t color)
 	for (int i = 0; i < height; i++)
 	{
 
-		if (y + i < PIXEL_HEIGHT && y + i >= 0)
+		uint8_t *tmp = vram;
+
+		for (int j = 0; j < width; j++)
 		{
 
-			for (int j = 0; j < width; j++)
-			{
+			*(uint32_t *)vram &= 0xFF000000;
 
-				if (x + j >= PIXEL_WIDTH || x + j < 0)
-					continue;
+			*(uint32_t *)vram |= color&0xffffff;
 
-				*(uint32_t *)(vram + j*3) &= 0xFF000000;
-
-				*(uint32_t *)(vram + j*3) |= color&0xffffff;
-
-			}
+			vram += 3;
 
 		}
 
-		vram += PIXEL_WIDTH*3;
+		vram = tmp + PIXEL_WIDTH*3;
 
 	}
 	

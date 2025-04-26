@@ -7,7 +7,9 @@
 void memcpy (char* dest , const char* source , int count) {
 
 	for (int i =0; i < count; i++) {
-		*(dest + i) = *(source + i);
+		*dest = *source;
+      source++;
+      dest++;
 	}
 }
 
@@ -15,7 +17,9 @@ void memcpy (char* dest , const char* source , int count) {
 void memcpy_dword (uint32_t* dest , const uint32_t* source , int count) {
 
    for (int i =0; i < count; i++) {
-      *(dest + i) = *(source + i);
+      *dest = *source;
+      source++;
+      dest++;
    }
 }
 
@@ -36,7 +40,8 @@ void strcpy(char *dest, const char *source)
 void memset_dword (uint32_t* dest , uint32_t val , int count) {
 
    for (int i =0; i < count; i++) {
-      *(dest + i) = val;
+      *dest = val;
+      dest++;
    }
 }
 
@@ -47,7 +52,8 @@ char *memset(char *dest, unsigned char val, int count)
     for (int i = 0; i < count; i++)
     {
 
-    	*(dest + i) = val;
+    	*dest = val;
+      dest++;
 
     }
 }
@@ -57,7 +63,8 @@ short *memsetw(short *dest, unsigned short val, int count)
    for (int i = 0; i < count; i++)
     {
 
-    	*(dest + i) = val;
+    	*dest = val;
+      dest++;
 
     }
 }

@@ -479,8 +479,6 @@ void scheduler_dispatch () {
                     i++;
                 }
 
-                winsys_display_window_if_possible_lockless(cpu_usage);
-
                 idle_task_ticks = 0;
                 total_ticks = 0;
         }
@@ -630,6 +628,8 @@ void idle_task() {
 
 extern uint32_t vga_palette[16];
 
+extern PWINDOW time_window;
+
 void cycle_colors()
 {
 
@@ -645,6 +645,8 @@ void cycle_colors()
           gfx_paint_char_bg(akos_window,'o', 2*CHAR_WIDTH,0, WIN_FRAME_COLOR, vga_palette[cycler+2]);
           gfx_paint_char_bg(akos_window,'s', 3*CHAR_WIDTH,0, WIN_FRAME_COLOR, vga_palette[cycler+3]);
           winsys_display_window(akos_window);
+          winsys_display_window(cpu_usage);
+          winsys_display_window(time_window);
           cycler = (cycler + 1) % 16;
           thread_sleep(200);
   } 
