@@ -35,6 +35,30 @@ void outl( unsigned short port , unsigned long data ) {
 	__asm__ ("outl %%eax, %%dx" : :"a" ( data ), "d" ( port ));
 }
 
+int cpu_has_msr()
+{
+   static uint32_t a, d; // eax, edx
+   cpuid(1, &a, &d);
+   return (d & (1 << 5)) > 0;
+}
+
+void cpuid(uint32_t code, uint32_t *a, uint32_t *d) {
+    asm volatile("cpuid"
+                 : "=a"(*a), "=d"(*d)
+                 : "a"(code)
+                 : "ecx", "ebx");
+}
+
+void cpu_get_msr(uint32_t msr, uint32_t *lo, uint32_t *hi)
+{
+   asm volatile("rdmsr" : "=a"(*lo), "=d"(*hi) : "c"(msr));
+}
+
+void cpu_set_msr(uint32_t msr, uint32_t lo, uint32_t hi)
+{
+   asm volatile("wrmsr" : : "a"(lo), "d"(hi), "c"(msr));
+}
+
 void set_eax(uint32_t val)
 {
 

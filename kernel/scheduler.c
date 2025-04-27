@@ -16,7 +16,7 @@ thread*  _currentTask = 0;
 
 process *kernel_proc;
 
-PWINDOW cpu_usage;
+//PWINDOW cpu_usage;
 
 process *get_running_process()
 {
@@ -458,30 +458,31 @@ void scheduler_dispatch () {
 
         } while (is_terminate || _currentTask->state & THREAD_BLOCK_SLEEP || _currentTask->state & THREAD_SUSPENDED);
 
-        static uint32_t idle_task_ticks = 0;
-        static uint32_t total_ticks = 0;
+        // static uint32_t idle_task_ticks = 0;
+        // static uint32_t total_ticks = 0;
 
-        if (_currentTask->tid == 1)
-                idle_task_ticks++;
-        total_ticks++;
+        // if (_currentTask->tid == 1)
+        //         idle_task_ticks++;
 
-        if (total_ticks == PHASE)
-        {
-                char cpu_percentage_str[3 + 1];
-                int_to_str_padding(100-idle_task_ticks*100/total_ticks,cpu_percentage_str,10,2);
-                cpu_percentage_str[2] = '%';
-                cpu_percentage_str[3] = 0;
+        // total_ticks++;
 
-                int i = 0;
-                while(i < 3)
-                {
-                    gfx_paint_char_bg(cpu_usage, cpu_percentage_str[i],CHAR_WIDTH*i,0,WIN_FRAME_COLOR,0);
-                    i++;
-                }
+        // if (total_ticks == PHASE)
+        // {
+        //         char cpu_percentage_str[3 + 1];
+        //         int_to_str_padding(100-idle_task_ticks*100/total_ticks,cpu_percentage_str,10,2);
+        //         cpu_percentage_str[2] = '%';
+        //         cpu_percentage_str[3] = 0;
 
-                idle_task_ticks = 0;
-                total_ticks = 0;
-        }
+        //         int i = 0;
+        //         while(i < 3)
+        //         {
+        //             gfx_paint_char_bg(cpu_usage, cpu_percentage_str[i],CHAR_WIDTH*i,0,WIN_FRAME_COLOR,0);
+        //             i++;
+        //         }
+
+        //         idle_task_ticks = 0;
+        //         total_ticks = 0;
+        // }
 }
 
 void scheduler_tick(void)
@@ -554,9 +555,9 @@ void scheduler_initialize(void) {
         /* create window system process */
         createKernelProcess(winsys_listener, "winsys");
 
-        cpu_usage = winsys_create_win(0,50,3*CHAR_WIDTH,CHAR_HEIGHT, "", false);
-        cpu_usage->has_frame = false;
-        winsys_move_window(cpu_usage,5*CHAR_WIDTH,0);
+        // cpu_usage = winsys_create_win(0,50,3*CHAR_WIDTH,CHAR_HEIGHT, "", false);
+        // cpu_usage->has_frame = false;
+        // winsys_move_window(cpu_usage,5*CHAR_WIDTH,0);
 
         /* register isr */
         idt_set_gate(32, (void *)scheduler_isr, 0x8E|0x60);
@@ -622,6 +623,8 @@ void idle_task() {
   t->priority = PRIORITY_LOW;
   queue_insert(*t);
   insert_thread_to_proc(kernel_proc,t);
+ 
+  thread_suspend(); // no need for the idle task...
 
   while(1) __asm__ ("pause");
 }
@@ -645,7 +648,7 @@ void cycle_colors()
           gfx_paint_char_bg(akos_window,'o', 2*CHAR_WIDTH,0, WIN_FRAME_COLOR, vga_palette[cycler+2]);
           gfx_paint_char_bg(akos_window,'s', 3*CHAR_WIDTH,0, WIN_FRAME_COLOR, vga_palette[cycler+3]);
           winsys_display_window(akos_window);
-          winsys_display_window(cpu_usage);
+          //winsys_display_window(cpu_usage);
           winsys_display_window(time_window);
           cycler = (cycler + 1) % 16;
           thread_sleep(200);

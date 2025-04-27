@@ -121,6 +121,9 @@ void get_shell_input(char *buff, int buff_size)
 
 		EVENT e = winsys_dequeue_from_event_handler(&main_window->event_handler);
 
+		if (e.event_type == EVENT_INVALID)
+            thread_suspend();
+
 		char *kbdus = get_kbdus_char_array();
 
 		char *shift_kbdus = get_kbdus_shift_char_array();

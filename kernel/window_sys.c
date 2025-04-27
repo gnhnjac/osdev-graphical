@@ -296,6 +296,17 @@ void winsys_init()
 
 	}
 
+	// set framebuffer cache to write combining
+
+	uint32_t pat_msr_lo;
+	uint32_t pat_msr_hi;
+	cpu_get_msr(0x277, &pat_msr_lo, &pat_msr_hi);
+
+	pat_msr_hi &= 0xFFFFFF00;
+	pat_msr_hi |= 0x1;
+
+	cpu_set_msr(0x277, &pat_msr_lo, &pat_msr_hi);
+
 	winsys_initialized = true;
 
 }
@@ -403,7 +414,7 @@ void winsys_create_win_user(PWINDOW local_win, int x, int y, int width, int heig
 	win->wsys_buffer = find_user_space_pages_by_pdir(winsys_pdir, USER_SPACE, get_win_page_amt(win));
 
 	for (int i = 0; i < get_win_page_amt(win); i++)
-		vmmngr_mmap_virt2virt(vmmngr_get_directory(), winsys_pdir, win->w_buffer + i * PAGE_SIZE, win->wsys_buffer + i * PAGE_SIZE, I86_PDE_WRITABLE, I86_PTE_WRITABLE);
+		vmmngr_mmap_virt2virt(vmmngr_get_directory(), winsys_pdir, win->w_buffer + i * PAGE_SIZE, win->wsys_buffer + i * PAGE_SIZE, I86_PDE_WRITABLE, I86_PTE_WRITABLE | I86_PTE_PAT);
 
 	win->id = winsys_get_free_id();
 
